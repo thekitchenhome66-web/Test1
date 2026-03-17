@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Maobai — Choose Your Level</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -391,12 +390,13 @@
 <!-- ── TOAST ───────────────────────────── -->
 <div class="toast" id="toast"></div>
 
-<script>
-  // ── Supabase init ──────────────────────────────
-  const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-  const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  const sb = createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
 
   // ── Toast helper ───────────────────────────────
   function showToast(msg, isError = false) {
@@ -421,18 +421,10 @@
   async function chooseBeginner() {
     setLoading('beginner', true);
     try {
-      const { data: { user }, error: authErr } = await sb.auth.getUser();
-      if (authErr || !user) throw new Error('Not signed in');
-
-      const { error } = await sb
-        .from('profiles')
-        .update({ current_hsk_level: 1 })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
+      localStorage.setItem('user_level', 1);
+      localStorage.setItem('user_lesson', 1);
       showToast('✅ HSK 1 selected — let\'s go!');
-      setTimeout(() => { window.location.href = '/app/dashboard.html'; }, 900);
+      setTimeout(() => { window.location.replace('/app/dashboard.html'); }, 900);
     } catch (err) {
       console.error(err);
       showToast('⚠️ ' + (err.message || 'Something went wrong'), true);
@@ -443,8 +435,12 @@
   // ── PLACEMENT TEST ─────────────────────────────
   function chooseTest() {
     setLoading('test', true);
-    setTimeout(() => { window.location.href = '/app/test.html'; }, 300);
+    setTimeout(() => { window.location.replace('/app/test.html'); }, 300);
   }
+
+  // Expose to global scope for onclick handlers
+  window.chooseBeginner = chooseBeginner;
+  window.chooseTest = chooseTest;
 </script>
 </body>
 </html>
