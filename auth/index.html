@@ -264,9 +264,6 @@
     });
 
     // ── Check existing session ───────────────────────────────
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) window.location.replace(DASHBOARD);
-    });
 
     // ── Init ─────────────────────────────────────────────────
     render();
