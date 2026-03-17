@@ -586,6 +586,14 @@
     }
     .ad-label{font-size:11px;color:var(--text-muted);margin-bottom:14px}
 
+    /* ── HEART-LOCK modal variant ── */
+    .modal.heart-modal .modal-icon{filter:drop-shadow(0 0 12px rgba(248,113,113,.5))}
+    .btn-rose{
+      background:var(--rose);color:#1a0606;
+      box-shadow:0 3px 14px rgba(248,113,113,.28);
+    }
+    .btn-rose:hover{box-shadow:0 6px 22px rgba(248,113,113,.42)}
+
     /* ════════════════════════════════════════
        TASKS PAGE
     ════════════════════════════════════════ */
@@ -870,6 +878,84 @@ const user = {
   get streak() { return Number(localStorage.getItem('streak')       || 0) },
 };
 
+/* ─── HEART LOCK ─────────────────────────────────────── */
+function checkHearts() {
+  return user.hearts > 0;
+}
+
+function showHeartLockModal() {
+  document.getElementById('modal').classList.add('heart-modal');
+  showModal('💔', 'No hearts left', 'You need hearts to start a lesson. Watch an ad to get +1 heart.');
+  document.getElementById('ad-bar-wrap').style.display = 'none';
+  document.getElementById('modal-actions').innerHTML = '';
+
+  const actionsEl = document.getElementById('modal-actions');
+
+  // Watch ad button
+  const adBtn = document.createElement('button');
+  adBtn.className = 'btn btn-rose';
+  adBtn.style.width = '100%';
+  adBtn.textContent = '📺 Watch Ad (+1 heart)';
+  adBtn.onclick = () => runHeartAd();
+  actionsEl.appendChild(adBtn);
+
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn btn-outline';
+  closeBtn.style.width = '100%';
+  closeBtn.textContent = 'Close';
+  closeBtn.onclick = () => closeModal();
+  actionsEl.appendChild(closeBtn);
+}
+
+function runHeartAd() {
+  document.getElementById('ad-bar-wrap').style.display = 'block';
+  document.getElementById('ad-bar').style.width = '0%';
+  document.getElementById('ad-label').textContent = 'Ad loading…';
+  document.getElementById('modal-actions').innerHTML =
+    `<button class="btn btn-outline disabled" id="heart-ad-skip" disabled>Watching… (5s)</button>`;
+
+  let elapsed = 0;
+  const duration = 5000, interval = 80;
+  clearInterval(adTimer);
+  adTimer = setInterval(() => {
+    elapsed += interval;
+    const pct = Math.min(100, Math.round((elapsed / duration) * 100));
+    document.getElementById('ad-bar').style.width = pct + '%';
+    const remaining = Math.ceil((duration - elapsed) / 1000);
+    const skipBtn = document.getElementById('heart-ad-skip');
+    if (elapsed >= duration) {
+      clearInterval(adTimer);
+      document.getElementById('ad-label').textContent = 'Ad finished!';
+      if (skipBtn) {
+        skipBtn.textContent = 'Collect +1 Heart';
+        skipBtn.classList.remove('disabled');
+        skipBtn.disabled = false;
+        skipBtn.className = 'btn btn-rose';
+        skipBtn.style.width = '100%';
+        skipBtn.onclick = () => {
+          const newHearts = Math.min(5, user.hearts + 1);
+          localStorage.setItem('hearts', newHearts);
+          renderStats();
+          closeModal();
+        };
+      }
+    } else {
+      if (skipBtn) skipBtn.textContent = `Watching… (${remaining}s)`;
+      document.getElementById('ad-label').textContent = `Please wait ${remaining}s…`;
+    }
+  }, interval);
+}
+
+/* ─── SAFE LESSON NAVIGATE ───────────────────────────── */
+function navigateToLesson(lessonNum) {
+  if (!checkHearts()) {
+    showHeartLockModal();
+    return;
+  }
+  window.location.href = `/app/lesson.html?lesson=${lessonNum}`;
+}
+
 /* ─── HSK CONFIG ─────────────────────────────────────── */
 const HSK_LEVELS = [
   { level:1, label:'HSK 1', lessons:30,  desc:'Beginner',     emoji:'🌱' },
@@ -1042,13 +1128,17 @@ function showInfoModal(icon, title, desc, actions) {
 function closeModal(e) {
   if (e && e.target !== document.getElementById('overlay')) return;
   clearInterval(adTimer);
+  document.getElementById('modal').classList.remove('heart-modal');
   document.getElementById('overlay').classList.remove('visible');
 }
 
 /* ─── LESSON HELPERS ─────────────────────────────────── */
 function getLessonState(hskLevel, lessonNum) {
-  if (hskLevel < user.level) return 'done';
+  // HSK level not yet reached → locked
   if (hskLevel > user.level) return 'locked';
+  // HSK level already passed → all done
+  if (hskLevel < user.level) return 'done';
+  // current HSK level
   if (lessonNum < user.lesson)  return 'done';
   if (lessonNum === user.lesson) return 'active';
   return 'locked';
@@ -1061,7 +1151,7 @@ function getProgress(hsk) {
 }
 
 function goToCurrentLesson() {
-  window.location.href = `/app/lesson.html?lesson=${user.lesson}`;
+  navigateToLesson(user.lesson);
 }
 
 /* ─── BUILD HSK SECTION ──────────────────────────────── */
@@ -1149,9 +1239,7 @@ function buildHSK(hsk) {
       node.innerHTML = circle + `<span class="node-label">${i}</span>`;
 
       if (state !== 'locked') {
-        node.addEventListener('click', () => {
-          window.location.href = `/app/lesson.html?lesson=${i}`;
-        });
+        node.addEventListener('click', () => navigateToLesson(i));
       }
 
       row.appendChild(node);
