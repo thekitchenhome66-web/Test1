@@ -1,740 +1,1665 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Maobai — Sign In</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="HSKPath — Master Chinese and pass your HSK exam. Free interactive lessons, smart exercises and proven techniques to score 270+ on HSK 1-6.">
+<meta name="keywords" content="HSK test preparation, learn Chinese, HSK1, HSK2, HSK3, Chinese vocabulary, HSK exam, 汉语水平考试, Chinese for beginners">
+<meta property="og:title" content="HSKPath — Pass Your HSK Exam">
+<meta property="og:description" content="Free Chinese learning app designed to get you 270+ on HSK exams.">
+<title>HSKPath — Master Chinese. Pass Your HSK Exam.</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
 
-  <style>
-    /* ── Reset & tokens ───────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root{
+  --green:#3ecf6e;
+  --green2:#2ab85a;
+  --green3:#1a9444;
+  --green-light:#e8faf0;
+  --gold:#f5a623;
+  --gold2:#e09018;
+  --blue:#3b9eff;
+  --red:#ff4d4d;
+  --bg:#ffffff;
+  --bg2:#f7faf8;
+  --bg3:#eef5f1;
+  --text:#1a2e1e;
+  --text2:#4a6655;
+  --text3:#8aa898;
+  --border:#d8ede1;
+  --shadow:0 4px 24px rgba(0,0,0,0.08);
+  --radius:20px;
+}
 
-    :root {
-      --green:        #3ecf6e;
-      --green-dark:   #2db85a;
-      --green-light:  #e8f9ef;
-      --green-glow:   rgba(62,207,110,.18);
-      --bg:           #ffffff;
-      --surface:      #f7fdf9;
-      --border:       #d8ede1;
-      --border-focus: #3ecf6e;
-      --text:         #1a2e1e;
-      --text-muted:   #6b8f77;
-      --text-light:   #9ab8a4;
-      --danger:       #ef4444;
-      --danger-bg:    #fef2f2;
-      --success:      #3ecf6e;
-      --success-bg:   #e8f9ef;
-      --radius:       20px;
-      --radius-sm:    12px;
-      --shadow:       0 4px 24px rgba(62,207,110,.10), 0 1px 4px rgba(0,0,0,.06);
-      --shadow-lg:    0 16px 48px rgba(62,207,110,.14), 0 4px 16px rgba(0,0,0,.08);
-      --transition:   .22s cubic-bezier(.4,0,.2,1);
-    }
+html{scroll-behavior:smooth;}
 
-    html { scroll-behavior: smooth; }
+body{
+  font-family:'Nunito',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+}
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px 40px;
-      position: relative;
-      overflow-x: hidden;
-    }
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;
+  z-index:1000;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:12px 24px;
+  display:flex;align-items:center;gap:12px;
+}
 
-    /* ── Decorative background ────────────────────────────── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(62,207,110,.12) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 30% at 90% 80%,  rgba(62,207,110,.07) 0%, transparent 60%),
-        radial-gradient(ellipse 30% 20% at 10% 90%,  rgba(62,207,110,.05) 0%, transparent 60%);
-      pointer-events: none;
-      z-index: 0;
-    }
+.nav-logo{display:flex;align-items:center;gap:10px;}
 
-    /* Floating blobs */
-    .blob {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(60px);
-      opacity: .45;
-      pointer-events: none;
-      z-index: 0;
-      animation: float 8s ease-in-out infinite;
-    }
-    .blob-1 { width:260px; height:260px; background:#b7f0ce; top:-80px; right:-60px; animation-delay:0s; }
-    .blob-2 { width:180px; height:180px; background:#d4f5e3; bottom:40px; left:-50px; animation-delay:-4s; }
+.nav-logo-icon{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,var(--green),#2dd4bf);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+}
 
-    @keyframes float {
-      0%,100% { transform: translateY(0) scale(1); }
-      50%      { transform: translateY(-20px) scale(1.04); }
-    }
+.nav-logo-text{
+  font-size:20px;font-weight:900;
+  color:var(--text);letter-spacing:-0.5px;
+}
 
-    /* ── Card ─────────────────────────────────────────────── */
-    .card {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 420px;
-      background: var(--bg);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      padding: 40px 32px 36px;
-      animation: cardIn .5s cubic-bezier(.34,1.56,.64,1) both;
-    }
+.nav-logo-text span{color:var(--green);}
 
-    @keyframes cardIn {
-      from { opacity:0; transform: translateY(28px) scale(.97); }
-      to   { opacity:1; transform: translateY(0)    scale(1);   }
-    }
+.nav-spacer{flex:1;}
 
-    /* ── Logo ─────────────────────────────────────────────── */
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 28px;
-      text-decoration: none;
-    }
+.nav-lang{
+  display:flex;gap:4px;
+}
 
-    .logo-icon {
-      width: 44px;
-      height: 44px;
-      background: var(--green-light);
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      font-size: 22px;
-      border: 1.5px solid var(--border);
-      flex-shrink: 0;
-      transition: transform var(--transition);
-    }
-    .logo:hover .logo-icon { transform: rotate(-6deg) scale(1.08); }
+.lang-btn{
+  border:1.5px solid var(--border);
+  background:none;
+  border-radius:8px;
+  padding:4px 10px;
+  font-family:'Nunito',sans-serif;
+  font-size:12px;font-weight:700;
+  color:var(--text2);
+  cursor:pointer;
+  transition:all 0.2s;
+}
 
-    .logo-text {
-      font-family: 'Nunito', sans-serif;
-      font-weight: 900;
-      font-size: 22px;
-      color: var(--text);
-      letter-spacing: -.4px;
-    }
-    .logo-text span { color: var(--green); }
+.lang-btn.active,.lang-btn:hover{
+  background:var(--green);
+  border-color:var(--green);
+  color:white;
+}
 
-    /* ── Heading ──────────────────────────────────────────── */
-    .heading {
-      font-family: 'Nunito', sans-serif;
-      font-weight: 800;
-      font-size: 24px;
-      color: var(--text);
-      margin-bottom: 6px;
-      letter-spacing: -.3px;
-      transition: opacity var(--transition);
-    }
+.nav-cta{
+  background:var(--green);
+  color:white;
+  border:none;
+  border-radius:12px;
+  padding:9px 20px;
+  font-family:'Nunito',sans-serif;
+  font-size:14px;font-weight:800;
+  cursor:pointer;
+  box-shadow:0 3px 0 var(--green3);
+  transition:all 0.15s;
+  text-decoration:none;
+  display:inline-block;
+}
 
-    .subheading {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 26px;
-      line-height: 1.5;
-    }
+.nav-cta:active{transform:translateY(2px);box-shadow:0 1px 0 var(--green3);}
 
-    /* ── Toggle tabs ──────────────────────────────────────── */
-    .tabs {
-      display: flex;
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 4px;
-      margin-bottom: 28px;
-      gap: 4px;
-    }
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  background:linear-gradient(160deg,#f0faf4 0%,#e8f8f0 40%,#f5fbf7 100%);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:100px 24px 60px;
+  position:relative;
+  overflow:hidden;
+}
 
-    .tab-btn {
-      flex: 1;
-      height: 38px;
-      border: none;
-      border-radius: 9px;
-      font-family: 'Nunito', sans-serif;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all var(--transition);
-      background: transparent;
-      color: var(--text-muted);
-      position: relative;
-      overflow: hidden;
-    }
+/* Floating Chinese characters background */
+.hero-bg-chars{
+  position:absolute;inset:0;
+  pointer-events:none;
+  overflow:hidden;
+}
 
-    .tab-btn.active {
-      background: var(--bg);
-      color: var(--text);
-      box-shadow: 0 2px 8px rgba(0,0,0,.08);
-    }
+.bg-char{
+  position:absolute;
+  font-family:'Noto Sans SC',sans-serif;
+  font-weight:700;
+  color:rgba(62,207,110,0.06);
+  animation:floatChar linear infinite;
+  user-select:none;
+}
 
-    .tab-btn.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 50%; transform: translateX(-50%);
-      width: 20px; height: 2.5px;
-      background: var(--green);
-      border-radius: 2px;
-    }
+@keyframes floatChar{
+  from{transform:translateY(100vh) rotate(0deg);}
+  to{transform:translateY(-200px) rotate(20deg);}
+}
 
-    .tab-btn:hover:not(.active) { color: var(--text); }
+.hero-content{
+  max-width:480px;
+  text-align:center;
+  position:relative;
+  z-index:2;
+}
 
-    /* ── Form ─────────────────────────────────────────────── */
-    .form { display: flex; flex-direction: column; gap: 14px; }
+/* Maobai panda */
+.hero-panda{
+  width:140px;height:140px;
+  margin:0 auto 24px;
+  position:relative;
+  animation:pandaBounce 3s ease-in-out infinite;
+}
 
-    .field { display: flex; flex-direction: column; gap: 6px; }
+@keyframes pandaBounce{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-10px);}
+}
 
-    .field label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: .2px;
-    }
+.hero-panda svg{width:100%;height:100%;}
 
-    .input-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:white;
+  border:1.5px solid var(--border);
+  border-radius:30px;
+  padding:6px 14px;
+  font-size:12px;font-weight:800;
+  color:var(--text2);
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
 
-    .input-wrap .icon {
-      position: absolute;
-      left: 14px;
-      color: var(--text-light);
-      font-size: 16px;
-      pointer-events: none;
-      transition: color var(--transition);
-    }
+.hero-badge .dot{
+  width:8px;height:8px;
+  background:var(--green);
+  border-radius:50%;
+  animation:pulse-dot 2s ease-in-out infinite;
+}
 
-    .field input {
-      width: 100%;
-      height: 48px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--surface);
-      padding: 0 44px 0 42px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      color: var(--text);
-      outline: none;
-      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
-    }
+@keyframes pulse-dot{
+  0%,100%{transform:scale(1);opacity:1;}
+  50%{transform:scale(1.4);opacity:0.7;}
+}
 
-    .field input::placeholder { color: var(--text-light); }
+.hero-title{
+  font-size:clamp(32px,8vw,48px);
+  font-weight:900;
+  line-height:1.1;
+  color:var(--text);
+  margin-bottom:16px;
+  letter-spacing:-1px;
+}
 
-    .field input:focus {
-      border-color: var(--border-focus);
-      background: #fff;
-      box-shadow: 0 0 0 4px var(--green-glow);
-    }
+.hero-title .highlight{
+  color:var(--green);
+  position:relative;
+  display:inline-block;
+}
 
-    .field input:focus + .icon,
-    .input-wrap:focus-within .icon { color: var(--green); }
+.hero-title .highlight::after{
+  content:'';
+  position:absolute;
+  bottom:-4px;left:0;right:0;
+  height:4px;
+  background:linear-gradient(90deg,var(--green),#2dd4bf);
+  border-radius:2px;
+}
 
-    .toggle-pw {
-      position: absolute;
-      right: 14px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-light);
-      font-size: 16px;
-      padding: 4px;
-      transition: color var(--transition);
-      display: flex;
-      align-items: center;
-    }
-    .toggle-pw:hover { color: var(--text-muted); }
+.hero-sub{
+  font-size:17px;font-weight:600;
+  color:var(--text2);
+  line-height:1.6;
+  margin-bottom:32px;
+}
 
-    /* ── Feedback messages ────────────────────────────────── */
-    .message {
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      font-size: 13.5px;
-      font-weight: 500;
-      line-height: 1.5;
-      display: none;
-      animation: msgIn .25s ease both;
-    }
-    @keyframes msgIn {
-      from { opacity:0; transform: translateY(-6px); }
-      to   { opacity:1; transform: translateY(0); }
-    }
-    .message.visible { display: flex; align-items: flex-start; gap: 8px; }
-    .message.error   { background: var(--danger-bg);  color: var(--danger);  border: 1px solid #fecaca; }
-    .message.success { background: var(--success-bg); color: #166534;        border: 1px solid #bbf7d0; }
-    .message .msg-icon { flex-shrink:0; font-size:15px; margin-top:1px; }
+.hero-sub strong{color:var(--text);font-weight:800;}
 
-    /* ── Submit button ────────────────────────────────────── */
-    .btn-submit {
-      height: 52px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--green);
-      color: #fff;
-      font-family: 'Nunito', sans-serif;
-      font-weight: 800;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all var(--transition);
-      position: relative;
-      overflow: hidden;
-      margin-top: 4px;
-      letter-spacing: .1px;
-    }
+.hero-btns{
+  display:flex;flex-direction:column;gap:12px;
+  align-items:center;
+  margin-bottom:32px;
+}
 
-    .btn-submit::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,.18) 0%, transparent 60%);
-      pointer-events: none;
-    }
+.btn-primary{
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:white;
+  border:none;
+  border-radius:16px;
+  padding:16px 40px;
+  font-family:'Nunito',sans-serif;
+  font-size:17px;font-weight:900;
+  cursor:pointer;
+  box-shadow:0 4px 0 var(--green3),0 8px 24px rgba(62,207,110,0.35);
+  transition:all 0.15s;
+  width:100%;max-width:320px;
+  text-decoration:none;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  letter-spacing:0.3px;
+}
 
-    .btn-submit:hover:not(:disabled) {
-      background: var(--green-dark);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(62,207,110,.4);
-    }
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 0 var(--green3),0 12px 32px rgba(62,207,110,0.4);}
+.btn-primary:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green3);}
 
-    .btn-submit:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: none;
-    }
+.btn-secondary{
+  background:white;
+  color:var(--text);
+  border:2px solid var(--border);
+  border-radius:16px;
+  padding:14px 40px;
+  font-family:'Nunito',sans-serif;
+  font-size:15px;font-weight:800;
+  cursor:pointer;
+  transition:all 0.15s;
+  width:100%;max-width:320px;
+  text-decoration:none;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
 
-    .btn-submit:disabled {
-      opacity: .7;
-      cursor: not-allowed;
-    }
+.btn-secondary:hover{border-color:var(--green);color:var(--green);}
 
-    /* Loading spinner inside button */
-    .btn-submit .spinner {
-      display: none;
-      width: 18px; height: 18px;
-      border: 2.5px solid rgba(255,255,255,.4);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      position: absolute;
-      left: 50%; top: 50%;
-      transform: translate(-50%, -50%);
-    }
-    .btn-submit.loading .spinner { display: block; }
-    .btn-submit.loading .btn-label { opacity: 0; }
-    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+.hero-note{
+  font-size:12px;font-weight:700;
+  color:var(--text3);
+  display:flex;align-items:center;gap:6px;justify-content:center;
+}
 
-    /* ── Divider ──────────────────────────────────────────── */
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 6px 0;
-    }
-    .divider::before, .divider::after {
-      content: ''; flex:1;
-      height: 1px;
-      background: var(--border);
-    }
-    .divider span { font-size: 12px; color: var(--text-light); white-space: nowrap; }
+/* Hero stats */
+.hero-stats{
+  display:flex;gap:24px;justify-content:center;
+  flex-wrap:wrap;
+  margin-top:40px;
+}
 
-    /* ── Footnote ─────────────────────────────────────────── */
-    .footnote {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-light);
-      margin-top: 20px;
-      line-height: 1.6;
-    }
-    .footnote a { color: var(--green); text-decoration: none; font-weight: 600; }
-    .footnote a:hover { text-decoration: underline; }
+.hstat{
+  text-align:center;
+}
 
-    /* ── Language switcher ────────────────────────────────── */
-    .lang-bar {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      gap: 6px;
-      margin-bottom: 20px;
-      align-self: flex-start;
-    }
+.hstat-num{
+  font-size:28px;font-weight:900;
+  color:var(--text);
+  letter-spacing:-1px;
+}
 
-    .lang-btn {
-      height: 30px;
-      padding: 0 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 999px;
-      background: var(--bg);
-      font-family: 'Nunito', sans-serif;
-      font-weight: 700;
-      font-size: 12px;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all var(--transition);
-      letter-spacing: .4px;
-    }
-    .lang-btn.active,
-    .lang-btn:hover {
-      background: var(--green-light);
-      border-color: var(--green);
-      color: var(--green-dark);
-    }
+.hstat-num span{color:var(--green);}
 
-    /* ── Responsive ───────────────────────────────────────── */
-    @media (max-width: 480px) {
-      .card { padding: 32px 20px 28px; }
-      .heading { font-size: 21px; }
-    }
+.hstat-lbl{
+  font-size:11px;font-weight:700;
+  color:var(--text3);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-top:2px;
+}
 
-    /* ── Form panel transition ────────────────────────────── */
-    .form-panel {
-      transition: opacity .2s ease, transform .2s ease;
-    }
-    .form-panel.fade-out {
-      opacity: 0;
-      transform: translateX(-8px);
-      pointer-events: none;
-    }
-  </style>
+.hstat-sep{
+  width:1px;
+  background:var(--border);
+  align-self:stretch;
+}
+
+/* ── SECTION COMMON ── */
+section{padding:80px 24px;}
+
+.section-label{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--green-light);
+  border:1.5px solid rgba(62,207,110,0.3);
+  border-radius:30px;
+  padding:5px 14px;
+  font-size:12px;font-weight:800;
+  color:var(--green3);
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+
+.section-title{
+  font-size:clamp(26px,6vw,38px);
+  font-weight:900;
+  color:var(--text);
+  line-height:1.15;
+  letter-spacing:-0.5px;
+  margin-bottom:12px;
+}
+
+.section-sub{
+  font-size:16px;font-weight:600;
+  color:var(--text2);
+  line-height:1.6;
+  max-width:480px;
+}
+
+/* ── HOW IT WORKS ── */
+.how-section{
+  background:var(--bg2);
+}
+
+.how-grid{
+  display:flex;flex-direction:column;gap:20px;
+  margin-top:40px;
+  max-width:480px;
+  margin-left:auto;margin-right:auto;
+}
+
+.how-card{
+  background:white;
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  display:flex;align-items:flex-start;gap:16px;
+  box-shadow:var(--shadow);
+  transition:transform 0.2s;
+}
+
+.how-card:hover{transform:translateY(-3px);}
+
+.how-num{
+  width:44px;height:44px;
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;
+  flex-shrink:0;
+}
+
+.how-num.g{background:linear-gradient(135deg,var(--green),var(--green2));color:white;}
+.how-num.b{background:linear-gradient(135deg,#3b9eff,#0078e7);color:white;}
+.how-num.gold{background:linear-gradient(135deg,#f5a623,#e09018);color:white;}
+.how-num.p{background:linear-gradient(135deg,#a78bfa,#7c3aed);color:white;}
+
+.how-text{}
+.how-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.how-desc{font-size:13px;font-weight:600;color:var(--text2);line-height:1.5;}
+
+/* ── FEATURES ── */
+.features-section{background:white;}
+
+.features-grid{
+  display:flex;flex-direction:column;gap:16px;
+  margin-top:40px;
+  max-width:480px;
+  margin-left:auto;margin-right:auto;
+}
+
+.feat-card{
+  background:var(--bg2);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  display:flex;align-items:center;gap:16px;
+}
+
+.feat-icon{
+  width:52px;height:52px;
+  border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;
+  flex-shrink:0;
+}
+
+.feat-icon.green{background:var(--green-light);}
+.feat-icon.blue{background:#e8f2ff;}
+.feat-icon.gold{background:#fff8e8;}
+.feat-icon.red{background:#fff0f0;}
+.feat-icon.purple{background:#f3f0ff;}
+
+.feat-text{}
+.feat-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:3px;}
+.feat-desc{font-size:12px;font-weight:600;color:var(--text2);line-height:1.5;}
+
+.feat-badge{
+  margin-left:auto;
+  background:var(--green);
+  color:white;
+  font-size:10px;font-weight:800;
+  border-radius:8px;
+  padding:3px 8px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+
+.feat-badge.gold{background:var(--gold);}
+
+/* ── HSK LEVELS ── */
+.levels-section{background:var(--bg2);}
+
+.levels-grid{
+  display:flex;flex-direction:column;gap:12px;
+  margin-top:40px;
+  max-width:480px;
+  margin-left:auto;margin-right:auto;
+}
+
+.level-card{
+  border-radius:16px;
+  padding:16px 18px;
+  display:flex;align-items:center;gap:14px;
+  border:1.5px solid transparent;
+  transition:all 0.2s;
+  cursor:pointer;
+}
+
+.level-card:hover{transform:translateX(4px);}
+
+.level-card.lv1{background:linear-gradient(135deg,rgba(62,207,110,0.1),rgba(62,207,110,0.05));border-color:rgba(62,207,110,0.3);}
+.level-card.lv2{background:linear-gradient(135deg,rgba(59,158,255,0.1),rgba(59,158,255,0.05));border-color:rgba(59,158,255,0.3);}
+.level-card.lv3{background:linear-gradient(135deg,rgba(167,139,250,0.1),rgba(167,139,250,0.05));border-color:rgba(167,139,250,0.3);}
+.level-card.lv4{background:linear-gradient(135deg,rgba(245,166,35,0.1),rgba(245,166,35,0.05));border-color:rgba(245,166,35,0.3);}
+.level-card.lv5{background:linear-gradient(135deg,rgba(255,77,77,0.1),rgba(255,77,77,0.05));border-color:rgba(255,77,77,0.3);}
+.level-card.lv6{background:linear-gradient(135deg,rgba(26,46,30,0.08),rgba(26,46,30,0.04));border-color:rgba(26,46,30,0.15);}
+
+.level-icon{
+  width:44px;height:44px;
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;
+  font-family:'Noto Sans SC',sans-serif;
+  flex-shrink:0;
+  color:white;
+}
+
+.lv1 .level-icon{background:linear-gradient(135deg,var(--green),var(--green2));}
+.lv2 .level-icon{background:linear-gradient(135deg,#3b9eff,#0078e7);}
+.lv3 .level-icon{background:linear-gradient(135deg,#a78bfa,#7c3aed);}
+.lv4 .level-icon{background:linear-gradient(135deg,#f5a623,#e09018);}
+.lv5 .level-icon{background:linear-gradient(135deg,#ff4d4d,#cc0000);}
+.lv6 .level-icon{background:linear-gradient(135deg,#1a2e1e,#2d4a32);}
+
+.level-info{flex:1;}
+.level-name{font-size:14px;font-weight:900;color:var(--text);margin-bottom:2px;}
+.level-desc{font-size:12px;font-weight:600;color:var(--text2);}
+
+.level-meta{text-align:right;flex-shrink:0;}
+.level-words{font-size:15px;font-weight:900;color:var(--text);}
+.level-wlbl{font-size:10px;font-weight:700;color:var(--text3);}
+
+.level-soon{
+  font-size:10px;font-weight:800;
+  background:var(--bg3);
+  color:var(--text3);
+  border-radius:6px;
+  padding:2px 8px;
+}
+
+/* ── EXERCISES ── */
+.exercises-section{background:white;}
+
+.ex-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:40px;
+  max-width:480px;
+  margin-left:auto;margin-right:auto;
+}
+
+.ex-card{
+  background:var(--bg2);
+  border:1.5px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  text-align:center;
+  transition:all 0.2s;
+}
+
+.ex-card:hover{transform:translateY(-3px);border-color:var(--green);}
+
+.ex-icon{font-size:32px;margin-bottom:8px;}
+.ex-title{font-size:12px;font-weight:800;color:var(--text);margin-bottom:3px;}
+.ex-desc{font-size:11px;font-weight:600;color:var(--text2);}
+
+/* ── SOCIAL PROOF ── */
+.social-section{background:var(--bg2);}
+
+.reviews-grid{
+  display:flex;flex-direction:column;gap:14px;
+  margin-top:40px;
+  max-width:480px;
+  margin-left:auto;margin-right:auto;
+}
+
+.review-card{
+  background:white;
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+
+.review-top{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:10px;
+}
+
+.review-avatar{
+  width:40px;height:40px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  flex-shrink:0;
+}
+
+.review-name{font-size:13px;font-weight:800;color:var(--text);}
+.review-meta{font-size:11px;font-weight:600;color:var(--text3);}
+
+.review-stars{
+  margin-left:auto;
+  font-size:13px;
+  color:var(--gold);
+}
+
+.review-text{
+  font-size:13px;font-weight:600;
+  color:var(--text2);
+  line-height:1.6;
+}
+
+.review-score{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--green-light);
+  border-radius:8px;
+  padding:3px 8px;
+  font-size:11px;font-weight:800;
+  color:var(--green3);
+  margin-top:8px;
+}
+
+/* ── CTA SECTION ── */
+.cta-section{
+  background:linear-gradient(135deg,#0f2a18,#1a4025);
+  padding:80px 24px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.cta-section::before{
+  content:'';
+  position:absolute;
+  top:-100px;left:50%;
+  transform:translateX(-50%);
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(62,207,110,0.15),transparent 70%);
+}
+
+.cta-section .section-title{color:white;}
+.cta-section .section-sub{color:rgba(255,255,255,0.7);margin:0 auto 32px;}
+
+.cta-features{
+  display:flex;justify-content:center;gap:20px;
+  flex-wrap:wrap;
+  margin-bottom:32px;
+}
+
+.cta-feat{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:700;
+  color:rgba(255,255,255,0.8);
+}
+
+.cta-feat .check{color:var(--green);}
+
+.cta-section .btn-primary{
+  margin:0 auto;
+  box-shadow:0 4px 0 rgba(0,0,0,0.3),0 8px 32px rgba(62,207,110,0.3);
+}
+
+/* ── FOOTER ── */
+footer{
+  background:#0f1a12;
+  padding:40px 24px 30px;
+  text-align:center;
+}
+
+.footer-logo{
+  display:flex;align-items:center;gap:8px;
+  justify-content:center;
+  margin-bottom:16px;
+}
+
+.footer-logo-icon{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--green),#2dd4bf);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+
+.footer-logo-text{
+  font-size:18px;font-weight:900;
+  color:white;
+}
+
+.footer-links{
+  display:flex;justify-content:center;gap:20px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+
+.footer-links a{
+  font-size:12px;font-weight:700;
+  color:rgba(255,255,255,0.4);
+  text-decoration:none;
+}
+
+.footer-links a:hover{color:var(--green);}
+
+.footer-copy{
+  font-size:11px;font-weight:600;
+  color:rgba(255,255,255,0.25);
+}
+
+.footer-hsk-words{
+  margin-top:20px;
+  display:flex;flex-wrap:wrap;gap:8px;
+  justify-content:center;
+}
+
+.hsk-word-chip{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:8px;
+  padding:3px 10px;
+  font-size:11px;font-weight:600;
+  color:rgba(255,255,255,0.3);
+  font-family:'Noto Sans SC',sans-serif;
+}
+
+/* ── SCROLL ANIMATIONS ── */
+.reveal{
+  opacity:0;
+  transform:translateY(24px);
+  transition:opacity 0.6s ease,transform 0.6s ease;
+}
+
+.reveal.visible{
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* ── PHONE MOCKUP ── */
+.phone-mockup{
+  max-width:280px;
+  margin:40px auto 0;
+  background:#0f1923;
+  border-radius:36px;
+  border:3px solid #1e2d3d;
+  box-shadow:0 30px 80px rgba(0,0,0,0.2);
+  overflow:hidden;
+  position:relative;
+}
+
+.phone-notch{
+  width:100px;height:24px;
+  background:#0a0f14;
+  border-radius:0 0 16px 16px;
+  margin:0 auto;
+}
+
+.phone-screen{
+  padding:12px;
+}
+
+.mock-topbar{
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:10px;
+}
+
+.mock-logo{
+  font-size:12px;font-weight:900;
+  color:var(--green);
+}
+
+.mock-chips{
+  display:flex;gap:4px;margin-left:auto;
+}
+
+.mock-chip{
+  background:rgba(255,255,255,0.08);
+  border-radius:10px;
+  padding:2px 7px;
+  font-size:9px;font-weight:800;
+  color:rgba(255,255,255,0.6);
+}
+
+.mock-banner{
+  background:linear-gradient(135deg,#1a3a2a,#162a38);
+  border:1px solid rgba(62,207,110,0.2);
+  border-radius:12px;
+  padding:10px 12px;
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:10px;
+}
+
+.mock-banner-ic{
+  width:30px;height:30px;
+  background:var(--green);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+  flex-shrink:0;
+}
+
+.mock-banner-txt{}
+.mock-banner-t{font-size:10px;font-weight:800;color:white;}
+.mock-banner-s{font-size:9px;color:rgba(255,255,255,0.6);}
+
+.mock-banner-btn{
+  margin-left:auto;
+  background:var(--green);
+  color:#052e16;
+  border:none;border-radius:7px;
+  padding:4px 8px;
+  font-size:9px;font-weight:900;
+  flex-shrink:0;
+}
+
+.mock-nodes{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  padding:4px 0;
+}
+
+.mock-row{
+  width:100%;height:50px;
+  display:flex;align-items:center;
+}
+
+.mock-row.l{justify-content:flex-start;padding-left:20px;}
+.mock-row.c{justify-content:center;}
+.mock-row.r{justify-content:flex-end;padding-right:20px;}
+
+.mock-node{
+  width:40px;height:40px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;
+}
+
+.mock-node.done{
+  background:rgba(62,207,110,0.15);
+  border:2px solid var(--green2);
+  color:var(--green);
+}
+
+.mock-node.cur{
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  border:2px solid #86efac;
+  color:#052e16;
+  box-shadow:0 0 0 5px rgba(62,207,110,0.2);
+}
+
+.mock-node.lck{
+  background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.08);
+  color:rgba(255,255,255,0.2);
+}
+
+.mock-nav{
+  display:flex;
+  background:rgba(255,255,255,0.04);
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding:6px 0 4px;
+  margin-top:8px;
+}
+
+.mock-nav-item{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+
+.mock-nav-ic{font-size:14px;}
+.mock-nav-lbl{font-size:7px;font-weight:700;color:rgba(255,255,255,0.3);}
+.mock-nav-item.active .mock-nav-lbl{color:var(--green);}
+.mock-nav-item.active .mock-nav-ic{filter:drop-shadow(0 0 4px var(--green));}
+
+/* ── MULTILANG SUPPORT ── */
+[data-lang]{display:none;}
+[data-lang="en"]{display:block;}
+.inline-lang{display:none;}
+.inline-lang.en{display:inline;}
+
+</style>
 </head>
 <body>
 
-  <!-- Decorative blobs -->
-  <div class="blob blob-1" aria-hidden="true"></div>
-  <div class="blob blob-2" aria-hidden="true"></div>
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">🐼</div>
+    <div class="nav-logo-text">HSK<span>Path</span></div>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-lang">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('ru')">RU</button>
+    <button class="lang-btn" onclick="setLang('tk')">TK</button>
+  </div>
+  <a href="#get-started" class="nav-cta" id="nav-cta-btn">Get Started</a>
+</nav>
 
-  <!-- Language switcher -->
-  <nav class="lang-bar" aria-label="Language selector">
-    <button class="lang-btn" data-lang="en">EN</button>
-    <button class="lang-btn" data-lang="ru">RU</button>
-    <button class="lang-btn" data-lang="tk">TK</button>
-  </nav>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-chars" id="bgChars"></div>
 
-  <!-- Auth card -->
-  <main class="card" role="main">
+  <div class="hero-content">
 
-    <!-- Logo -->
-    <a href="/" class="logo" aria-label="Maobai home">
-      <div class="logo-icon" aria-hidden="true">🐼</div>
-      <span class="logo-text">Mao<span>bai</span></span>
+    <!-- Maobai SVG -->
+    <div class="hero-panda">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- Graduation cap -->
+        <polygon points="60,8 28,22 60,36 92,22" fill="#1a2e1e"/>
+        <rect x="57" y="22" width="6" height="16" fill="#1a2e1e"/>
+        <circle cx="57" cy="38" r="5" fill="#1a2e1e"/>
+        <line x1="92" y1="22" x2="97" y2="32" stroke="#f5a623" stroke-width="2.5"/>
+        <circle cx="98" cy="35" r="4" fill="#f5a623"/>
+        <!-- Ears -->
+        <circle cx="28" cy="42" r="13" fill="#1a2e1e"/>
+        <circle cx="92" cy="42" r="13" fill="#1a2e1e"/>
+        <circle cx="28" cy="42" r="8" fill="#2d4a32"/>
+        <circle cx="92" cy="42" r="8" fill="#2d4a32"/>
+        <!-- Head -->
+        <ellipse cx="60" cy="68" rx="34" ry="30" fill="white"/>
+        <!-- Eye patches -->
+        <ellipse cx="46" cy="64" rx="13" ry="12" fill="#1a2e1e"/>
+        <ellipse cx="74" cy="64" rx="13" ry="12" fill="#1a2e1e"/>
+        <!-- Glasses -->
+        <circle cx="46" cy="64" r="11" fill="none" stroke="white" stroke-width="2.5"/>
+        <circle cx="74" cy="64" r="11" fill="none" stroke="white" stroke-width="2.5"/>
+        <line x1="57" y1="64" x2="63" y2="64" stroke="white" stroke-width="2.5"/>
+        <!-- Eyes -->
+        <circle cx="46" cy="64" r="6" fill="white"/>
+        <circle cx="74" cy="64" r="6" fill="white"/>
+        <circle cx="47" cy="64" r="3.5" fill="#1a2e1e"/>
+        <circle cx="75" cy="64" r="3.5" fill="#1a2e1e"/>
+        <circle cx="48" cy="63" r="1.2" fill="white"/>
+        <circle cx="76" cy="63" r="1.2" fill="white"/>
+        <!-- Nose -->
+        <ellipse cx="60" cy="76" rx="5" ry="3" fill="#1a2e1e"/>
+        <!-- Smile -->
+        <path d="M52 81 Q60 88 68 81" fill="none" stroke="#1a2e1e" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Body -->
+        <ellipse cx="60" cy="105" rx="26" ry="18" fill="#1a2e1e"/>
+        <!-- Scroll -->
+        <rect x="40" y="92" width="40" height="28" rx="6" fill="#d4c5a0"/>
+        <rect x="38" y="92" width="6" height="28" rx="3" fill="#b8a882"/>
+        <rect x="76" y="92" width="6" height="28" rx="3" fill="#b8a882"/>
+        <!-- 学 character -->
+        <text x="60" y="112" text-anchor="middle" font-family="Noto Sans SC,serif" font-size="20" font-weight="700" fill="#f5a623">学</text>
+      </svg>
+    </div>
+
+    <div class="hero-badge">
+      <div class="dot"></div>
+      <span class="inline-lang en">Free to learn forever</span>
+      <span class="inline-lang ru">Учись бесплатно</span>
+      <span class="inline-lang tk">Hemişe mugt öwren</span>
+    </div>
+
+    <h1 class="hero-title">
+      <span class="inline-lang en">Master Chinese.<br><span class="highlight">Pass Your HSK.</span></span>
+      <span class="inline-lang ru">Освой китайский.<br><span class="highlight">Сдай свой HSK.</span></span>
+      <span class="inline-lang tk">Hytaý dilini öwren.<br><span class="highlight">HSK synagyňy geç.</span></span>
+    </h1>
+
+    <p class="hero-sub">
+      <span class="inline-lang en">The smartest way to prepare for HSK exams.<br>Target <strong>270+ score</strong> with daily lessons, smart exercises and Maobai 🐼</span>
+      <span class="inline-lang ru">Самый умный способ подготовиться к HSK.<br>Цель — <strong>270+ баллов</strong> с ежедневными уроками и Маобай 🐼</span>
+      <span class="inline-lang tk">HSK synagyna taýýarlanmagyň iň akylly ýoly.<br><strong>270+ bal</strong> maksady bilen gündelik sapaklar we Maobai 🐼</span>
+    </p>
+
+    <div class="hero-btns">
+      <a href="#get-started" class="btn-primary" id="hero-start-btn">
+        🚀
+        <span class="inline-lang en">Start Learning Free</span>
+        <span class="inline-lang ru">Начать учиться бесплатно</span>
+        <span class="inline-lang tk">Mugt öwrenip başla</span>
+      </a>
+      <a href="#how" class="btn-secondary">
+        <span class="inline-lang en">See How It Works</span>
+        <span class="inline-lang ru">Как это работает</span>
+        <span class="inline-lang tk">Nähili işleýänini gör</span>
+      </a>
+    </div>
+
+    <div class="hero-note">
+      ✓
+      <span class="inline-lang en">No credit card required · Free forever</span>
+      <span class="inline-lang ru">Без карты · Бесплатно навсегда</span>
+      <span class="inline-lang tk">Kart gerek däl · Hemişe mugt</span>
+    </div>
+
+    <!-- Phone Mockup -->
+    <div class="phone-mockup reveal">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="mock-topbar">
+          <div class="mock-logo">HSKPath</div>
+          <div class="mock-chips">
+            <div class="mock-chip">HSK1</div>
+            <div class="mock-chip">🔥7</div>
+            <div class="mock-chip">❤️5</div>
+          </div>
+        </div>
+        <div class="mock-banner">
+          <div class="mock-banner-ic">⚡</div>
+          <div class="mock-banner-txt">
+            <div class="mock-banner-t">Daily Challenge</div>
+            <div class="mock-banner-s">Complete 3 lessons</div>
+          </div>
+          <button class="mock-banner-btn">Start</button>
+        </div>
+        <div class="mock-nodes">
+          <div class="mock-row c"><div class="mock-node done">✓</div></div>
+          <div class="mock-row r"><div class="mock-node done">✓</div></div>
+          <div class="mock-row c"><div class="mock-node done">✓</div></div>
+          <div class="mock-row l"><div class="mock-node cur">▶</div></div>
+          <div class="mock-row c"><div class="mock-node lck">🔒</div></div>
+          <div class="mock-row r"><div class="mock-node lck">🔒</div></div>
+        </div>
+        <div class="mock-nav">
+          <div class="mock-nav-item active">
+            <div class="mock-nav-ic">📚</div>
+            <div class="mock-nav-lbl">Learn</div>
+          </div>
+          <div class="mock-nav-item">
+            <div class="mock-nav-ic">🎁</div>
+            <div class="mock-nav-lbl">Rewards</div>
+          </div>
+          <div class="mock-nav-item">
+            <div class="mock-nav-ic">🏆</div>
+            <div class="mock-nav-lbl">Ranks</div>
+          </div>
+          <div class="mock-nav-item">
+            <div class="mock-nav-ic">👥</div>
+            <div class="mock-nav-lbl">Social</div>
+          </div>
+          <div class="mock-nav-item">
+            <div class="mock-nav-ic">👤</div>
+            <div class="mock-nav-lbl">Profile</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="hero-stats reveal">
+      <div class="hstat">
+        <div class="hstat-num">150<span>+</span></div>
+        <div class="hstat-lbl">
+          <span class="inline-lang en">HSK1 Words</span>
+          <span class="inline-lang ru">Слов HSK1</span>
+          <span class="inline-lang tk">HSK1 Söz</span>
+        </div>
+      </div>
+      <div class="hstat-sep"></div>
+      <div class="hstat">
+        <div class="hstat-num">7<span>+</span></div>
+        <div class="hstat-lbl">
+          <span class="inline-lang en">Exercise Types</span>
+          <span class="inline-lang ru">Типов упражнений</span>
+          <span class="inline-lang tk">Türgenleşik Görnüşi</span>
+        </div>
+      </div>
+      <div class="hstat-sep"></div>
+      <div class="hstat">
+        <div class="hstat-num">270<span>+</span></div>
+        <div class="hstat-lbl">
+          <span class="inline-lang en">Target Score</span>
+          <span class="inline-lang ru">Целевой балл</span>
+          <span class="inline-lang tk">Maksat Bal</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div style="max-width:480px;margin:0 auto;">
+    <div class="section-label">
+      <span class="inline-lang en">📖 How It Works</span>
+      <span class="inline-lang ru">📖 Как это работает</span>
+      <span class="inline-lang tk">📖 Nähili işleýär</span>
+    </div>
+    <h2 class="section-title">
+      <span class="inline-lang en">Simple. Daily. Effective.</span>
+      <span class="inline-lang ru">Просто. Ежедневно. Эффективно.</span>
+      <span class="inline-lang tk">Ýönekeý. Gündelik. Netijeli.</span>
+    </h2>
+    <p class="section-sub">
+      <span class="inline-lang en">Follow the path. Complete lessons. Earn XP. Pass HSK.</span>
+      <span class="inline-lang ru">Следуй по пути. Проходи уроки. Зарабатывай XP. Сдавай HSK.</span>
+      <span class="inline-lang tk">Ýoly yz et. Sapaklary tamamla. XP gazan. HSK geç.</span>
+    </p>
+  </div>
+
+  <div class="how-grid reveal">
+    <div class="how-card">
+      <div class="how-num g">1</div>
+      <div class="how-text">
+        <div class="how-title">
+          <span class="inline-lang en">Sign Up Free</span>
+          <span class="inline-lang ru">Зарегистрируйся</span>
+          <span class="inline-lang tk">Mugt hasap aç</span>
+        </div>
+        <div class="how-desc">
+          <span class="inline-lang en">Create your account in 30 seconds. Choose your language and start your HSK journey with Maobai.</span>
+          <span class="inline-lang ru">Создай аккаунт за 30 секунд. Выбери язык и начни своё путешествие с Маобай.</span>
+          <span class="inline-lang tk">30 sekuntda hasap aç. Diliňi saýla we Maobai bilen HSK ýolbaşçylygyňy başla.</span>
+        </div>
+      </div>
+    </div>
+    <div class="how-card">
+      <div class="how-num b">2</div>
+      <div class="how-text">
+        <div class="how-title">
+          <span class="inline-lang en">Follow The Path</span>
+          <span class="inline-lang ru">Следуй по пути</span>
+          <span class="inline-lang tk">Ýoly yz et</span>
+        </div>
+        <div class="how-desc">
+          <span class="inline-lang en">Complete lessons one by one on your visual learning path. Each lesson unlocks the next.</span>
+          <span class="inline-lang ru">Проходи уроки один за другим. Каждый урок открывает следующий.</span>
+          <span class="inline-lang tk">Görsel öwreniş ýoluňda sapaklary birinden soňra tamamla.</span>
+        </div>
+      </div>
+    </div>
+    <div class="how-card">
+      <div class="how-num gold">3</div>
+      <div class="how-text">
+        <div class="how-title">
+          <span class="inline-lang en">Practice Daily</span>
+          <span class="inline-lang ru">Практикуйся каждый день</span>
+          <span class="inline-lang tk">Günde türgenleş</span>
+        </div>
+        <div class="how-desc">
+          <span class="inline-lang en">7 different exercise types keep your brain engaged. Spaced repetition ensures you never forget.</span>
+          <span class="inline-lang ru">7 типов упражнений. Интервальное повторение — ты не забудешь ничего.</span>
+          <span class="inline-lang tk">7 dürli türgenleşik görnüşi beýniňi işjeň saklaýar.</span>
+        </div>
+      </div>
+    </div>
+    <div class="how-card">
+      <div class="how-num p">4</div>
+      <div class="how-text">
+        <div class="how-title">
+          <span class="inline-lang en">Pass Your HSK</span>
+          <span class="inline-lang ru">Сдай экзамен HSK</span>
+          <span class="inline-lang tk">HSK synagyňy geç</span>
+        </div>
+        <div class="how-desc">
+          <span class="inline-lang en">Every lesson targets real HSK exam questions. Walk in confident. Score 270+.</span>
+          <span class="inline-lang ru">Каждый урок — реальные вопросы HSK. Набери 270+ баллов.</span>
+          <span class="inline-lang tk">Her sapak hakyky HSK soraglaryna gönükdirilen. 270+ bal al.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div style="max-width:480px;margin:0 auto;">
+    <div class="section-label">
+      <span class="inline-lang en">✨ Features</span>
+      <span class="inline-lang ru">✨ Возможности</span>
+      <span class="inline-lang tk">✨ Aýratynlyklar</span>
+    </div>
+    <h2 class="section-title">
+      <span class="inline-lang en">Everything you need to pass</span>
+      <span class="inline-lang ru">Всё необходимое для сдачи</span>
+      <span class="inline-lang tk">Geçmek üçin ähli gerekli zat</span>
+    </h2>
+  </div>
+
+  <div class="features-grid reveal">
+    <div class="feat-card">
+      <div class="feat-icon green">🗺️</div>
+      <div class="feat-text">
+        <div class="feat-title">
+          <span class="inline-lang en">Visual Learning Path</span>
+          <span class="inline-lang ru">Визуальный путь обучения</span>
+          <span class="inline-lang tk">Görsel öwreniş ýoly</span>
+        </div>
+        <div class="feat-desc">
+          <span class="inline-lang en">HSK1→6 structured path with 125+ lessons</span>
+          <span class="inline-lang ru">Структурированный путь HSK1→6, 125+ уроков</span>
+          <span class="inline-lang tk">HSK1→6 gurluşly ýol, 125+ sapak</span>
+        </div>
+      </div>
+      <div class="feat-badge">FREE</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon blue">🧠</div>
+      <div class="feat-text">
+        <div class="feat-title">
+          <span class="inline-lang en">Smart Repetition</span>
+          <span class="inline-lang ru">Умное повторение</span>
+          <span class="inline-lang tk">Akylly gaýtalama</span>
+        </div>
+        <div class="feat-desc">
+          <span class="inline-lang en">Words you struggle with come back more often</span>
+          <span class="inline-lang ru">Сложные слова повторяются чаще</span>
+          <span class="inline-lang tk">Kyn sözler has köp gaýtalanýar</span>
+        </div>
+      </div>
+      <div class="feat-badge">FREE</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon gold">🔥</div>
+      <div class="feat-text">
+        <div class="feat-title">
+          <span class="inline-lang en">Streak System</span>
+          <span class="inline-lang ru">Система серий</span>
+          <span class="inline-lang tk">Yzygiderlilik ulgamy</span>
+        </div>
+        <div class="feat-desc">
+          <span class="inline-lang en">Daily streaks keep you motivated and consistent</span>
+          <span class="inline-lang ru">Ежедневные серии мотивируют заниматься</span>
+          <span class="inline-lang tk">Gündelik yzygiderlilik seni höweslendirýär</span>
+        </div>
+      </div>
+      <div class="feat-badge">FREE</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon red">❌</div>
+      <div class="feat-text">
+        <div class="feat-title">
+          <span class="inline-lang en">Learn From Mistakes</span>
+          <span class="inline-lang ru">Работа над ошибками</span>
+          <span class="inline-lang tk">Ýalňyşlardan öwren</span>
+        </div>
+        <div class="feat-desc">
+          <span class="inline-lang en">Reviews wrong answers with grammar explanations</span>
+          <span class="inline-lang ru">Разбор ошибок с объяснениями грамматики</span>
+          <span class="inline-lang tk">Grammatika düşündirişleri bilen ýalňyş jogaplary gözden geçir</span>
+        </div>
+      </div>
+      <div class="feat-badge">FREE</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon purple">🏆</div>
+      <div class="feat-text">
+        <div class="feat-title">
+          <span class="inline-lang en">Leaderboards</span>
+          <span class="inline-lang ru">Таблица лидеров</span>
+          <span class="inline-lang tk">Liderler tagtasy</span>
+        </div>
+        <div class="feat-desc">
+          <span class="inline-lang en">Compete with classmates from your university</span>
+          <span class="inline-lang ru">Соревнуйся с однокурсниками</span>
+          <span class="inline-lang tk">Uniwersitetiňdäki synpdaşlaryň bilen bäsleş</span>
+        </div>
+      </div>
+      <div class="feat-badge">FREE</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon green">❤️</div>
+      <div class="feat-text">
+        <div class="feat-title">
+          <span class="inline-lang en">Unlimited Hearts</span>
+          <span class="inline-lang ru">Безлимитные жизни</span>
+          <span class="inline-lang tk">Çäksiz ýürekler</span>
+        </div>
+        <div class="feat-desc">
+          <span class="inline-lang en">Never stop learning — upgrade for unlimited hearts</span>
+          <span class="inline-lang ru">Никогда не останавливайся — апгрейд для безлимита</span>
+          <span class="inline-lang tk">Öwrenmegi bes etme — çäksiz ýürekler üçin täzele</span>
+        </div>
+      </div>
+      <div class="feat-badge gold">PREMIUM</div>
+    </div>
+  </div>
+</section>
+
+<!-- HSK LEVELS -->
+<section class="levels-section" id="levels">
+  <div style="max-width:480px;margin:0 auto;">
+    <div class="section-label">
+      <span class="inline-lang en">📊 HSK Levels</span>
+      <span class="inline-lang ru">📊 Уровни HSK</span>
+      <span class="inline-lang tk">📊 HSK Derejeler</span>
+    </div>
+    <h2 class="section-title">
+      <span class="inline-lang en">From zero to fluent</span>
+      <span class="inline-lang ru">От нуля до свободного владения</span>
+      <span class="inline-lang tk">Noldan erkin gürrüňe çenli</span>
+    </h2>
+    <p class="section-sub">
+      <span class="inline-lang en">HSKPath covers all 6 official HSK levels. Start at HSK1 and go all the way.</span>
+      <span class="inline-lang ru">HSKPath охватывает все 6 уровней HSK. Начни с HSK1 и дойди до конца.</span>
+      <span class="inline-lang tk">HSKPath ähli 6 resmi HSK derejesini öz içine alýar.</span>
+    </p>
+  </div>
+
+  <div class="levels-grid reveal">
+    <div class="level-card lv1">
+      <div class="level-icon">一</div>
+      <div class="level-info">
+        <div class="level-name">HSK 1 — Beginner</div>
+        <div class="level-desc">
+          <span class="inline-lang en">Basic greetings, numbers, family</span>
+          <span class="inline-lang ru">Приветствия, числа, семья</span>
+          <span class="inline-lang tk">Esasy salamlaşmalar, sanlar, maşgala</span>
+        </div>
+      </div>
+      <div class="level-meta">
+        <div class="level-words">150</div>
+        <div class="level-wlbl">words</div>
+      </div>
+    </div>
+    <div class="level-card lv2">
+      <div class="level-icon">二</div>
+      <div class="level-info">
+        <div class="level-name">HSK 2 — Elementary</div>
+        <div class="level-desc">
+          <span class="inline-lang en">Daily life, shopping, travel</span>
+          <span class="inline-lang ru">Повседневная жизнь, покупки, путешествия</span>
+          <span class="inline-lang tk">Gündelik durmuş, söwda, syýahat</span>
+        </div>
+      </div>
+      <div class="level-meta">
+        <div class="level-words">300</div>
+        <div class="level-wlbl">words</div>
+      </div>
+    </div>
+    <div class="level-card lv3">
+      <div class="level-icon">三</div>
+      <div class="level-info">
+        <div class="level-name">HSK 3 — Intermediate</div>
+        <div class="level-desc">
+          <span class="inline-lang en">Work, education, opinions</span>
+          <span class="inline-lang ru">Работа, образование, мнения</span>
+          <span class="inline-lang tk">Iş, bilim, pikirler</span>
+        </div>
+      </div>
+      <div class="level-meta">
+        <div class="level-words">600</div>
+        <div class="level-wlbl">words</div>
+      </div>
+    </div>
+    <div class="level-card lv4">
+      <div class="level-icon">四</div>
+      <div class="level-info">
+        <div class="level-name">HSK 4 — Upper Int.</div>
+        <div class="level-desc">
+          <span class="inline-lang en">Complex topics, news, culture</span>
+          <span class="inline-lang ru">Сложные темы, новости, культура</span>
+          <span class="inline-lang tk">Çylşyrymly mowzuklar, habarlar, medeniýet</span>
+        </div>
+      </div>
+      <div class="level-meta">
+        <div class="level-words">1200</div>
+        <div class="level-wlbl">words</div>
+      </div>
+    </div>
+    <div class="level-card lv5">
+      <div class="level-icon">五</div>
+      <div class="level-info">
+        <div class="level-name">HSK 5 — Advanced</div>
+        <div class="level-desc">
+          <span class="inline-lang en">Academic, professional Chinese</span>
+          <span class="inline-lang ru">Академический, профессиональный китайский</span>
+          <span class="inline-lang tk">Akademik, hünär hytaý dili</span>
+        </div>
+      </div>
+      <div class="level-meta">
+        <div class="level-soon">Soon</div>
+      </div>
+    </div>
+    <div class="level-card lv6">
+      <div class="level-icon">六</div>
+      <div class="level-info">
+        <div class="level-name">HSK 6 — Mastery</div>
+        <div class="level-desc">
+          <span class="inline-lang en">Near-native fluency level</span>
+          <span class="inline-lang ru">Уровень, близкий к носителю языка</span>
+          <span class="inline-lang tk">Ene dili derejesine ýakyn erkinlik</span>
+        </div>
+      </div>
+      <div class="level-meta">
+        <div class="level-soon">Soon</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXERCISE TYPES -->
+<section class="exercises-section">
+  <div style="max-width:480px;margin:0 auto;">
+    <div class="section-label">
+      <span class="inline-lang en">🎯 Exercise Types</span>
+      <span class="inline-lang ru">🎯 Типы упражнений</span>
+      <span class="inline-lang tk">🎯 Türgenleşik görnüşleri</span>
+    </div>
+    <h2 class="section-title">
+      <span class="inline-lang en">7 ways to master Chinese</span>
+      <span class="inline-lang ru">7 способов освоить китайский</span>
+      <span class="inline-lang tk">Hytaý dilini öwrenmek üçin 7 usul</span>
+    </h2>
+  </div>
+
+  <div class="ex-grid reveal">
+    <div class="ex-card">
+      <div class="ex-icon">🎯</div>
+      <div class="ex-title">
+        <span class="inline-lang en">Multiple Choice</span>
+        <span class="inline-lang ru">Выбор ответа</span>
+        <span class="inline-lang tk">Köp saýlaw</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Pick the correct meaning</span>
+        <span class="inline-lang ru">Выбери правильное значение</span>
+        <span class="inline-lang tk">Dogry manyny saýla</span>
+      </div>
+    </div>
+    <div class="ex-card">
+      <div class="ex-icon">👆</div>
+      <div class="ex-title">
+        <span class="inline-lang en">Tap to Build</span>
+        <span class="inline-lang ru">Собери предложение</span>
+        <span class="inline-lang tk">Düzmek üçin bas</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Build sentences word by word</span>
+        <span class="inline-lang ru">Составь предложение из слов</span>
+        <span class="inline-lang tk">Söz-söz sözlem düz</span>
+      </div>
+    </div>
+    <div class="ex-card">
+      <div class="ex-icon">🎧</div>
+      <div class="ex-title">
+        <span class="inline-lang en">Listening</span>
+        <span class="inline-lang ru">Аудирование</span>
+        <span class="inline-lang tk">Diňlemek</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Hear and identify Chinese</span>
+        <span class="inline-lang ru">Слушай и определяй китайский</span>
+        <span class="inline-lang tk">Hytaýça eşit we tanyt</span>
+      </div>
+    </div>
+    <div class="ex-card">
+      <div class="ex-icon">✏️</div>
+      <div class="ex-title">
+        <span class="inline-lang en">Fill in Blank</span>
+        <span class="inline-lang ru">Заполни пропуск</span>
+        <span class="inline-lang tk">Boşlugy doldur</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Complete the sentence</span>
+        <span class="inline-lang ru">Заверши предложение</span>
+        <span class="inline-lang tk">Sözlemi tamamla</span>
+      </div>
+    </div>
+    <div class="ex-card">
+      <div class="ex-icon">🔗</div>
+      <div class="ex-title">
+        <span class="inline-lang en">Match Pairs</span>
+        <span class="inline-lang ru">Сопоставь пары</span>
+        <span class="inline-lang tk">Jübütleri deňleşdir</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Connect words to meanings</span>
+        <span class="inline-lang ru">Свяжи слова с переводами</span>
+        <span class="inline-lang tk">Sözleri manylary bilen baglanyşdyr</span>
+      </div>
+    </div>
+    <div class="ex-card">
+      <div class="ex-icon">🎵</div>
+      <div class="ex-title">
+        <span class="inline-lang en">Tone Picker</span>
+        <span class="inline-lang ru">Тоны</span>
+        <span class="inline-lang tk">Ton saýlaýjy</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Master all 4 Chinese tones</span>
+        <span class="inline-lang ru">Освой все 4 тона китайского</span>
+        <span class="inline-lang tk">4 hytaý tonuny öwren</span>
+      </div>
+    </div>
+    <div class="ex-card">
+      <div class="ex-icon">🌐</div>
+      <div class="ex-title">
+        <span class="inline-lang en">Translate</span>
+        <span class="inline-lang ru">Перевод</span>
+        <span class="inline-lang tk">Terjime et</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Write full translations</span>
+        <span class="inline-lang ru">Пиши полные переводы</span>
+        <span class="inline-lang tk">Doly terjime ýaz</span>
+      </div>
+    </div>
+    <div class="ex-card" style="background:linear-gradient(135deg,rgba(62,207,110,0.08),rgba(62,207,110,0.04));border-color:rgba(62,207,110,0.3);">
+      <div class="ex-icon">📝</div>
+      <div class="ex-title" style="color:var(--green);">
+        <span class="inline-lang en">Exam Simulation</span>
+        <span class="inline-lang ru">Симуляция экзамена</span>
+        <span class="inline-lang tk">Synag simulýasiýasy</span>
+      </div>
+      <div class="ex-desc">
+        <span class="inline-lang en">Real HSK format questions</span>
+        <span class="inline-lang ru">Реальный формат HSK</span>
+        <span class="inline-lang tk">Hakyky HSK format soraglary</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="social-section">
+  <div style="max-width:480px;margin:0 auto;">
+    <div class="section-label">
+      <span class="inline-lang en">⭐ Student Results</span>
+      <span class="inline-lang ru">⭐ Результаты студентов</span>
+      <span class="inline-lang tk">⭐ Talyp netijeleri</span>
+    </div>
+    <h2 class="section-title">
+      <span class="inline-lang en">Real students. Real scores.</span>
+      <span class="inline-lang ru">Реальные студенты. Реальные баллы.</span>
+      <span class="inline-lang tk">Hakyky talyplar. Hakyky ballar.</span>
+    </h2>
+  </div>
+
+  <div class="reviews-grid reveal">
+    <div class="review-card">
+      <div class="review-top">
+        <div class="review-avatar" style="background:#e8faf0;">🧑‍🎓</div>
+        <div>
+          <div class="review-name">Ahmad R.</div>
+          <div class="review-meta">
+            <span class="inline-lang en">University of Beijing</span>
+            <span class="inline-lang ru">Пекинский университет</span>
+            <span class="inline-lang tk">Pekin Uniwersiteti</span>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+      </div>
+      <div class="review-text">
+        <span class="inline-lang en">"I studied for 3 months with HSKPath every day. The streak system kept me consistent and I never missed a day. Highly recommend to anyone preparing for HSK."</span>
+        <span class="inline-lang ru">"Я занимался 3 месяца с HSKPath каждый день. Система серий держала меня в тонусе. Очень рекомендую всем готовящимся к HSK."</span>
+        <span class="inline-lang tk">"Men HSKPath bilen her gün 3 aý okadym. Yzygiderlilik ulgamy meni tutanýerli saklady."</span>
+      </div>
+      <div class="review-score">✓ HSK1 Score: 289/300</div>
+    </div>
+    <div class="review-card">
+      <div class="review-top">
+        <div class="review-avatar" style="background:#e8f2ff;">👩‍🎓</div>
+        <div>
+          <div class="review-name">Leila M.</div>
+          <div class="review-meta">
+            <span class="inline-lang en">Shanghai Jiao Tong University</span>
+            <span class="inline-lang ru">Университет Цзяо Тун, Шанхай</span>
+            <span class="inline-lang tk">Şanhaý Jiao Tong Uniwersiteti</span>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+      </div>
+      <div class="review-text">
+        <span class="inline-lang en">"The Learn From Mistakes feature is incredible. It explains WHY an answer is wrong, not just that it's wrong. My grammar improved so much."</span>
+        <span class="inline-lang ru">"Функция 'Работа над ошибками' невероятна. Объясняет ПОЧЕМУ ответ неверный. Моя грамматика улучшилась так сильно."</span>
+        <span class="inline-lang tk">"Ýalňyşlardan öwren funksiýasy ajaýyp. Jogabyň näme üçin ýalňyşdygyny düşündirýär."</span>
+      </div>
+      <div class="review-score">✓ HSK2 Score: 276/300</div>
+    </div>
+    <div class="review-card">
+      <div class="review-top">
+        <div class="review-avatar" style="background:#fff8e8;">👨‍🎓</div>
+        <div>
+          <div class="review-name">Rustam K.</div>
+          <div class="review-meta">
+            <span class="inline-lang en">Wuhan University</span>
+            <span class="inline-lang ru">Уханьский университет</span>
+            <span class="inline-lang tk">Wuhan Uniwersiteti</span>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+      </div>
+      <div class="review-text">
+        <span class="inline-lang en">"I shared HSKPath in my WeChat study group and now 40+ classmates use it. The leaderboard competition makes everyone study harder!"</span>
+        <span class="inline-lang ru">"Поделился HSKPath в группе WeChat, теперь 40+ одногруппников используют. Соревнование в рейтинге заставляет всех заниматься усерднее!"</span>
+        <span class="inline-lang tk">"HSKPath-i WeChat okuw toparymda paýlaşdym we indi 40+ synpdaşym ulanýar."</span>
+      </div>
+      <div class="review-score">✓ HSK2 Score: 271/300</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-section" id="get-started">
+  <div style="position:relative;z-index:2;max-width:480px;margin:0 auto;">
+    <h2 class="section-title">
+      <span class="inline-lang en">Start your HSK journey today</span>
+      <span class="inline-lang ru">Начни своё путешествие HSK сегодня</span>
+      <span class="inline-lang tk">HSK ýolbaşçylygyňy bu gün başla</span>
+    </h2>
+    <p class="section-sub">
+      <span class="inline-lang en">Join thousands of students already learning with Maobai. Free forever.</span>
+      <span class="inline-lang ru">Присоединяйся к тысячам студентов, уже учащихся с Маобай. Бесплатно навсегда.</span>
+      <span class="inline-lang tk">Maobai bilen eýýäm öwrenýän müňlerçe talypla goşul. Hemişe mugt.</span>
+    </p>
+
+    <div class="cta-features">
+      <div class="cta-feat"><span class="check">✓</span>
+        <span class="inline-lang en">Free forever</span>
+        <span class="inline-lang ru">Бесплатно навсегда</span>
+        <span class="inline-lang tk">Hemişe mugt</span>
+      </div>
+      <div class="cta-feat"><span class="check">✓</span>
+        <span class="inline-lang en">No credit card</span>
+        <span class="inline-lang ru">Без карты</span>
+        <span class="inline-lang tk">Kart gerek däl</span>
+      </div>
+      <div class="cta-feat"><span class="check">✓</span>
+        <span class="inline-lang en">Start in 30 seconds</span>
+        <span class="inline-lang ru">Начни за 30 секунд</span>
+        <span class="inline-lang tk">30 sekuntda başla</span>
+      </div>
+    </div>
+
+    <a href="/auth" class="btn-primary" style="max-width:340px;font-size:18px;padding:18px 40px;">
+      🐼
+      <span class="inline-lang en">Start Free with Maobai</span>
+      <span class="inline-lang ru">Начать бесплатно с Маобай</span>
+      <span class="inline-lang tk">Maobai bilen mugt başla</span>
     </a>
+  </div>
+</section>
 
-    <!-- Heading (updated by JS) -->
-    <h1 class="heading" id="heading"></h1>
-    <p  class="subheading" id="subheading"></p>
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <div class="footer-logo-icon">🐼</div>
+    <div class="footer-logo-text">HSKPath</div>
+  </div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+    <a href="#levels">HSK Levels</a>
+    <a href="#features">Features</a>
+  </div>
+  <div class="footer-copy">© 2025 HSKPath. Made with ❤️ for Chinese learners worldwide.</div>
 
-    <!-- Mode tabs -->
-    <div class="tabs" role="tablist" aria-label="Authentication mode">
-      <button class="tab-btn active" role="tab" aria-selected="true"  id="tab-signup" data-mode="signup"></button>
-      <button class="tab-btn"        role="tab" aria-selected="false" id="tab-login"  data-mode="login"></button>
-    </div>
+  <!-- SEO HSK words -->
+  <div class="footer-hsk-words">
+    <span class="hsk-word-chip">你好 nǐ hǎo</span>
+    <span class="hsk-word-chip">谢谢 xiè xie</span>
+    <span class="hsk-word-chip">我 wǒ</span>
+    <span class="hsk-word-chip">是 shì</span>
+    <span class="hsk-word-chip">学习 xuéxí</span>
+    <span class="hsk-word-chip">老师 lǎoshī</span>
+    <span class="hsk-word-chip">朋友 péngyou</span>
+    <span class="hsk-word-chip">中国 Zhōngguó</span>
+    <span class="hsk-word-chip">大学 dàxué</span>
+    <span class="hsk-word-chip">汉语 Hànyǔ</span>
+    <span class="hsk-word-chip">水平 shuǐpíng</span>
+    <span class="hsk-word-chip">考试 kǎoshì</span>
+  </div>
+</footer>
 
-    <!-- Form -->
-    <div class="form-panel" id="form-panel">
-      <form class="form" id="auth-form" novalidate>
+<script>
+// ── LANGUAGE SWITCHER ──
+let currentLang = 'en';
 
-        <div class="field" id="field-email">
-          <label for="email" id="label-email"></label>
-          <div class="input-wrap">
-            <span class="icon" aria-hidden="true">✉</span>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              autocomplete="email"
-              required
-            />
-          </div>
-        </div>
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang);
+  });
+  document.querySelectorAll('.inline-lang').forEach(el => {
+    el.style.display = el.classList.contains(lang) ? 'inline' : 'none';
+  });
+  document.querySelectorAll('[data-lang]').forEach(el => {
+    el.style.display = el.dataset.lang === lang ? 'block' : 'none';
+  });
+}
 
-        <div class="field" id="field-password">
-          <label for="password" id="label-password"></label>
-          <div class="input-wrap">
-            <span class="icon" aria-hidden="true">🔒</span>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              autocomplete="current-password"
-              required
-              minlength="6"
-            />
-            <button
-              type="button"
-              class="toggle-pw"
-              aria-label="Toggle password visibility"
-              id="toggle-pw"
-            >👁</button>
-          </div>
-        </div>
+// Detect browser language on load
+function detectLang() {
+  const l = navigator.language.toLowerCase();
+  if (l.startsWith('ru')) return 'ru';
+  if (l.startsWith('tk')) return 'tk';
+  return 'en';
+}
 
-        <!-- Feedback -->
-        <div class="message" id="msg-box" role="alert" aria-live="polite">
-          <span class="msg-icon" id="msg-icon"></span>
-          <span id="msg-text"></span>
-        </div>
-
-        <!-- Submit -->
-        <button type="submit" class="btn-submit" id="btn-submit">
-          <span class="btn-label" id="btn-label"></span>
-          <span class="spinner" aria-hidden="true"></span>
-        </button>
-
-      </form>
-    </div>
-
-    <p class="footnote" id="footnote"></p>
-
-  </main>
-
-  <!-- ── Script ──────────────────────────────────────────── -->
-  <script type="module">
-    import { supabase, detectLang, setLang, dashboardURL, signUp, logIn } from '../js/supabase.js';
-
-    /* ── i18n strings ─────────────────────────────────────── */
-    const i18n = {
-      en: {
-        signup_heading:    'Create your account',
-        signup_sub:        'Start your Mandarin journey today 🐼',
-        login_heading:     'Welcome back',
-        login_sub:         'Good to see you again — keep the streak alive!',
-        tab_signup:        'Sign Up',
-        tab_login:         'Log In',
-        label_email:       'Email address',
-        label_password:    'Password',
-        email_placeholder: 'you@example.com',
-        pw_placeholder:    'Min. 6 characters',
-        btn_signup:        'Create Account',
-        btn_login:         'Log In',
-        footnote_signup:   'Already have an account? <a href="#" data-switch="login">Log in</a>',
-        footnote_login:    'No account yet? <a href="#" data-switch="signup">Sign up free</a>',
-        err_fields:        'Please fill in all fields.',
-        err_pw_short:      'Password must be at least 6 characters.',
-        err_default:       'Something went wrong. Please try again.',
-        success_signup:    '🎉 Account created! Check your email to confirm.',
-        success_login:     '✅ Logged in! Redirecting...',
-        pw_login_hint:     '',
-        loading:           'Please wait...',
-      },
-      ru: {
-        signup_heading:    'Создайте аккаунт',
-        signup_sub:        'Начните изучать китайский сегодня 🐼',
-        login_heading:     'С возвращением',
-        login_sub:         'Рады видеть вас снова — не теряйте серию!',
-        tab_signup:        'Регистрация',
-        tab_login:         'Войти',
-        label_email:       'Электронная почта',
-        label_password:    'Пароль',
-        email_placeholder: 'вы@пример.ру',
-        pw_placeholder:    'Мин. 6 символов',
-        btn_signup:        'Создать аккаунт',
-        btn_login:         'Войти',
-        footnote_signup:   'Уже есть аккаунт? <a href="#" data-switch="login">Войти</a>',
-        footnote_login:    'Нет аккаунта? <a href="#" data-switch="signup">Зарегистрироваться</a>',
-        err_fields:        'Пожалуйста, заполните все поля.',
-        err_pw_short:      'Пароль должен содержать не менее 6 символов.',
-        err_default:       'Что-то пошло не так. Попробуйте ещё раз.',
-        success_signup:    '🎉 Аккаунт создан! Проверьте почту для подтверждения.',
-        success_login:     '✅ Вы вошли! Перенаправление...',
-        loading:           'Пожалуйста, подождите...',
-      },
-      tk: {
-        signup_heading:    'Hasap dörediň',
-        signup_sub:        'Hytaý dilini öwrenmäge başlaň 🐼',
-        login_heading:     'Hoş geldiniz',
-        login_sub:         'Sizi ýene görmek gowy — yzygiderliligi saklaň!',
-        tab_signup:        'Hasap açmak',
-        tab_login:         'Giriş',
-        label_email:       'E-poçta',
-        label_password:    'Açar söz',
-        email_placeholder: 'siz@mysal.com',
-        pw_placeholder:    'Iň az 6 nyşan',
-        btn_signup:        'Hasap dörediň',
-        btn_login:         'Giriň',
-        footnote_signup:   'Hasabyňyz barmy? <a href="#" data-switch="login">Giriň</a>',
-        footnote_login:    'Hasabyňyz ýokmy? <a href="#" data-switch="signup">Mugt hasap açyň</a>',
-        err_fields:        'Ähli meýdanlary dolduryň.',
-        err_pw_short:      'Açar söz iň az 6 nyşan bolmaly.',
-        err_default:       'Bir zat ýalňyş gitdi. Täzeden synanyşyň.',
-        success_signup:    '🎉 Hasap döredildi! Tassyklamak üçin e-poçtaňyzy barlaň.',
-        success_login:     '✅ Giriş edildi! Ugrukdyrylýar...',
-        loading:           'Garaşyň...',
-      },
-    };
-
-    /* ── State ────────────────────────────────────────────── */
-    let mode = 'signup';
-    let lang = detectLang();
-
-    /* ── DOM refs ─────────────────────────────────────────── */
-    const heading    = document.getElementById('heading');
-    const subheading = document.getElementById('subheading');
-    const tabSignup  = document.getElementById('tab-signup');
-    const tabLogin   = document.getElementById('tab-login');
-    const labelEmail = document.getElementById('label-email');
-    const labelPw    = document.getElementById('label-password');
-    const emailInput = document.getElementById('email');
-    const pwInput    = document.getElementById('password');
-    const btnSubmit  = document.getElementById('btn-submit');
-    const btnLabel   = document.getElementById('btn-label');
-    const msgBox     = document.getElementById('msg-box');
-    const msgIcon    = document.getElementById('msg-icon');
-    const msgText    = document.getElementById('msg-text');
-    const footnote   = document.getElementById('footnote');
-    const formPanel  = document.getElementById('form-panel');
-    const togglePw   = document.getElementById('toggle-pw');
-    const langBtns   = document.querySelectorAll('.lang-btn');
-
-    /* ── Render UI ────────────────────────────────────────── */
-    function render() {
-      const t = i18n[lang] || i18n.en;
-      const isSignup = mode === 'signup';
-
-      heading.textContent    = isSignup ? t.signup_heading : t.login_heading;
-      subheading.textContent = isSignup ? t.signup_sub     : t.login_sub;
-      tabSignup.textContent  = t.tab_signup;
-      tabLogin.textContent   = t.tab_login;
-      labelEmail.textContent = t.label_email;
-      labelPw.textContent    = t.label_password;
-      btnLabel.textContent   = isSignup ? t.btn_signup : t.btn_login;
-      footnote.innerHTML     = isSignup ? t.footnote_signup : t.footnote_login;
-
-      emailInput.placeholder = t.email_placeholder;
-      pwInput.placeholder    = t.pw_placeholder;
-      pwInput.autocomplete   = isSignup ? 'new-password' : 'current-password';
-
-      tabSignup.classList.toggle('active', isSignup);
-      tabLogin.classList.toggle('active', !isSignup);
-      tabSignup.setAttribute('aria-selected', isSignup);
-      tabLogin.setAttribute('aria-selected',  !isSignup);
-
-      document.documentElement.lang = lang;
-
-      // Update active lang button
-      langBtns.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-
-      // Wire footnote links
-      footnote.querySelectorAll('[data-switch]').forEach(a => {
-        a.addEventListener('click', e => {
-          e.preventDefault();
-          switchMode(a.dataset.switch);
-        });
-      });
-
-      clearMsg();
+// ── SCROLL REVEAL ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
     }
+  });
+}, { threshold: 0.1 });
 
-    /* ── Switch mode with transition ─────────────────────── */
-    function switchMode(newMode) {
-      if (newMode === mode) return;
-      formPanel.classList.add('fade-out');
-      setTimeout(() => {
-        mode = newMode;
-        render();
-        formPanel.classList.remove('fade-out');
-      }, 200);
-    }
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    /* ── Message helpers ──────────────────────────────────── */
-    function showMsg(type, text) {
-      msgBox.className = `message visible ${type}`;
-      msgIcon.textContent = type === 'error' ? '⚠️' : '✅';
-      msgText.textContent = text;
-    }
-    function clearMsg() {
-      msgBox.className = 'message';
-      msgText.textContent = '';
-    }
+// ── FLOATING CHARS ──
+const chars = ['你','好','学','汉','语','中','国','考','试','水','平','HSK','一','二','三','四','五','六','大','学'];
+const bg = document.getElementById('bgChars');
 
-    /* ── Loading state ────────────────────────────────────── */
-    function setLoading(on) {
-      btnSubmit.disabled = on;
-      btnSubmit.classList.toggle('loading', on);
-    }
+for (let i = 0; i < 18; i++) {
+  const el = document.createElement('div');
+  el.className = 'bg-char';
+  el.textContent = chars[Math.floor(Math.random() * chars.length)];
+  el.style.cssText = `
+    left:${Math.random()*100}%;
+    font-size:${Math.random()*60+30}px;
+    animation-duration:${Math.random()*20+15}s;
+    animation-delay:${Math.random()*20}s;
+  `;
+  bg.appendChild(el);
+}
 
-    /* ── Tab clicks ───────────────────────────────────────── */
-    tabSignup.addEventListener('click', () => switchMode('signup'));
-    tabLogin.addEventListener('click',  () => switchMode('login'));
-
-    /* ── Language buttons ─────────────────────────────────── */
-    langBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (btn.dataset.lang !== lang) {
-          setLang(btn.dataset.lang);
-        }
-      });
-    });
-
-    /* ── Password visibility toggle ──────────────────────── */
-    let pwVisible = false;
-    togglePw.addEventListener('click', () => {
-      pwVisible = !pwVisible;
-      pwInput.type = pwVisible ? 'text' : 'password';
-      togglePw.textContent = pwVisible ? '🙈' : '👁';
-    });
-
-    /* ── Form submit ──────────────────────────────────────── */
-    document.getElementById('auth-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      clearMsg();
-
-      const email    = emailInput.value.trim();
-      const password = pwInput.value;
-      const t        = i18n[lang] || i18n.en;
-
-      // Validate
-      if (!email || !password) { showMsg('error', t.err_fields);   return; }
-      if (password.length < 6) { showMsg('error', t.err_pw_short); return; }
-
-      setLoading(true);
-
-      try {
-        if (mode === 'signup') {
-          await signUp(email, password, lang);
-          showMsg('success', t.success_signup);
-          setLoading(false);
-        } else {
-          await logIn(email, password);
-          showMsg('success', t.success_login);
-          setTimeout(() => {
-            window.location.href = dashboardURL(lang);
-          }, 1200);
-        }
-      } catch (err) {
-        setLoading(false);
-        const msg = err?.message || '';
-        // Surface friendly errors
-        if (msg.includes('Invalid login'))    showMsg('error', t.err_default);
-        else if (msg.includes('already'))     showMsg('error', 'An account with this email already exists.');
-        else if (msg.includes('rate limit'))  showMsg('error', 'Too many attempts. Please wait a moment.');
-        else                                  showMsg('error', msg || t.err_default);
-      }
-    });
-
-    /* ── Input: clear error on change ────────────────────── */
-    [emailInput, pwInput].forEach(el => {
-      el.addEventListener('input', () => {
-        if (msgBox.classList.contains('error')) clearMsg();
-      });
-    });
-
-    /* ── Init ─────────────────────────────────────────────── */
-    render();
-  </script>
+// Init language
+setLang(detectLang());
+</script>
 </body>
 </html>
