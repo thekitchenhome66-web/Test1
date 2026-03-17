@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maobai — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root{
+      --bg:#0f1923;
+      --bg2:#0d1720;
+      --card:#162235;
+      --card2:#1a2a3d;
+      --border:#1f3349;
+      --border2:#243d57;
+      --green:#4ade80;
+      --green-dark:#22c55e;
+      --green-glow:rgba(74,222,128,.28);
+      --green-muted:rgba(74,222,128,.10);
+      --green-soft:rgba(74,222,128,.06);
+      --text:#e8f4ef;
+      --text-muted:#5a7a8a;
+      --text-mid:#8fb3c4;
+      --locked:#162030;
+      --locked-border:#1b2e42;
+      --locked-icon:#2a4157;
+      --active-ring:rgba(74,222,128,.35);
+      --gold:#fbbf24;
+      --gold-soft:rgba(251,191,36,.12);
+      --blue:#60a5fa;
+      --blue-soft:rgba(96,165,250,.10);
+      --rose:#f87171;
+      --rose-soft:rgba(248,113,113,.10);
+      --radius:20px;
+      --radius-sm:12px;
+      --radius-xs:8px;
+      --nav-h:68px;
+      --header-h:64px;
+      --transition:.2s cubic-bezier(.4,0,.2,1);
+    }
+
+    html{scroll-behavior:smooth}
+
+    body{
+      font-family:'Nunito Sans',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+      padding-bottom:calc(var(--nav-h) + 24px);
+    }
+
+    ::-webkit-scrollbar{width:3px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+    /* ════════════════════════════════════════
+       HEADER
+    ════════════════════════════════════════ */
+    .header{
+      position:sticky;top:0;z-index:60;
+      height:var(--header-h);
+      background:rgba(15,25,35,.96);
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+      display:flex;align-items:center;
+      justify-content:space-between;
+      padding:0 18px;
+    }
+
+    .logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+    .logo-icon{
+      width:36px;height:36px;
+      background:var(--green-muted);
+      border-radius:10px;
+      border:1.5px solid rgba(74,222,128,.22);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+    }
+    .logo-icon svg{width:25px;height:25px}
+    .logo-name{
+      font-family:'Nunito',sans-serif;
+      font-size:20px;font-weight:900;
+      color:var(--text);letter-spacing:-.5px;
+    }
+    .logo-name span{color:var(--green)}
+
+    .header-stats{display:flex;align-items:center;gap:5px}
+    .stat-pill{
+      display:flex;align-items:center;gap:4px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:5px 10px;
+      font-family:'Nunito',sans-serif;
+      font-size:12px;font-weight:800;
+      color:var(--text-mid);
+      white-space:nowrap;
+    }
+    .stat-pill .val{color:var(--text)}
+    .stat-pill.xp .val{color:var(--green)}
+    .stat-pill.fire .val{color:var(--gold)}
+    .stat-pill .sicon{font-size:13px;line-height:1}
+
+
+
+    /* ════════════════════════════════════════
+       PAGES
+    ════════════════════════════════════════ */
+    .page{display:none}
+    .page.active{display:block}
+    .page-inner{
+      max-width:520px;margin:0 auto;
+      padding:20px 16px 0;
+    }
+
+    /* ════════════════════════════════════════
+       FEATURE CARDS
+    ════════════════════════════════════════ */
+    .feature-cards{
+      display:flex;flex-direction:column;gap:12px;
+      margin-bottom:20px;
+    }
+
+    .fcard{
+      border-radius:var(--radius);
+      padding:18px 20px;
+      border:1px solid var(--border);
+      background:var(--card);
+      position:relative;overflow:hidden;
+      animation:fadeUp .4s ease both;
+    }
+    .fcard::before{
+      content:'';position:absolute;inset:0;
+      pointer-events:none;
+    }
+
+    /* daily challenge */
+    .fcard.daily::before{
+      background:linear-gradient(120deg,var(--gold-soft) 0%,transparent 60%);
+    }
+    .fcard.daily{border-color:rgba(251,191,36,.2)}
+
+    /* review */
+    .fcard.review::before{
+      background:linear-gradient(120deg,var(--blue-soft) 0%,transparent 60%);
+    }
+    .fcard.review{border-color:rgba(96,165,250,.2)}
+
+    .fcard-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .fcard-icon{
+      font-size:26px;line-height:1;
+      flex-shrink:0;margin-top:1px;
+    }
+    .fcard-body{flex:1}
+    .fcard-title{
+      font-family:'Nunito',sans-serif;
+      font-size:15px;font-weight:900;
+      color:var(--text);letter-spacing:-.2px;
+      margin-bottom:3px;
+    }
+    .fcard-desc{
+      font-size:12.5px;color:var(--text-muted);
+      line-height:1.45;
+    }
+
+    .fcard-footer{
+      display:flex;align-items:center;
+      justify-content:space-between;
+      margin-top:14px;
+    }
+    .fcard-meta{font-size:11.5px;color:var(--text-muted)}
+    .fcard-meta span{
+      display:inline-flex;align-items:center;gap:4px;
+      background:var(--bg2);
+      border:1px solid var(--border);
+      border-radius:999px;padding:3px 9px;
+      font-family:'Nunito',sans-serif;font-weight:700;
+    }
+
+    /* progress bar in daily */
+    .daily-progress{
+      margin-top:12px;
+      background:var(--border);
+      border-radius:999px;height:6px;overflow:hidden;
+    }
+    .daily-progress-fill{
+      height:100%;border-radius:999px;
+      background:linear-gradient(90deg,var(--gold),#f59e0b);
+      transition:width .6s cubic-bezier(.4,0,.2,1);
+    }
+    .daily-progress-label{
+      display:flex;justify-content:space-between;
+      margin-top:5px;
+      font-size:11px;font-weight:700;color:var(--text-muted);
+    }
+
+    /* btn */
+    .btn{
+      display:inline-flex;align-items:center;gap:6px;
+      border:none;border-radius:999px;
+      font-family:'Nunito',sans-serif;
+      font-size:13px;font-weight:900;
+      padding:9px 20px;
+      cursor:pointer;
+      letter-spacing:.2px;
+      transition:transform var(--transition),box-shadow var(--transition),opacity var(--transition);
+      white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+
+    .btn-green{
+      background:var(--green);color:#0f1923;
+      box-shadow:0 3px 14px var(--green-glow);
+    }
+    .btn-green:hover{box-shadow:0 6px 22px rgba(74,222,128,.38)}
+
+    .btn-gold{
+      background:var(--gold);color:#1a0e00;
+      box-shadow:0 3px 14px rgba(251,191,36,.25);
+    }
+    .btn-gold:hover{box-shadow:0 6px 22px rgba(251,191,36,.38)}
+
+    .btn-blue{
+      background:var(--blue);color:#06101e;
+      box-shadow:0 3px 14px rgba(96,165,250,.25);
+    }
+    .btn-blue:hover{box-shadow:0 6px 22px rgba(96,165,250,.38)}
+
+    .btn-outline{
+      background:transparent;
+      border:2px solid var(--border2);
+      color:var(--text-mid);
+    }
+    .btn-outline:hover{border-color:var(--green);color:var(--green)}
+
+    .btn:disabled,.btn.disabled{
+      opacity:.45;cursor:not-allowed;
+      transform:none !important;box-shadow:none !important;
+    }
+
+    /* ════════════════════════════════════════
+       HSK SECTION
+    ════════════════════════════════════════ */
+    .hsk-section{
+      margin-bottom:12px;
+      animation:fadeUp .4s ease both;
+    }
+    .hsk-section:nth-child(1){animation-delay:.05s}
+    .hsk-section:nth-child(2){animation-delay:.10s}
+    .hsk-section:nth-child(3){animation-delay:.14s}
+    .hsk-section:nth-child(4){animation-delay:.18s}
+    .hsk-section:nth-child(5){animation-delay:.22s}
+    .hsk-section:nth-child(6){animation-delay:.26s}
+
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(18px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    /* banner */
+    .hsk-banner{
+      display:flex;align-items:center;
+      justify-content:space-between;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px 16px;
+      cursor:pointer;
+      position:relative;overflow:hidden;
+      transition:border-color var(--transition),
+                 box-shadow var(--transition),
+                 border-radius var(--transition);
+      user-select:none;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .hsk-banner::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(120deg,var(--green-muted) 0%,transparent 55%);
+      pointer-events:none;
+    }
+    .hsk-banner.locked-banner::before{
+      background:linear-gradient(120deg,rgba(22,32,48,.6) 0%,transparent 55%);
+    }
+    .hsk-banner:not(.locked-banner):hover{
+      border-color:rgba(74,222,128,.3);
+      box-shadow:0 4px 20px rgba(74,222,128,.08);
+    }
+    .hsk-section.open .hsk-banner{
+      border-radius:var(--radius) var(--radius) 0 0;
+      border-bottom-color:transparent;
+    }
+
+    .hsk-banner-left{display:flex;align-items:center;gap:12px}
+
+    .hsk-badge{
+      width:42px;height:42px;border-radius:12px;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      flex-shrink:0;
+    }
+    .hsk-badge.unlocked{
+      background:var(--green-muted);
+      border:1.5px solid rgba(74,222,128,.28);
+    }
+    .hsk-badge.locked{
+      background:var(--locked);
+      border:1.5px solid var(--locked-border);
+    }
+    .hsk-badge-tag{
+      font-family:'Nunito',sans-serif;
+      font-size:8px;font-weight:900;letter-spacing:.5px;line-height:1;
+    }
+    .hsk-badge.unlocked .hsk-badge-tag{color:rgba(74,222,128,.65)}
+    .hsk-badge.locked   .hsk-badge-tag{color:var(--text-muted)}
+    .hsk-badge-num{
+      font-family:'Nunito',sans-serif;
+      font-size:19px;font-weight:900;line-height:1.1;
+    }
+    .hsk-badge.unlocked .hsk-badge-num{color:var(--green)}
+    .hsk-badge.locked   .hsk-badge-num{color:var(--text-muted)}
+
+    .hsk-label{
+      font-family:'Nunito',sans-serif;
+      font-size:14px;font-weight:900;letter-spacing:-.2px;
+    }
+    .hsk-banner.locked-banner .hsk-label{color:var(--text-muted)}
+    .hsk-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+
+    .hsk-banner-right{display:flex;align-items:center;gap:9px}
+
+    /* ring */
+    .hsk-ring{position:relative;width:36px;height:36px;flex-shrink:0}
+    .hsk-ring svg{width:36px;height:36px;transform:rotate(-90deg)}
+    .r-track{fill:none;stroke:var(--border2);stroke-width:3}
+    .r-fill{
+      fill:none;stroke:var(--green);stroke-width:3;
+      stroke-linecap:round;
+      transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);
+    }
+    .hsk-ring-label{
+      position:absolute;inset:0;
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Nunito',sans-serif;
+      font-size:8.5px;font-weight:900;color:var(--green);
+    }
+
+    .lock-chip{
+      display:flex;align-items:center;gap:4px;
+      background:var(--locked);
+      border:1px solid var(--locked-border);
+      border-radius:999px;padding:3px 8px;
+      font-size:10.5px;font-weight:700;color:var(--text-muted);
+    }
+
+    .chevron{
+      width:18px;height:18px;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--text-muted);flex-shrink:0;
+      transition:transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    .chevron svg{width:14px;height:14px}
+    .hsk-section.open .chevron{transform:rotate(180deg)}
+
+    /* ════════════════════════════════════════
+       LESSON PATH
+    ════════════════════════════════════════ */
+    .lesson-path-wrap{
+      overflow:hidden;max-height:0;
+      transition:max-height .5s cubic-bezier(.4,0,.2,1);
+    }
+    .hsk-section.open .lesson-path-wrap{max-height:99999px}
+
+    .lesson-path{
+      background:rgba(12,21,31,.55);
+      border:1px solid var(--border);
+      border-top:none;
+      border-radius:0 0 var(--radius) var(--radius);
+      padding:24px 0 8px;
+      position:relative;
+    }
+
+    /* vertical spine line */
+    .path-spine{
+      position:absolute;
+      top:0;bottom:0;left:50%;
+      width:2px;
+      transform:translateX(-50%);
+      background:repeating-linear-gradient(
+        to bottom,
+        var(--border2) 0,var(--border2) 6px,
+        transparent 6px,transparent 12px
+      );
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .path-nodes{
+      position:relative;z-index:1;
+      display:flex;flex-direction:column;
+      align-items:center;
+      gap:0;
+    }
+
+    /* Each row: position varies for zigzag */
+    .path-row{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      width:100%;
+      padding:0 24px;
+      margin-bottom:8px;
+    }
+
+    /* offset classes */
+    .path-row.col-center{justify-content:center}
+    .path-row.col-left  {justify-content:flex-start}
+    .path-row.col-right {justify-content:flex-end}
+
+    /* node */
+    .lesson-node{
+      display:flex;flex-direction:column;
+      align-items:center;gap:4px;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color:transparent;
+      position:relative;
+    }
+    .lesson-node.locked-node{cursor:not-allowed}
+
+    .node-circle{
+      width:54px;height:54px;
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      position:relative;
+      transition:transform .16s ease,box-shadow .16s ease;
+      font-size:20px;
+    }
+
+    /* done */
+    .node-circle.done{
+      background:var(--green);
+      box-shadow:0 3px 14px rgba(74,222,128,.32);
+      color:#0f1923;
+    }
+    .lesson-node:not(.locked-node):hover .node-circle.done{
+      transform:translateY(-3px);
+      box-shadow:0 8px 22px rgba(74,222,128,.42);
+    }
+
+    /* active */
+    .node-circle.active{
+      background:var(--green);
+      box-shadow:0 0 0 6px var(--active-ring),0 3px 18px rgba(74,222,128,.45);
+      color:#0f1923;
+      animation:nodePulse 2.4s ease-in-out infinite;
+    }
+    @keyframes nodePulse{
+      0%,100%{box-shadow:0 0 0 6px var(--active-ring),0 3px 18px rgba(74,222,128,.45)}
+      50%    {box-shadow:0 0 0 11px rgba(74,222,128,.10),0 3px 26px rgba(74,222,128,.55)}
+    }
+    .lesson-node:not(.locked-node):hover .node-circle.active{transform:translateY(-3px)}
+
+    /* locked */
+    .node-circle.locked{
+      background:var(--locked);
+      border:2px solid var(--locked-border);
+      color:var(--locked-icon);
+      font-size:16px;
+      opacity:.45;
+    }
+
+    .node-label{
+      font-family:'Nunito',sans-serif;
+      font-size:10px;font-weight:800;
+      color:var(--text-muted);
+    }
+    .active-node .node-label{color:var(--green)}
+
+    /* start badge */
+    .start-badge{
+      position:absolute;
+      bottom:calc(100% + 7px);
+      left:50%;transform:translateX(-50%);
+      background:var(--green);color:#0f1923;
+      font-family:'Nunito',sans-serif;
+      font-size:9px;font-weight:900;
+      padding:2px 8px;border-radius:999px;
+      white-space:nowrap;pointer-events:none;
+      box-shadow:0 2px 10px var(--green-glow);
+    }
+    .start-badge::after{
+      content:'';position:absolute;
+      top:100%;left:50%;transform:translateX(-50%);
+      border:4px solid transparent;
+      border-top-color:var(--green);
+    }
+
+    /* ── TEST BUTTON ── */
+    .test-row{
+      display:flex;justify-content:center;
+      padding:10px 24px 20px;
+    }
+    .test-btn{
+      display:flex;align-items:center;gap:7px;
+      background:transparent;
+      border:2px solid var(--green);
+      border-radius:999px;
+      padding:10px 26px;
+      font-family:'Nunito',sans-serif;
+      font-size:13px;font-weight:900;
+      color:var(--green);cursor:pointer;
+      transition:background var(--transition),
+                 box-shadow var(--transition),
+                 transform var(--transition);
+      letter-spacing:.2px;
+    }
+    .test-btn:hover{
+      background:var(--green-muted);
+      box-shadow:0 4px 18px rgba(74,222,128,.18);
+      transform:translateY(-2px);
+    }
+    .test-btn.locked-test{
+      border-color:var(--border2);color:var(--text-muted);cursor:default;opacity:.5;
+    }
+    .test-btn.locked-test:hover{
+      background:transparent;box-shadow:none;transform:none;
+    }
+
+    /* ════════════════════════════════════════
+       MODAL / OVERLAY
+    ════════════════════════════════════════ */
+    .overlay{
+      position:fixed;inset:0;z-index:200;
+      background:rgba(7,14,22,.82);
+      backdrop-filter:blur(6px);
+      -webkit-backdrop-filter:blur(6px);
+      display:flex;align-items:center;justify-content:center;
+      padding:24px;
+      opacity:0;pointer-events:none;
+      transition:opacity .22s ease;
+    }
+    .overlay.visible{opacity:1;pointer-events:all}
+
+    .modal{
+      background:var(--card2);
+      border:1px solid var(--border2);
+      border-radius:var(--radius);
+      padding:28px 24px;
+      width:100%;max-width:360px;
+      text-align:center;
+      transform:scale(.94);
+      transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+    }
+    .overlay.visible .modal{transform:scale(1)}
+
+    .modal-icon{font-size:42px;margin-bottom:14px}
+    .modal-title{
+      font-family:'Nunito',sans-serif;
+      font-size:20px;font-weight:900;
+      color:var(--text);margin-bottom:8px;letter-spacing:-.3px;
+    }
+    .modal-desc{
+      font-size:13.5px;color:var(--text-mid);
+      line-height:1.55;margin-bottom:22px;
+    }
+    .modal-actions{display:flex;flex-direction:column;gap:10px}
+
+    /* ad progress */
+    .ad-bar-wrap{
+      background:var(--border);border-radius:999px;
+      height:7px;overflow:hidden;margin:12px 0 6px;
+    }
+    .ad-bar{
+      height:100%;border-radius:999px;
+      background:linear-gradient(90deg,var(--blue),#818cf8);
+      width:0;
+      transition:width .05s linear;
+    }
+    .ad-label{font-size:11px;color:var(--text-muted);margin-bottom:14px}
+
+    /* ════════════════════════════════════════
+       TASKS PAGE
+    ════════════════════════════════════════ */
+    .tasks-section{margin-bottom:20px}
+    .tasks-heading{
+      font-family:'Nunito',sans-serif;
+      font-size:16px;font-weight:900;
+      color:var(--text);margin-bottom:12px;
+      letter-spacing:-.2px;
+    }
+
+    /* ════════════════════════════════════════
+       LEADERBOARD PLACEHOLDER
+    ════════════════════════════════════════ */
+    .placeholder-page{
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      padding:80px 24px;gap:14px;text-align:center;
+    }
+    .placeholder-page .ph-icon{font-size:52px}
+    .placeholder-page h2{
+      font-family:'Nunito',sans-serif;
+      font-size:20px;font-weight:900;color:var(--text);
+    }
+    .placeholder-page p{font-size:14px;color:var(--text-muted);line-height:1.5}
+
+    /* ════════════════════════════════════════
+       BOTTOM NAV
+    ════════════════════════════════════════ */
+    .bottom-nav{
+      position:fixed;bottom:0;left:0;right:0;
+      height:var(--nav-h);
+      background:rgba(13,23,32,.97);
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
+      border-top:1px solid var(--border);
+      display:flex;align-items:center;
+      justify-content:space-around;
+      padding:0 6px;z-index:100;
+    }
+    .nav-item{
+      display:flex;flex-direction:column;
+      align-items:center;gap:4px;
+      flex:1;padding:8px 4px;
+      cursor:pointer;text-decoration:none;
+      border-radius:var(--radius-sm);
+      transition:background var(--transition);
+      -webkit-tap-highlight-color:transparent;
+      position:relative;
+    }
+    .nav-item:hover{background:rgba(255,255,255,.04)}
+    .nav-icon{font-size:21px;line-height:1;transition:transform .16s}
+    .nav-item:hover .nav-icon{transform:translateY(-2px)}
+    .nav-label{
+      font-family:'Nunito',sans-serif;
+      font-size:9.5px;font-weight:800;
+      color:var(--text-muted);letter-spacing:.2px;
+    }
+    .nav-item.active .nav-label{color:var(--green)}
+    .nav-item.active .nav-icon{filter:drop-shadow(0 0 5px var(--green))}
+    .nav-item.active::after{
+      content:'';position:absolute;bottom:4px;
+      width:4px;height:4px;border-radius:50%;
+      background:var(--green);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════ -->
+<header class="header">
+  <a class="logo" href="#">
+    <div class="logo-icon">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="13" cy="16" rx="8" ry="8" fill="#1a1a1a"/>
+        <ellipse cx="51" cy="16" rx="8" ry="8" fill="#1a1a1a"/>
+        <ellipse cx="32" cy="36" rx="22" ry="20" fill="#fff"/>
+        <ellipse cx="22" cy="30" rx="7" ry="6" fill="#1a1a1a"/>
+        <ellipse cx="42" cy="30" rx="7" ry="6" fill="#1a1a1a"/>
+        <ellipse cx="22" cy="30" rx="4" ry="4" fill="#fff"/>
+        <ellipse cx="42" cy="30" rx="4" ry="4" fill="#fff"/>
+        <ellipse cx="23" cy="31" rx="2" ry="2.5" fill="#1a1a1a"/>
+        <ellipse cx="43" cy="31" rx="2" ry="2.5" fill="#1a1a1a"/>
+        <ellipse cx="32" cy="39" rx="4" ry="2.5" fill="#1a1a1a"/>
+        <path d="M27 43 Q32 48 37 43" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <ellipse cx="17" cy="42" rx="4" ry="2.5" fill="#ffb3c6" opacity="0.5"/>
+        <ellipse cx="47" cy="42" rx="4" ry="2.5" fill="#ffb3c6" opacity="0.5"/>
+      </svg>
+    </div>
+    <span class="logo-name">Mao<span>bai</span></span>
+  </a>
+  <div class="header-stats">
+    <div class="stat-pill xp">
+      <span class="sicon">⚡</span>
+      <span class="val" id="stat-xp">0</span>
+      <span>XP</span>
+    </div>
+    <div class="stat-pill">
+      <span class="sicon">❤️</span>
+      <span class="val" id="stat-hearts">5</span>
+    </div>
+    <div class="stat-pill fire">
+      <span class="sicon">🔥</span>
+      <span class="val" id="stat-streak">0</span>
+    </div>
+  </div>
+</header>
+
+
+<!-- ══ HOME PAGE ═══════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="page-inner">
+
+    <!-- Feature cards -->
+    <div class="feature-cards" id="feature-cards">
+
+      <!-- Daily Challenge -->
+      <div class="fcard daily" style="animation-delay:.04s">
+        <div class="fcard-header">
+          <div class="fcard-icon">🌟</div>
+          <div class="fcard-body">
+            <div class="fcard-title">Daily Challenge</div>
+            <div class="fcard-desc">Complete 3 lessons today to keep your streak alive!</div>
+          </div>
+        </div>
+        <div class="daily-progress">
+          <div class="daily-progress-fill" id="daily-fill" style="width:0%"></div>
+        </div>
+        <div class="daily-progress-label">
+          <span id="daily-count">0 / 3 lessons done</span>
+          <span id="daily-xp">+30 XP</span>
+        </div>
+        <div class="fcard-footer">
+          <div class="fcard-meta">
+            <span>🔥 <span id="daily-streak">0</span> day streak</span>
+          </div>
+          <button class="btn btn-gold" onclick="goToCurrentLesson()">
+            ▶ Start
+          </button>
+        </div>
+      </div>
+
+      <!-- Review mistakes -->
+      <div class="fcard review" style="animation-delay:.08s">
+        <div class="fcard-header">
+          <div class="fcard-icon">🔁</div>
+          <div class="fcard-body">
+            <div class="fcard-title">Review Your Mistakes</div>
+            <div class="fcard-desc">Improve faster by practicing your weak points.</div>
+          </div>
+        </div>
+        <div class="fcard-footer">
+          <div class="fcard-meta" id="review-meta">
+            <span id="review-status">1 free review available</span>
+          </div>
+          <button class="btn btn-blue" id="review-btn" onclick="handleReview()">
+            Review
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- HSK list -->
+    <div id="hsk-list"></div>
+
+  </div>
+</div>
+
+<!-- ══ TASKS PAGE ══════════════════════════════════════ -->
+<div class="page" id="page-tasks">
+  <div class="page-inner">
+    <div class="tasks-section">
+      <div class="tasks-heading">⭐ Daily Goals</div>
+      <!-- Daily card clone for tasks tab -->
+      <div class="fcard daily">
+        <div class="fcard-header">
+          <div class="fcard-icon">🌟</div>
+          <div class="fcard-body">
+            <div class="fcard-title">Daily Challenge</div>
+            <div class="fcard-desc">Complete 3 lessons today to earn your streak bonus.</div>
+          </div>
+        </div>
+        <div class="daily-progress">
+          <div class="daily-progress-fill" id="daily-fill-t" style="width:0%"></div>
+        </div>
+        <div class="daily-progress-label">
+          <span id="daily-count-t">0 / 3 lessons done</span>
+          <span>+30 XP</span>
+        </div>
+        <div class="fcard-footer">
+          <div class="fcard-meta"></div>
+          <button class="btn btn-gold" onclick="goToCurrentLesson()">▶ Start</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tasks-section">
+      <div class="tasks-heading">🔁 Practice</div>
+      <div class="fcard review">
+        <div class="fcard-header">
+          <div class="fcard-icon">🔁</div>
+          <div class="fcard-body">
+            <div class="fcard-title">Review Your Mistakes</div>
+            <div class="fcard-desc">Improve faster by practicing your weak points.</div>
+          </div>
+        </div>
+        <div class="fcard-footer">
+          <div class="fcard-meta">
+            <span id="review-status-t">1 free review available</span>
+          </div>
+          <button class="btn btn-blue" id="review-btn-t" onclick="handleReview()">Review</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEADERBOARD PAGE ════════════════════════════════ -->
+<div class="page" id="page-rank">
+  <div class="placeholder-page">
+    <div class="ph-icon">🏆</div>
+    <h2>Leaderboard</h2>
+    <p>Weekly rankings are coming soon.<br/>Keep studying to claim the top spot!</p>
+  </div>
+</div>
+
+<!-- ══ PROFILE PAGE ════════════════════════════════════ -->
+<div class="page" id="page-profile">
+  <div class="placeholder-page">
+    <div class="ph-icon">👤</div>
+    <h2>Profile</h2>
+    <p>Your stats, badges and history<br/>will appear here.</p>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="window.location.href='/app/profile.html'">Open Profile →</button>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══════════════════════════════════════ -->
+<nav class="bottom-nav">
+  <a class="nav-item active" id="nav-home"    href="#" onclick="switchTab('home');return false">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Home</span>
+  </a>
+  <a class="nav-item" id="nav-tasks"  href="#" onclick="switchTab('tasks');return false">
+    <span class="nav-icon">✅</span>
+    <span class="nav-label">Tasks</span>
+  </a>
+  <a class="nav-item" id="nav-rank"   href="#" onclick="switchTab('rank');return false">
+    <span class="nav-icon">🏆</span>
+    <span class="nav-label">Leaderboard</span>
+  </a>
+  <a class="nav-item" id="nav-profile" href="#" onclick="switchTab('profile');return false">
+    <span class="nav-icon">👤</span>
+    <span class="nav-label">Profile</span>
+  </a>
+</nav>
+
+<!-- ══ MODAL ═══════════════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-icon" id="modal-icon">📺</div>
+    <div class="modal-title" id="modal-title">Watch an ad</div>
+    <div class="modal-desc"  id="modal-desc">Watch a short ad to unlock a review session.</div>
+    <div class="ad-bar-wrap" id="ad-bar-wrap" style="display:none">
+      <div class="ad-bar" id="ad-bar"></div>
+    </div>
+    <div class="ad-label" id="ad-label"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════ -->
+<script>
+/* ─── USER STATE ─────────────────────────────────────── */
+const user = {
+  get level()  { return Number(localStorage.getItem('user_level')  || 1) },
+  get lesson() { return Number(localStorage.getItem('user_lesson') || 1) },
+  get xp()     { return Number(localStorage.getItem('xp')          || 0) },
+  get hearts() { return Number(localStorage.getItem('hearts')       || 5) },
+  get streak() { return Number(localStorage.getItem('streak')       || 0) },
+};
+
+/* ─── HSK CONFIG ─────────────────────────────────────── */
+const HSK_LEVELS = [
+  { level:1, label:'HSK 1', lessons:30,  desc:'Beginner',     emoji:'🌱' },
+  { level:2, label:'HSK 2', lessons:40,  desc:'Elementary',   emoji:'🌿' },
+  { level:3, label:'HSK 3', lessons:60,  desc:'Intermediate', emoji:'🍃' },
+  { level:4, label:'HSK 4', lessons:80,  desc:'Upper-Int.',   emoji:'🌲' },
+  { level:5, label:'HSK 5', lessons:120, desc:'Advanced',     emoji:'🎋' },
+  { level:6, label:'HSK 6', lessons:150, desc:'Mastery',      emoji:'🏯' },
+];
+
+/* zigzag column positions (repeating pattern) */
+/* center → left → right → center … */
+const ZIGZAG_COLS = ['col-center','col-left','col-right'];
+
+/* ─── TABS ───────────────────────────────────────────── */
+const TABS = ['home','tasks','rank','profile'];
+
+function switchTab(tab) {
+  TABS.forEach(t => {
+    document.getElementById('page-' + t)?.classList.toggle('active', t === tab);
+    document.getElementById('nav-'  + t)?.classList.toggle('active', t === tab);
+  });
+}
+
+/* ─── STATS ──────────────────────────────────────────── */
+function renderStats() {
+  document.getElementById('stat-xp').textContent     = user.xp;
+  document.getElementById('stat-hearts').textContent = user.hearts;
+  document.getElementById('stat-streak').textContent = user.streak;
+  document.getElementById('daily-streak').textContent = user.streak;
+  syncReviewStatus();
+  syncDailyProgress();
+}
+
+/* ─── DAILY PROGRESS ─────────────────────────────────── */
+function syncDailyProgress() {
+  const done   = Number(localStorage.getItem('daily_done') || 0);
+  const target = 3;
+  const pct    = Math.min(100, Math.round((done / target) * 100));
+  const label  = `${Math.min(done,target)} / ${target} lessons done`;
+  ['','t'].forEach(sfx => {
+    const fill = document.getElementById('daily-fill' + (sfx ? '-'+sfx : ''));
+    const cnt  = document.getElementById('daily-count' + (sfx ? '-'+sfx : ''));
+    if (fill) fill.style.width = pct + '%';
+    if (cnt)  cnt.textContent  = label;
+  });
+}
+
+/* ─── REVIEW LOGIC ───────────────────────────────────── */
+function getReviewState() {
+  const freeUsed = localStorage.getItem('review_free_used') === 'true';
+  const today    = new Date().toDateString();
+  const adDay    = localStorage.getItem('review_ad_day');
+  let   adsUsed  = adDay === today ? Number(localStorage.getItem('review_ads_used') || 0) : 0;
+  if (adDay !== today) {
+    localStorage.setItem('review_ad_day',   today);
+    localStorage.setItem('review_ads_used', '0');
+    adsUsed = 0;
+  }
+  return { freeUsed, adsUsed };
+}
+
+function syncReviewStatus() {
+  const { freeUsed, adsUsed } = getReviewState();
+  let label = '', disabled = false;
+  if (!freeUsed)         label = '1 free review available';
+  else if (adsUsed < 3)  label = `${3 - adsUsed} ad unlock${3-adsUsed!==1?'s':''} left today`;
+  else                   { label = 'Come back tomorrow'; disabled = true; }
+
+  ['review-status','review-status-t'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+  ['review-btn','review-btn-t'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('disabled', disabled);
+    btn.disabled = disabled;
+  });
+}
+
+function handleReview() {
+  const { freeUsed, adsUsed } = getReviewState();
+
+  if (!freeUsed) {
+    localStorage.setItem('review_free_used','true');
+    syncReviewStatus();
+    window.location.href = '/app/review.html';
+    return;
+  }
+  if (adsUsed < 3) {
+    showAdModal(adsUsed);
+    return;
+  }
+  showInfoModal(
+    '⏰','Come back later',
+    "You've used all 3 ad unlocks for today. Try again tomorrow!",
+    [{ label:'OK', cls:'btn-outline', action: closeModal }]
+  );
+}
+
+/* ─── AD SIMULATION ──────────────────────────────────── */
+let adTimer = null;
+
+function showAdModal(currentAds) {
+  showModal('📺','Watch an Ad','Watch a short ad to unlock a review session.');
+  document.getElementById('ad-bar-wrap').style.display = 'block';
+  document.getElementById('ad-bar').style.width = '0%';
+  document.getElementById('ad-label').textContent = 'Ad loading…';
+  document.getElementById('modal-actions').innerHTML =
+    `<button class="btn btn-outline disabled" id="ad-skip-btn" disabled>Watching… (5s)</button>`;
+
+  let elapsed = 0;
+  const duration = 5000;
+  const interval = 80;
+  clearInterval(adTimer);
+  adTimer = setInterval(() => {
+    elapsed += interval;
+    const pct = Math.min(100, Math.round((elapsed / duration) * 100));
+    document.getElementById('ad-bar').style.width = pct + '%';
+    const remaining = Math.ceil((duration - elapsed) / 1000);
+    const skipBtn   = document.getElementById('ad-skip-btn');
+    if (elapsed >= duration) {
+      clearInterval(adTimer);
+      document.getElementById('ad-label').textContent = 'Ad finished!';
+      if (skipBtn) {
+        skipBtn.textContent = 'Continue →';
+        skipBtn.classList.remove('disabled');
+        skipBtn.disabled = false;
+        skipBtn.className = 'btn btn-blue';
+        skipBtn.onclick = () => {
+          const used = currentAds + 1;
+          localStorage.setItem('review_ads_used', used);
+          syncReviewStatus();
+          closeModal();
+          window.location.href = '/app/review.html';
+        };
+      }
+    } else {
+      if (skipBtn) skipBtn.textContent = `Watching… (${remaining}s)`;
+      document.getElementById('ad-label').textContent = `Please wait ${remaining}s…`;
+    }
+  }, interval);
+}
+
+/* ─── GENERIC MODAL ──────────────────────────────────── */
+function showModal(icon, title, desc) {
+  document.getElementById('modal-icon').textContent  = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-desc').textContent  = desc;
+  document.getElementById('ad-bar-wrap').style.display = 'none';
+  document.getElementById('ad-label').textContent = '';
+  document.getElementById('modal-actions').innerHTML = '';
+  document.getElementById('overlay').classList.add('visible');
+}
+
+function showInfoModal(icon, title, desc, actions) {
+  showModal(icon, title, desc);
+  const actionsEl = document.getElementById('modal-actions');
+  actions.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'btn ' + a.cls;
+    btn.style.width = '100%';
+    btn.textContent = a.label;
+    btn.onclick = a.action;
+    actionsEl.appendChild(btn);
+  });
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('overlay')) return;
+  clearInterval(adTimer);
+  document.getElementById('overlay').classList.remove('visible');
+}
+
+/* ─── LESSON HELPERS ─────────────────────────────────── */
+function getLessonState(hskLevel, lessonNum) {
+  if (hskLevel < user.level) return 'done';
+  if (hskLevel > user.level) return 'locked';
+  if (lessonNum < user.lesson)  return 'done';
+  if (lessonNum === user.lesson) return 'active';
+  return 'locked';
+}
+
+function getProgress(hsk) {
+  if (hsk.level < user.level) return 100;
+  if (hsk.level > user.level) return 0;
+  return Math.round(((user.lesson - 1) / hsk.lessons) * 100);
+}
+
+function goToCurrentLesson() {
+  window.location.href = `/app/lesson.html?lesson=${user.lesson}`;
+}
+
+/* ─── BUILD HSK SECTION ──────────────────────────────── */
+function buildHSK(hsk) {
+  const isUnlocked = hsk.level <= user.level;
+  const progress   = getProgress(hsk);
+  const R = 11;
+  const C = 2 * Math.PI * R;
+  const offset = C - (progress / 100) * C;
+
+  const section = document.createElement('div');
+  section.className = 'hsk-section';
+  section.id = `hsk-${hsk.level}`;
+
+  /* banner */
+  const banner = document.createElement('div');
+  banner.className = `hsk-banner${isUnlocked ? '' : ' locked-banner'}`;
+  banner.innerHTML = `
+    <div class="hsk-banner-left">
+      <div class="hsk-badge ${isUnlocked ? 'unlocked':'locked'}">
+        <div class="hsk-badge-tag">HSK</div>
+        <div class="hsk-badge-num">${hsk.level}</div>
+      </div>
+      <div>
+        <div class="hsk-label">${hsk.emoji} ${hsk.label} — ${hsk.desc}</div>
+        <div class="hsk-meta">${hsk.lessons} lessons${isUnlocked ? ' · '+progress+'% done':''}</div>
+      </div>
+    </div>
+    <div class="hsk-banner-right">
+      ${isUnlocked ? `
+        <div class="hsk-ring">
+          <svg viewBox="0 0 26 26">
+            <circle class="r-track" cx="13" cy="13" r="${R}"/>
+            <circle class="r-fill"  cx="13" cy="13" r="${R}"
+              stroke-dasharray="${C.toFixed(2)}"
+              stroke-dashoffset="${offset.toFixed(2)}"/>
+          </svg>
+          <div class="hsk-ring-label">${progress}%</div>
+        </div>
+      ` : `<div class="lock-chip">🔒 Locked</div>`}
+      <div class="chevron">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+  `;
+
+  if (isUnlocked) {
+    banner.addEventListener('click', () => section.classList.toggle('open'));
+  }
+  section.appendChild(banner);
+
+  /* lesson path */
+  if (isUnlocked) {
+    const wrap = document.createElement('div');
+    wrap.className = 'lesson-path-wrap';
+
+    const path = document.createElement('div');
+    path.className = 'lesson-path';
+
+    const spine = document.createElement('div');
+    spine.className = 'path-spine';
+    path.appendChild(spine);
+
+    const nodes = document.createElement('div');
+    nodes.className = 'path-nodes';
+
+    for (let i = 1; i <= hsk.lessons; i++) {
+      const state      = getLessonState(hsk.level, i);
+      const colClass   = ZIGZAG_COLS[(i - 1) % ZIGZAG_COLS.length];
+
+      const row = document.createElement('div');
+      row.className = `path-row ${colClass}`;
+
+      const node = document.createElement('div');
+      node.className = `lesson-node${state==='locked'?' locked-node':''}${state==='active'?' active-node':''}`;
+
+      let circle = '';
+      if      (state === 'done')   circle = `<div class="node-circle done">✓</div>`;
+      else if (state === 'active') circle = `<div class="node-circle active"><div class="start-badge">Start!</div>⭐</div>`;
+      else                         circle = `<div class="node-circle locked">🔒</div>`;
+
+      node.innerHTML = circle + `<span class="node-label">${i}</span>`;
+
+      if (state !== 'locked') {
+        node.addEventListener('click', () => {
+          window.location.href = `/app/lesson.html?lesson=${i}`;
+        });
+      }
+
+      row.appendChild(node);
+      nodes.appendChild(row);
+    }
+
+    /* test button */
+    const testRow = document.createElement('div');
+    testRow.className = 'test-row';
+    const testUnlocked = hsk.level < user.level;
+    const testBtn = document.createElement('button');
+    testBtn.className = `test-btn${testUnlocked ? '' : ' locked-test'}`;
+    testBtn.innerHTML = testUnlocked
+      ? `🎓 Take HSK ${hsk.level} Test`
+      : `🔒 Complete all lessons to unlock test`;
+    if (testUnlocked) {
+      testBtn.addEventListener('click', () => {
+        window.location.href = `/app/test.html?hsk=${hsk.level}`;
+      });
+    }
+    testRow.appendChild(testBtn);
+    nodes.appendChild(testRow);
+
+    path.appendChild(nodes);
+    wrap.appendChild(path);
+    section.appendChild(wrap);
+
+    if (hsk.level === user.level) section.classList.add('open');
+  }
+
+  return section;
+}
+
+/* ─── RENDER ─────────────────────────────────────────── */
+function render() {
+  renderStats();
+  const list = document.getElementById('hsk-list');
+  list.innerHTML = '';
+  HSK_LEVELS.forEach(hsk => list.appendChild(buildHSK(hsk)));
+}
+
+render();
+
+/* scroll active into view after paint */
+window.addEventListener('load', () => {
+  const active = document.querySelector('.active-node');
+  if (active) setTimeout(() => active.scrollIntoView({behavior:'smooth',block:'center'}), 400);
+});
+</script>
+</body>
+</html>
