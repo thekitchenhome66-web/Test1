@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maobai — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & tokens ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:        #3ecf6e;
+      --green-dark:   #2db85a;
+      --green-light:  #e8f9ef;
+      --green-glow:   rgba(62,207,110,.18);
+      --bg:           #ffffff;
+      --surface:      #f7fdf9;
+      --border:       #d8ede1;
+      --border-focus: #3ecf6e;
+      --text:         #1a2e1e;
+      --text-muted:   #6b8f77;
+      --text-light:   #9ab8a4;
+      --danger:       #ef4444;
+      --danger-bg:    #fef2f2;
+      --success:      #3ecf6e;
+      --success-bg:   #e8f9ef;
+      --radius:       20px;
+      --radius-sm:    12px;
+      --shadow:       0 4px 24px rgba(62,207,110,.10), 0 1px 4px rgba(0,0,0,.06);
+      --shadow-lg:    0 16px 48px rgba(62,207,110,.14), 0 4px 16px rgba(0,0,0,.08);
+      --transition:   .22s cubic-bezier(.4,0,.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px 40px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ── Decorative background ────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(62,207,110,.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 90% 80%,  rgba(62,207,110,.07) 0%, transparent 60%),
+        radial-gradient(ellipse 30% 20% at 10% 90%,  rgba(62,207,110,.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Floating blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: .45;
+      pointer-events: none;
+      z-index: 0;
+      animation: float 8s ease-in-out infinite;
+    }
+    .blob-1 { width:260px; height:260px; background:#b7f0ce; top:-80px; right:-60px; animation-delay:0s; }
+    .blob-2 { width:180px; height:180px; background:#d4f5e3; bottom:40px; left:-50px; animation-delay:-4s; }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%      { transform: translateY(-20px) scale(1.04); }
+    }
+
+    /* ── Card ─────────────────────────────────────────────── */
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 40px 32px 36px;
+      animation: cardIn .5s cubic-bezier(.34,1.56,.64,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(28px) scale(.97); }
+      to   { opacity:1; transform: translateY(0)    scale(1);   }
+    }
+
+    /* ── Logo ─────────────────────────────────────────────── */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--green-light);
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      border: 1.5px solid var(--border);
+      flex-shrink: 0;
+      transition: transform var(--transition);
+    }
+    .logo:hover .logo-icon { transform: rotate(-6deg) scale(1.08); }
+
+    .logo-text {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 22px;
+      color: var(--text);
+      letter-spacing: -.4px;
+    }
+    .logo-text span { color: var(--green); }
+
+    /* ── Heading ──────────────────────────────────────────── */
+    .heading {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 24px;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -.3px;
+      transition: opacity var(--transition);
+    }
+
+    .subheading {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 26px;
+      line-height: 1.5;
+    }
+
+    /* ── Toggle tabs ──────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      margin-bottom: 28px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      height: 38px;
+      border: none;
+      border-radius: 9px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: transparent;
+      color: var(--text-muted);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab-btn.active {
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 20px; height: 2.5px;
+      background: var(--green);
+      border-radius: 2px;
+    }
+
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    /* ── Form ─────────────────────────────────────────────── */
+    .form { display: flex; flex-direction: column; gap: 14px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    .field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: .2px;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrap .icon {
+      position: absolute;
+      left: 14px;
+      color: var(--text-light);
+      font-size: 16px;
+      pointer-events: none;
+      transition: color var(--transition);
+    }
+
+    .field input {
+      width: 100%;
+      height: 48px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      padding: 0 44px 0 42px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    .field input::placeholder { color: var(--text-light); }
+
+    .field input:focus {
+      border-color: var(--border-focus);
+      background: #fff;
+      box-shadow: 0 0 0 4px var(--green-glow);
+    }
+
+    .field input:focus + .icon,
+    .input-wrap:focus-within .icon { color: var(--green); }
+
+    .toggle-pw {
+      position: absolute;
+      right: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 16px;
+      padding: 4px;
+      transition: color var(--transition);
+      display: flex;
+      align-items: center;
+    }
+    .toggle-pw:hover { color: var(--text-muted); }
+
+    /* ── Feedback messages ────────────────────────────────── */
+    .message {
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13.5px;
+      font-weight: 500;
+      line-height: 1.5;
+      display: none;
+      animation: msgIn .25s ease both;
+    }
+    @keyframes msgIn {
+      from { opacity:0; transform: translateY(-6px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .message.visible { display: flex; align-items: flex-start; gap: 8px; }
+    .message.error   { background: var(--danger-bg);  color: var(--danger);  border: 1px solid #fecaca; }
+    .message.success { background: var(--success-bg); color: #166534;        border: 1px solid #bbf7d0; }
+    .message .msg-icon { flex-shrink:0; font-size:15px; margin-top:1px; }
+
+    /* ── Submit button ────────────────────────────────────── */
+    .btn-submit {
+      height: 52px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--green);
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+      margin-top: 4px;
+      letter-spacing: .1px;
+    }
+
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: var(--green-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(62,207,110,.4);
+    }
+
+    .btn-submit:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .btn-submit:disabled {
+      opacity: .7;
+      cursor: not-allowed;
+    }
+
+    /* Loading spinner inside button */
+    .btn-submit .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .btn-submit.loading .spinner { display: block; }
+    .btn-submit.loading .btn-label { opacity: 0; }
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    /* ── Divider ──────────────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 6px 0;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex:1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span { font-size: 12px; color: var(--text-light); white-space: nowrap; }
+
+    /* ── Footnote ─────────────────────────────────────────── */
+    .footnote {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+    .footnote a { color: var(--green); text-decoration: none; font-weight: 600; }
+    .footnote a:hover { text-decoration: underline; }
+
+    /* ── Language switcher ────────────────────────────────── */
+    .lang-bar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      align-self: flex-start;
+    }
+
+    .lang-btn {
+      height: 30px;
+      padding: 0 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: var(--bg);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: .4px;
+    }
+    .lang-btn.active,
+    .lang-btn:hover {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: var(--green-dark);
+    }
+
+    /* ── Responsive ───────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .card { padding: 32px 20px 28px; }
+      .heading { font-size: 21px; }
+    }
+
+    /* ── Form panel transition ────────────────────────────── */
+    .form-panel {
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .form-panel.fade-out {
+      opacity: 0;
+      transform: translateX(-8px);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Decorative blobs -->
+  <div class="blob blob-1" aria-hidden="true"></div>
+  <div class="blob blob-2" aria-hidden="true"></div>
+
+  <!-- Language switcher -->
+  <nav class="lang-bar" aria-label="Language selector">
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="ru">RU</button>
+    <button class="lang-btn" data-lang="tk">TK</button>
+  </nav>
+
+  <!-- Auth card -->
+  <main class="card" role="main">
+
+    <!-- Logo -->
+    <a href="/" class="logo" aria-label="Maobai home">
+      <div class="logo-icon" aria-hidden="true">🐼</div>
+      <span class="logo-text">Mao<span>bai</span></span>
+    </a>
+
+    <!-- Heading (updated by JS) -->
+    <h1 class="heading" id="heading"></h1>
+    <p  class="subheading" id="subheading"></p>
+
+    <!-- Mode tabs -->
+    <div class="tabs" role="tablist" aria-label="Authentication mode">
+      <button class="tab-btn active" role="tab" aria-selected="true"  id="tab-signup" data-mode="signup"></button>
+      <button class="tab-btn"        role="tab" aria-selected="false" id="tab-login"  data-mode="login"></button>
+    </div>
+
+    <!-- Form -->
+    <div class="form-panel" id="form-panel">
+      <form class="form" id="auth-form" novalidate>
+
+        <div class="field" id="field-email">
+          <label for="email" id="label-email"></label>
+          <div class="input-wrap">
+            <span class="icon" aria-hidden="true">✉</span>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autocomplete="email"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="field" id="field-password">
+          <label for="password" id="label-password"></label>
+          <div class="input-wrap">
+            <span class="icon" aria-hidden="true">🔒</span>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              autocomplete="current-password"
+              required
+              minlength="6"
+            />
+            <button
+              type="button"
+              class="toggle-pw"
+              aria-label="Toggle password visibility"
+              id="toggle-pw"
+            >👁</button>
+          </div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="message" id="msg-box" role="alert" aria-live="polite">
+          <span class="msg-icon" id="msg-icon"></span>
+          <span id="msg-text"></span>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-submit" id="btn-submit">
+          <span class="btn-label" id="btn-label"></span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+
+      </form>
+    </div>
+
+    <p class="footnote" id="footnote"></p>
+
+  </main>
+
+  <!-- ── Script ──────────────────────────────────────────── -->
+  <script type="module">
+    import { supabase, detectLang, setLang, dashboardURL, signUp, logIn } from '../js/supabase.js';
+
+    /* ── i18n strings ─────────────────────────────────────── */
+    const i18n = {
+      en: {
+        signup_heading:    'Create your account',
+        signup_sub:        'Start your Mandarin journey today 🐼',
+        login_heading:     'Welcome back',
+        login_sub:         'Good to see you again — keep the streak alive!',
+        tab_signup:        'Sign Up',
+        tab_login:         'Log In',
+        label_email:       'Email address',
+        label_password:    'Password',
+        email_placeholder: 'you@example.com',
+        pw_placeholder:    'Min. 6 characters',
+        btn_signup:        'Create Account',
+        btn_login:         'Log In',
+        footnote_signup:   'Already have an account? <a href="#" data-switch="login">Log in</a>',
+        footnote_login:    'No account yet? <a href="#" data-switch="signup">Sign up free</a>',
+        err_fields:        'Please fill in all fields.',
+        err_pw_short:      'Password must be at least 6 characters.',
+        err_default:       'Something went wrong. Please try again.',
+        success_signup:    '🎉 Account created! Check your email to confirm.',
+        success_login:     '✅ Logged in! Redirecting...',
+        pw_login_hint:     '',
+        loading:           'Please wait...',
+      },
+      ru: {
+        signup_heading:    'Создайте аккаунт',
+        signup_sub:        'Начните изучать китайский сегодня 🐼',
+        login_heading:     'С возвращением',
+        login_sub:         'Рады видеть вас снова — не теряйте серию!',
+        tab_signup:        'Регистрация',
+        tab_login:         'Войти',
+        label_email:       'Электронная почта',
+        label_password:    'Пароль',
+        email_placeholder: 'вы@пример.ру',
+        pw_placeholder:    'Мин. 6 символов',
+        btn_signup:        'Создать аккаунт',
+        btn_login:         'Войти',
+        footnote_signup:   'Уже есть аккаунт? <a href="#" data-switch="login">Войти</a>',
+        footnote_login:    'Нет аккаунта? <a href="#" data-switch="signup">Зарегистрироваться</a>',
+        err_fields:        'Пожалуйста, заполните все поля.',
+        err_pw_short:      'Пароль должен содержать не менее 6 символов.',
+        err_default:       'Что-то пошло не так. Попробуйте ещё раз.',
+        success_signup:    '🎉 Аккаунт создан! Проверьте почту для подтверждения.',
+        success_login:     '✅ Вы вошли! Перенаправление...',
+        loading:           'Пожалуйста, подождите...',
+      },
+      tk: {
+        signup_heading:    'Hasap dörediň',
+        signup_sub:        'Hytaý dilini öwrenmäge başlaň 🐼',
+        login_heading:     'Hoş geldiniz',
+        login_sub:         'Sizi ýene görmek gowy — yzygiderliligi saklaň!',
+        tab_signup:        'Hasap açmak',
+        tab_login:         'Giriş',
+        label_email:       'E-poçta',
+        label_password:    'Açar söz',
+        email_placeholder: 'siz@mysal.com',
+        pw_placeholder:    'Iň az 6 nyşan',
+        btn_signup:        'Hasap dörediň',
+        btn_login:         'Giriň',
+        footnote_signup:   'Hasabyňyz barmy? <a href="#" data-switch="login">Giriň</a>',
+        footnote_login:    'Hasabyňyz ýokmy? <a href="#" data-switch="signup">Mugt hasap açyň</a>',
+        err_fields:        'Ähli meýdanlary dolduryň.',
+        err_pw_short:      'Açar söz iň az 6 nyşan bolmaly.',
+        err_default:       'Bir zat ýalňyş gitdi. Täzeden synanyşyň.',
+        success_signup:    '🎉 Hasap döredildi! Tassyklamak üçin e-poçtaňyzy barlaň.',
+        success_login:     '✅ Giriş edildi! Ugrukdyrylýar...',
+        loading:           'Garaşyň...',
+      },
+    };
+
+    /* ── State ────────────────────────────────────────────── */
+    let mode = 'signup';
+    let lang = detectLang();
+
+    /* ── DOM refs ─────────────────────────────────────────── */
+    const heading    = document.getElementById('heading');
+    const subheading = document.getElementById('subheading');
+    const tabSignup  = document.getElementById('tab-signup');
+    const tabLogin   = document.getElementById('tab-login');
+    const labelEmail = document.getElementById('label-email');
+    const labelPw    = document.getElementById('label-password');
+    const emailInput = document.getElementById('email');
+    const pwInput    = document.getElementById('password');
+    const btnSubmit  = document.getElementById('btn-submit');
+    const btnLabel   = document.getElementById('btn-label');
+    const msgBox     = document.getElementById('msg-box');
+    const msgIcon    = document.getElementById('msg-icon');
+    const msgText    = document.getElementById('msg-text');
+    const footnote   = document.getElementById('footnote');
+    const formPanel  = document.getElementById('form-panel');
+    const togglePw   = document.getElementById('toggle-pw');
+    const langBtns   = document.querySelectorAll('.lang-btn');
+
+    /* ── Render UI ────────────────────────────────────────── */
+    function render() {
+      const t = i18n[lang] || i18n.en;
+      const isSignup = mode === 'signup';
+
+      heading.textContent    = isSignup ? t.signup_heading : t.login_heading;
+      subheading.textContent = isSignup ? t.signup_sub     : t.login_sub;
+      tabSignup.textContent  = t.tab_signup;
+      tabLogin.textContent   = t.tab_login;
+      labelEmail.textContent = t.label_email;
+      labelPw.textContent    = t.label_password;
+      btnLabel.textContent   = isSignup ? t.btn_signup : t.btn_login;
+      footnote.innerHTML     = isSignup ? t.footnote_signup : t.footnote_login;
+
+      emailInput.placeholder = t.email_placeholder;
+      pwInput.placeholder    = t.pw_placeholder;
+      pwInput.autocomplete   = isSignup ? 'new-password' : 'current-password';
+
+      tabSignup.classList.toggle('active', isSignup);
+      tabLogin.classList.toggle('active', !isSignup);
+      tabSignup.setAttribute('aria-selected', isSignup);
+      tabLogin.setAttribute('aria-selected',  !isSignup);
+
+      document.documentElement.lang = lang;
+
+      // Update active lang button
+      langBtns.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+
+      // Wire footnote links
+      footnote.querySelectorAll('[data-switch]').forEach(a => {
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          switchMode(a.dataset.switch);
+        });
+      });
+
+      clearMsg();
+    }
+
+    /* ── Switch mode with transition ─────────────────────── */
+    function switchMode(newMode) {
+      if (newMode === mode) return;
+      formPanel.classList.add('fade-out');
+      setTimeout(() => {
+        mode = newMode;
+        render();
+        formPanel.classList.remove('fade-out');
+      }, 200);
+    }
+
+    /* ── Message helpers ──────────────────────────────────── */
+    function showMsg(type, text) {
+      msgBox.className = `message visible ${type}`;
+      msgIcon.textContent = type === 'error' ? '⚠️' : '✅';
+      msgText.textContent = text;
+    }
+    function clearMsg() {
+      msgBox.className = 'message';
+      msgText.textContent = '';
+    }
+
+    /* ── Loading state ────────────────────────────────────── */
+    function setLoading(on) {
+      btnSubmit.disabled = on;
+      btnSubmit.classList.toggle('loading', on);
+    }
+
+    /* ── Tab clicks ───────────────────────────────────────── */
+    tabSignup.addEventListener('click', () => switchMode('signup'));
+    tabLogin.addEventListener('click',  () => switchMode('login'));
+
+    /* ── Language buttons ─────────────────────────────────── */
+    langBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.lang !== lang) {
+          setLang(btn.dataset.lang);
+        }
+      });
+    });
+
+    /* ── Password visibility toggle ──────────────────────── */
+    let pwVisible = false;
+    togglePw.addEventListener('click', () => {
+      pwVisible = !pwVisible;
+      pwInput.type = pwVisible ? 'text' : 'password';
+      togglePw.textContent = pwVisible ? '🙈' : '👁';
+    });
+
+    /* ── Form submit ──────────────────────────────────────── */
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      const email    = emailInput.value.trim();
+      const password = pwInput.value;
+      const t        = i18n[lang] || i18n.en;
+
+      // Validate
+      if (!email || !password) { showMsg('error', t.err_fields);   return; }
+      if (password.length < 6) { showMsg('error', t.err_pw_short); return; }
+
+      setLoading(true);
+
+      try {
+        if (mode === 'signup') {
+          await signUp(email, password, lang);
+          showMsg('success', t.success_signup);
+          setLoading(false);
+        } else {
+          await logIn(email, password);
+          showMsg('success', t.success_login);
+          setTimeout(() => {
+            window.location.href = dashboardURL(lang);
+          }, 1200);
+        }
+      } catch (err) {
+        setLoading(false);
+        const msg = err?.message || '';
+        // Surface friendly errors
+        if (msg.includes('Invalid login'))    showMsg('error', t.err_default);
+        else if (msg.includes('already'))     showMsg('error', 'An account with this email already exists.');
+        else if (msg.includes('rate limit'))  showMsg('error', 'Too many attempts. Please wait a moment.');
+        else                                  showMsg('error', msg || t.err_default);
+      }
+    });
+
+    /* ── Input: clear error on change ────────────────────── */
+    [emailInput, pwInput].forEach(el => {
+      el.addEventListener('input', () => {
+        if (msgBox.classList.contains('error')) clearMsg();
+      });
+    });
+
+    /* ── Init ─────────────────────────────────────────────── */
+    render();
+  </script>
+</body>
+</html>
