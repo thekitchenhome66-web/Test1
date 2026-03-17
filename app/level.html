@@ -390,13 +390,11 @@
 <!-- ── TOAST ───────────────────────────── -->
 <div class="toast" id="toast"></div>
 
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-  const sb = createClient(
-    'https://cuiznbvvlqtwcoocehnd.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
-  );
+<script>
+  // ── Redirect returning users ───────────────────
+  if (localStorage.getItem('user_level')) {
+    window.location.replace('/app/dashboard.html');
+  }
 
   // ── Toast helper ───────────────────────────────
   function showToast(msg, isError = false) {
@@ -418,18 +416,12 @@
   }
 
   // ── BEGINNER ───────────────────────────────────
-  async function chooseBeginner() {
+  function chooseBeginner() {
     setLoading('beginner', true);
-    try {
-      localStorage.setItem('user_level', 1);
-      localStorage.setItem('user_lesson', 1);
-      showToast('✅ HSK 1 selected — let\'s go!');
-      setTimeout(() => { window.location.replace('/app/dashboard.html'); }, 900);
-    } catch (err) {
-      console.error(err);
-      showToast('⚠️ ' + (err.message || 'Something went wrong'), true);
-      setLoading('beginner', false);
-    }
+    localStorage.setItem('user_level', '1');
+    localStorage.setItem('user_lesson', '1');
+    showToast("✅ HSK 1 selected — let's go!");
+    setTimeout(() => { window.location.replace('/app/dashboard.html'); }, 900);
   }
 
   // ── PLACEMENT TEST ─────────────────────────────
@@ -438,7 +430,6 @@
     setTimeout(() => { window.location.replace('/app/test.html'); }, 300);
   }
 
-  // Expose to global scope for onclick handlers
   window.chooseBeginner = chooseBeginner;
   window.chooseTest = chooseTest;
 </script>
