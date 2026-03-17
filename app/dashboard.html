@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maobai — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0f1923;
+      --card:        #162235;
+      --border:      #1f3349;
+      --green:       #4ade80;
+      --green-glow:  rgba(74,222,128,0.28);
+      --green-muted: rgba(74,222,128,0.10);
+      --text:        #e8f4ef;
+      --text-muted:  #5a7a8a;
+      --text-mid:    #8fb3c4;
+      --locked:      #1a2e40;
+      --locked-icon: #2e4a60;
+      --active-ring: rgba(74,222,128,0.35);
+      --gold:        #fbbf24;
+      --radius:      20px;
+      --radius-sm:   12px;
+      --nav-h:       68px;
+      --header-h:    64px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Nunito Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: calc(var(--nav-h) + 20px);
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ══ HEADER ══════════════════════════════ */
+    .header {
+      position: sticky; top: 0; z-index: 50;
+      height: var(--header-h);
+      background: rgba(15,25,35,0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+    }
+
+    .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: rgba(74,222,128,0.12);
+      border-radius: 10px;
+      border: 1.5px solid rgba(74,222,128,0.22);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 25px; height: 25px; }
+
+    .logo-name {
+      font-family: 'Nunito', sans-serif;
+      font-size: 20px; font-weight: 900;
+      color: var(--text); letter-spacing: -0.5px;
+    }
+    .logo-name span { color: var(--green); }
+
+    .header-stats { display: flex; align-items: center; gap: 6px; }
+
+    .stat-pill {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px; font-weight: 800;
+      color: var(--text-mid);
+      white-space: nowrap;
+    }
+    .stat-pill .val       { color: var(--text); }
+    .stat-pill.xp .val   { color: var(--green); }
+    .stat-pill.fire .val { color: var(--gold); }
+
+    /* ══ TABS ════════════════════════════════ */
+    .tabs {
+      display: flex;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 18px;
+      position: sticky;
+      top: var(--header-h);
+      z-index: 40;
+    }
+
+    .tab-btn {
+      flex: 1; max-width: 140px;
+      padding: 14px 0 12px;
+      background: transparent; border: none;
+      border-bottom: 3px solid transparent;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px; font-weight: 800;
+      color: var(--text-muted); cursor: pointer;
+      letter-spacing: 0.2px;
+      transition: color 0.18s, border-color 0.18s;
+    }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+
+    /* ══ PAGES ═══════════════════════════════ */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-inner {
+      max-width: 520px; margin: 0 auto;
+      padding: 20px 16px 0;
+    }
+
+    /* ══ TASKS PLACEHOLDER ═══════════════════ */
+    .tasks-placeholder {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 80px 24px; gap: 14px; text-align: center;
+    }
+    .tasks-placeholder .ph-icon { font-size: 52px; }
+    .tasks-placeholder h2 {
+      font-family: 'Nunito', sans-serif;
+      font-size: 20px; font-weight: 900; color: var(--text);
+    }
+    .tasks-placeholder p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+    /* ══ HSK SECTION ═════════════════════════ */
+    .hsk-section { margin-bottom: 12px; animation: fadeUp 0.4s ease both; }
+    .hsk-section:nth-child(1) { animation-delay: 0.04s; }
+    .hsk-section:nth-child(2) { animation-delay: 0.08s; }
+    .hsk-section:nth-child(3) { animation-delay: 0.12s; }
+    .hsk-section:nth-child(4) { animation-delay: 0.16s; }
+    .hsk-section:nth-child(5) { animation-delay: 0.20s; }
+    .hsk-section:nth-child(6) { animation-delay: 0.24s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Banner ── */
+    .hsk-banner {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 15px 18px;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: border-color 0.18s, box-shadow 0.18s, border-radius 0.3s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* when open, flatten bottom corners */
+    .hsk-section.open .hsk-banner {
+      border-radius: var(--radius) var(--radius) 0 0;
+      border-bottom-color: transparent;
+    }
+
+    .hsk-banner::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(120deg, var(--green-muted) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    .hsk-banner.locked-banner::before {
+      background: linear-gradient(120deg, rgba(26,46,64,0.5) 0%, transparent 55%);
+    }
+    .hsk-banner:not(.locked-banner):hover {
+      border-color: rgba(74,222,128,0.35);
+      box-shadow: 0 4px 20px rgba(74,222,128,0.1);
+    }
+
+    .hsk-banner-left { display: flex; align-items: center; gap: 13px; }
+
+    .hsk-badge {
+      width: 44px; height: 44px; border-radius: 13px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .hsk-badge.unlocked {
+      background: var(--green-muted);
+      border: 1.5px solid rgba(74,222,128,0.3);
+    }
+    .hsk-badge.locked {
+      background: var(--locked);
+      border: 1.5px solid var(--border);
+    }
+    .hsk-badge-tag {
+      font-family: 'Nunito', sans-serif;
+      font-size: 9px; font-weight: 900; letter-spacing: 0.5px; line-height: 1;
+    }
+    .hsk-badge.unlocked .hsk-badge-tag { color: rgba(74,222,128,0.7); }
+    .hsk-badge.locked   .hsk-badge-tag { color: var(--text-muted); }
+    .hsk-badge-num {
+      font-family: 'Nunito', sans-serif;
+      font-size: 20px; font-weight: 900; line-height: 1.1;
+    }
+    .hsk-badge.unlocked .hsk-badge-num { color: var(--green); }
+    .hsk-badge.locked   .hsk-badge-num { color: var(--text-muted); }
+
+    .hsk-label {
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px; font-weight: 900; letter-spacing: -0.3px;
+    }
+    .hsk-banner.locked-banner .hsk-label { color: var(--text-muted); }
+    .hsk-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .hsk-banner-right { display: flex; align-items: center; gap: 10px; }
+
+    /* progress ring */
+    .hsk-ring { position: relative; width: 38px; height: 38px; flex-shrink: 0; }
+    .hsk-ring svg { width: 38px; height: 38px; transform: rotate(-90deg); }
+    .hsk-ring .r-track { fill: none; stroke: var(--border); stroke-width: 3; }
+    .hsk-ring .r-fill  {
+      fill: none; stroke: var(--green); stroke-width: 3;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1);
+    }
+    .hsk-ring-label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Nunito', sans-serif;
+      font-size: 9px; font-weight: 900; color: var(--green);
+    }
+
+    .lock-chip {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--locked); border: 1px solid var(--border);
+      border-radius: 999px; padding: 4px 9px;
+      font-size: 11px; font-weight: 700; color: var(--text-muted);
+    }
+
+    /* chevron */
+    .chevron {
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); flex-shrink: 0;
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    }
+    .chevron svg { width: 16px; height: 16px; }
+    .hsk-section.open .chevron { transform: rotate(180deg); }
+
+    /* ══ LESSON PATH ═════════════════════════ */
+    .lesson-path-wrap {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .hsk-section.open .lesson-path-wrap { max-height: 99999px; }
+
+    .lesson-path {
+      padding: 18px 0 6px;
+      background: rgba(14,26,38,0.6);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+
+    /* zigzag rows */
+    .lesson-row {
+      display: flex; justify-content: center;
+      gap: 16px; margin-bottom: 18px;
+    }
+
+    /* node */
+    .lesson-node {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 5px;
+      cursor: pointer; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lesson-node.locked-node { cursor: default; }
+
+    .node-circle {
+      width: 50px; height: 50px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+      font-size: 20px;
+    }
+
+    .node-circle.done {
+      background: var(--green);
+      box-shadow: 0 3px 12px rgba(74,222,128,0.3);
+      color: #0f1923;
+    }
+    .lesson-node:not(.locked-node):hover .node-circle.done {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 20px rgba(74,222,128,0.4);
+    }
+
+    .node-circle.active {
+      background: var(--green);
+      box-shadow: 0 0 0 5px var(--active-ring), 0 3px 18px rgba(74,222,128,0.45);
+      color: #0f1923;
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 5px var(--active-ring), 0 3px 18px rgba(74,222,128,0.45); }
+      50%      { box-shadow: 0 0 0 9px rgba(74,222,128,0.12), 0 3px 26px rgba(74,222,128,0.55); }
+    }
+    .lesson-node:not(.locked-node):hover .node-circle.active { transform: translateY(-3px); }
+
+    .node-circle.locked {
+      background: var(--locked);
+      border: 2px solid var(--border);
+      color: var(--locked-icon);
+      font-size: 16px;
+    }
+
+    .node-label { font-size: 10px; font-weight: 700; color: var(--text-muted); }
+    .active-node .node-label { color: var(--green); }
+
+    .start-tip {
+      position: absolute; bottom: calc(100% + 9px);
+      left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #0f1923;
+      font-family: 'Nunito', sans-serif;
+      font-size: 10px; font-weight: 900;
+      padding: 3px 9px; border-radius: 999px;
+      white-space: nowrap; pointer-events: none;
+      box-shadow: 0 3px 12px var(--green-glow);
+    }
+    .start-tip::after {
+      content: ''; position: absolute;
+      top: 100%; left: 50%; transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--green);
+    }
+
+    /* ══ TEST BUTTON ═════════════════════════ */
+    .test-row {
+      display: flex; justify-content: center;
+      padding: 6px 24px 18px;
+    }
+
+    .test-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: transparent;
+      border: 2px solid var(--green);
+      border-radius: 999px;
+      padding: 11px 28px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px; font-weight: 900;
+      color: var(--green); cursor: pointer;
+      transition: background 0.18s, box-shadow 0.18s, transform 0.16s;
+      letter-spacing: 0.3px;
+    }
+    .test-btn:hover {
+      background: var(--green-muted);
+      box-shadow: 0 4px 18px rgba(74,222,128,0.2);
+      transform: translateY(-2px);
+    }
+    .test-btn.locked-test {
+      border-color: var(--border);
+      color: var(--text-muted); cursor: default;
+    }
+    .test-btn.locked-test:hover {
+      background: transparent; box-shadow: none; transform: none;
+    }
+
+    /* ══ BOTTOM NAV ══════════════════════════ */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: rgba(15,25,35,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center;
+      justify-content: space-around;
+      padding: 0 8px; z-index: 100;
+    }
+
+    .nav-item {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      flex: 1; padding: 8px 4px;
+      cursor: pointer; text-decoration: none;
+      border-radius: var(--radius-sm);
+      transition: background 0.14s;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); }
+
+    .nav-icon { font-size: 22px; line-height: 1; transition: transform 0.16s; }
+    .nav-item:hover .nav-icon { transform: translateY(-2px); }
+
+    .nav-label {
+      font-family: 'Nunito', sans-serif;
+      font-size: 10px; font-weight: 800;
+      color: var(--text-muted); letter-spacing: 0.2px;
+    }
+    .nav-item.active .nav-label { color: var(--green); }
+    .nav-item.active .nav-icon  { filter: drop-shadow(0 0 5px var(--green)); }
+    .nav-item.active::after {
+      content: ''; position: absolute; bottom: 5px;
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--green);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <a class="logo" href="#">
+      <div class="logo-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="13" cy="16" rx="8" ry="8" fill="#1a1a1a"/>
+          <ellipse cx="51" cy="16" rx="8" ry="8" fill="#1a1a1a"/>
+          <ellipse cx="32" cy="36" rx="22" ry="20" fill="#fff"/>
+          <ellipse cx="22" cy="30" rx="7" ry="6" fill="#1a1a1a"/>
+          <ellipse cx="42" cy="30" rx="7" ry="6" fill="#1a1a1a"/>
+          <ellipse cx="22" cy="30" rx="4" ry="4" fill="#fff"/>
+          <ellipse cx="42" cy="30" rx="4" ry="4" fill="#fff"/>
+          <ellipse cx="23" cy="31" rx="2" ry="2.5" fill="#1a1a1a"/>
+          <ellipse cx="43" cy="31" rx="2" ry="2.5" fill="#1a1a1a"/>
+          <ellipse cx="32" cy="39" rx="4" ry="2.5" fill="#1a1a1a"/>
+          <path d="M27 43 Q32 48 37 43" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+          <ellipse cx="17" cy="42" rx="4" ry="2.5" fill="#ffb3c6" opacity="0.5"/>
+          <ellipse cx="47" cy="42" rx="4" ry="2.5" fill="#ffb3c6" opacity="0.5"/>
+        </svg>
+      </div>
+      <span class="logo-name">Mao<span>bai</span></span>
+    </a>
+
+    <div class="header-stats">
+      <div class="stat-pill xp">
+        <span style="font-size:14px">⚡</span>
+        <span class="val" id="stat-xp">0</span>
+        <span>XP</span>
+      </div>
+      <div class="stat-pill">
+        <span style="font-size:14px">❤️</span>
+        <span class="val" id="stat-hearts">5</span>
+      </div>
+      <div class="stat-pill fire">
+        <span style="font-size:14px">🔥</span>
+        <span class="val" id="stat-streak">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-home"  onclick="switchTab('home')">🏠 Home</button>
+    <button class="tab-btn"        id="tab-tasks" onclick="switchTab('tasks')">✅ Tasks</button>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <div class="page-inner" id="hsk-list"></div>
+  </div>
+
+  <!-- TASKS PAGE -->
+  <div class="page" id="page-tasks">
+    <div class="tasks-placeholder">
+      <div class="ph-icon">✅</div>
+      <h2>Tasks Coming Soon</h2>
+      <p>Daily challenges and tasks will appear here.<br/>Keep learning to unlock them!</p>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a class="nav-item active" id="nav-home" href="#" onclick="switchTab('home'); return false;">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </a>
+    <a class="nav-item" id="nav-tasks" href="#" onclick="switchTab('tasks'); return false;">
+      <span class="nav-icon">✅</span>
+      <span class="nav-label">Tasks</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🏆</span>
+      <span class="nav-label">Leaderboard</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <script>
+    /* ─── USER ─────────────────────────────── */
+    const user = { level: 1, lesson: 1, xp: 0, hearts: 5, streak: 0 };
+
+    /* ─── HSK CONFIG ────────────────────────── */
+    const HSK_LEVELS = [
+      { level:1, label:'HSK 1', lessons:30,  desc:'Beginner',     emoji:'🌱' },
+      { level:2, label:'HSK 2', lessons:40,  desc:'Elementary',   emoji:'🌿' },
+      { level:3, label:'HSK 3', lessons:60,  desc:'Intermediate', emoji:'🍃' },
+      { level:4, label:'HSK 4', lessons:80,  desc:'Upper-Int.',   emoji:'🌲' },
+      { level:5, label:'HSK 5', lessons:120, desc:'Advanced',     emoji:'🎋' },
+      { level:6, label:'HSK 6', lessons:150, desc:'Mastery',      emoji:'🏯' },
+    ];
+
+    const PER_ROW = 3;
+
+    /* ─── TABS ──────────────────────────────── */
+    function switchTab(tab) {
+      ['home','tasks'].forEach(t => {
+        document.getElementById('page-' + t).classList.toggle('active', t === tab);
+        document.getElementById('tab-'  + t).classList.toggle('active', t === tab);
+      });
+      document.getElementById('nav-home').classList.toggle('active',  tab === 'home');
+      document.getElementById('nav-tasks').classList.toggle('active', tab === 'tasks');
+    }
+
+    /* ─── STATS ─────────────────────────────── */
+    function renderStats() {
+      document.getElementById('stat-xp').textContent     = user.xp;
+      document.getElementById('stat-hearts').textContent = user.hearts;
+      document.getElementById('stat-streak').textContent = user.streak;
+    }
+
+    /* ─── HELPERS ───────────────────────────── */
+    function getLessonState(hskLevel, lessonNum) {
+      if (hskLevel < user.level) return 'done';
+      if (hskLevel > user.level) return 'locked';
+      if (lessonNum < user.lesson)  return 'done';
+      if (lessonNum === user.lesson) return 'active';
+      return 'locked';
+    }
+
+    function getProgress(hsk) {
+      if (hsk.level < user.level) return 100;
+      if (hsk.level > user.level) return 0;
+      return Math.round(((user.lesson - 1) / hsk.lessons) * 100);
+    }
+
+    function buildRows(total) {
+      const rows = []; let n = 1, ri = 0;
+      while (n <= total) {
+        const chunk = [];
+        const count = Math.min(PER_ROW, total - n + 1);
+        for (let i = 0; i < count; i++) chunk.push(n++);
+        rows.push(ri % 2 === 0 ? chunk : [...chunk].reverse());
+        ri++;
+      }
+      return rows;
+    }
+
+    /* ─── BUILD ONE HSK SECTION ─────────────── */
+    function buildHSK(hsk) {
+      const isUnlocked = hsk.level <= user.level;
+      const progress   = getProgress(hsk);
+      const C          = 2 * Math.PI * 12; // r=12
+      const offset     = C - (progress / 100) * C;
+
+      const section = document.createElement('div');
+      section.className = 'hsk-section';
+      section.id = `hsk-${hsk.level}`;
+
+      /* ── Banner ── */
+      const banner = document.createElement('div');
+      banner.className = `hsk-banner${isUnlocked ? '' : ' locked-banner'}`;
+      banner.innerHTML = `
+        <div class="hsk-banner-left">
+          <div class="hsk-badge ${isUnlocked ? 'unlocked' : 'locked'}">
+            <div class="hsk-badge-tag">HSK</div>
+            <div class="hsk-badge-num">${hsk.level}</div>
+          </div>
+          <div>
+            <div class="hsk-label">${hsk.emoji} ${hsk.label} — ${hsk.desc}</div>
+            <div class="hsk-meta">${hsk.lessons} lessons${isUnlocked ? ' · ' + progress + '% done' : ''}</div>
+          </div>
+        </div>
+        <div class="hsk-banner-right">
+          ${isUnlocked ? `
+            <div class="hsk-ring">
+              <svg viewBox="0 0 28 28">
+                <circle class="r-track" cx="14" cy="14" r="10"/>
+                <circle class="r-fill"  cx="14" cy="14" r="10"
+                  stroke-dasharray="${C.toFixed(2)}"
+                  stroke-dashoffset="${offset.toFixed(2)}"/>
+              </svg>
+              <div class="hsk-ring-label">${progress}%</div>
+            </div>
+          ` : `<div class="lock-chip">🔒 Locked</div>`}
+          <div class="chevron">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+        </div>
+      `;
+
+      if (isUnlocked) {
+        banner.addEventListener('click', () => section.classList.toggle('open'));
+      }
+
+      section.appendChild(banner);
+
+      /* ── Lesson path (collapsible) ── */
+      if (isUnlocked) {
+        const wrap = document.createElement('div');
+        wrap.className = 'lesson-path-wrap';
+
+        const path = document.createElement('div');
+        path.className = 'lesson-path';
+
+        buildRows(hsk.lessons).forEach(row => {
+          const rowEl = document.createElement('div');
+          rowEl.className = 'lesson-row';
+
+          row.forEach(lessonNum => {
+            const state = getLessonState(hsk.level, lessonNum);
+            const node  = document.createElement('div');
+            node.className = `lesson-node${state === 'locked' ? ' locked-node' : ''}${state === 'active' ? ' active-node' : ''}`;
+
+            let circle = '';
+            if (state === 'done') {
+              circle = `<div class="node-circle done">✓</div>`;
+            } else if (state === 'active') {
+              circle = `<div class="node-circle active"><div class="start-tip">Start!</div>⭐</div>`;
+            } else {
+              circle = `<div class="node-circle locked">🔒</div>`;
+            }
+
+            node.innerHTML = circle + `<span class="node-label">${lessonNum}</span>`;
+
+            if (state !== 'locked') {
+              node.addEventListener('click', () => {
+                window.location.href = `/app/lesson.html?lesson=${lessonNum}`;
+              });
+            }
+
+            rowEl.appendChild(node);
+          });
+
+          path.appendChild(rowEl);
+        });
+
+        /* ── Test button ── */
+        const testRow = document.createElement('div');
+        testRow.className = 'test-row';
+        const isTestUnlocked = hsk.level < user.level;
+        const testBtn = document.createElement('button');
+        testBtn.className = `test-btn${isTestUnlocked ? '' : ' locked-test'}`;
+        testBtn.innerHTML = isTestUnlocked
+          ? `🎓 Take HSK ${hsk.level} Test`
+          : `🔒 Finish all lessons to unlock test`;
+        if (isTestUnlocked) {
+          testBtn.addEventListener('click', () => {
+            window.location.href = `/app/test.html?hsk=${hsk.level}`;
+          });
+        }
+        testRow.appendChild(testBtn);
+        path.appendChild(testRow);
+
+        wrap.appendChild(path);
+        section.appendChild(wrap);
+
+        /* auto-open current level */
+        if (hsk.level === user.level) section.classList.add('open');
+      }
+
+      return section;
+    }
+
+    /* ─── RENDER ────────────────────────────── */
+    function render() {
+      renderStats();
+      const list = document.getElementById('hsk-list');
+      list.innerHTML = '';
+      HSK_LEVELS.forEach(hsk => list.appendChild(buildHSK(hsk)));
+    }
+
+    render();
+
+    /* scroll active lesson into view */
+    window.addEventListener('load', () => {
+      const active = document.querySelector('.active-node');
+      if (active) setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
+    });
+  </script>
+</body>
+</html>
