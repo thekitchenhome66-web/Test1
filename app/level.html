@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maobai — Choose Your Level</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1923;
+      --card:      #162235;
+      --card2:     #1a2a42;
+      --border:    #1f3150;
+      --green:     #4ade80;
+      --green-dim: #1a4a2e;
+      --blue:      #38bdf8;
+      --purple:    #a78bfa;
+      --text:      #e2eaf5;
+      --muted:     #5a7a9a;
+      --radius:    20px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* noise texture */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* radial glow behind hero */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse at center, rgba(74,222,128,.07) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ───────────────────────────────── */
+    header {
+      position: relative; z-index: 10;
+      display: flex; align-items: center;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,25,35,.8);
+      backdrop-filter: blur(16px);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 1.35rem; font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    .logo span { font-size: 1.5rem; }
+
+    /* ── HERO ─────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 52px 24px 36px;
+      animation: fadeUp .5s ease both;
+    }
+    .hero-panda {
+      font-size: 4.5rem;
+      display: block;
+      margin-bottom: 18px;
+      animation: floatPanda 3.5s ease-in-out infinite;
+    }
+    @keyframes floatPanda {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    .hero h1 {
+      font-size: 1.9rem; font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1rem; font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* ── CARDS CONTAINER ──────────────────────── */
+    .cards {
+      position: relative; z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 18px 48px;
+      display: flex; flex-direction: column; gap: 16px;
+      width: 100%;
+    }
+
+    /* ── LEVEL CARD ───────────────────────────── */
+    .level-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px 24px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+      animation: fadeUp .5s ease both;
+      text-align: left;
+    }
+    .level-card:nth-child(1) { animation-delay: .1s; }
+    .level-card:nth-child(2) { animation-delay: .2s; }
+
+    /* shimmer highlight */
+    .level-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.04) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .level-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+
+    /* GREEN card */
+    .level-card.green {
+      background: linear-gradient(135deg, #0d2a1a 0%, #162235 60%);
+      border-color: rgba(74,222,128,.3);
+    }
+    .level-card.green:hover {
+      border-color: var(--green);
+      box-shadow: 0 12px 40px rgba(74,222,128,.15);
+    }
+
+    /* BLUE card */
+    .level-card.blue {
+      background: linear-gradient(135deg, #0d1f2e 0%, #162235 60%);
+      border-color: rgba(56,189,248,.25);
+    }
+    .level-card.blue:hover {
+      border-color: var(--blue);
+      box-shadow: 0 12px 40px rgba(56,189,248,.12);
+    }
+
+    .card-icon {
+      font-size: 2.4rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .card-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase;
+      border-radius: 50px;
+      padding: 4px 10px;
+      margin-bottom: 10px;
+    }
+    .green .card-tag {
+      color: var(--green);
+      background: rgba(74,222,128,.1);
+      border: 1px solid rgba(74,222,128,.25);
+    }
+    .blue .card-tag {
+      color: var(--blue);
+      background: rgba(56,189,248,.1);
+      border: 1px solid rgba(56,189,248,.2);
+    }
+
+    .level-card h2 {
+      font-size: 1.3rem; font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: -.3px;
+    }
+    .level-card p {
+      font-size: 0.88rem; font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    /* pill list */
+    .pill-list {
+      display: flex; flex-wrap: wrap; gap: 7px;
+      margin-bottom: 22px;
+    }
+    .pill {
+      font-size: 0.7rem; font-weight: 700;
+      border-radius: 50px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    /* card button */
+    .card-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      border: none; border-radius: 50px;
+      padding: 12px 26px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem; font-weight: 900;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, opacity .15s;
+      position: relative; z-index: 1;
+      width: 100%;
+      justify-content: center;
+    }
+    .card-btn:active { transform: scale(0.97); }
+    .card-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .green .card-btn {
+      background: var(--green);
+      color: #0a1a10;
+      box-shadow: 0 4px 20px rgba(74,222,128,.25);
+    }
+    .green .card-btn:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(74,222,128,.4);
+    }
+
+    .blue .card-btn {
+      background: var(--blue);
+      color: #071525;
+      box-shadow: 0 4px 20px rgba(56,189,248,.2);
+    }
+    .blue .card-btn:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(56,189,248,.35);
+    }
+
+    /* decorative characters */
+    .card-deco {
+      position: absolute; right: 16px; top: 16px;
+      font-size: 4rem; opacity: .07;
+      pointer-events: none; user-select: none;
+      transform: rotate(8deg);
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ── DIVIDER ──────────────────────────────── */
+    .or-divider {
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 2px;
+    }
+    .or-divider::before,
+    .or-divider::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: var(--border);
+    }
+    .or-divider span {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    /* ── LOADING SPINNER ──────────────────────── */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(0,0,0,.2);
+      border-top-color: #0a1a10;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      display: none;
+    }
+    .spinner.blue-spin {
+      border-top-color: #071525;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TOAST ────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: #1e2d3d;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 22px;
+      font-size: 0.85rem; font-weight: 700;
+      color: var(--text);
+      z-index: 100;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+      opacity: 0;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.error { border-color: #f87171; color: #f87171; }
+
+    /* ── ANIMATIONS ───────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (min-width: 520px) {
+      .cards { padding: 0 24px 60px; }
+      .hero h1 { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────── -->
+<header>
+  <div class="logo">
+    <span>🐼</span> Maobai
+  </div>
+</header>
+
+<!-- ── HERO ───────────────────────────── -->
+<div class="hero">
+  <span class="hero-panda">🐼</span>
+  <h1>Start your <em>journey</em></h1>
+  <p>Choose your level to get started</p>
+</div>
+
+<!-- ── CARDS ──────────────────────────── -->
+<div class="cards">
+
+  <!-- Beginner -->
+  <div class="level-card green" id="beginnerCard">
+    <span class="card-deco">你好</span>
+    <span class="card-icon">🌱</span>
+    <div class="card-tag">✦ Recommended</div>
+    <h2>Beginner</h2>
+    <p>I'm new to Chinese. Start me from the very basics.</p>
+    <div class="pill-list">
+      <span class="pill">Pinyin</span>
+      <span class="pill">Tones</span>
+      <span class="pill">150 Characters</span>
+      <span class="pill">HSK 1</span>
+    </div>
+    <button class="card-btn" id="beginnerBtn" onclick="chooseBeginner()">
+      <span id="beginnerLabel">Start from HSK 1</span>
+      <div class="spinner" id="beginnerSpinner"></div>
+    </button>
+  </div>
+
+  <div class="or-divider"><span>or</span></div>
+
+  <!-- Placement Test -->
+  <div class="level-card blue" id="testCard">
+    <span class="card-deco">HSK</span>
+    <span class="card-icon">🎯</span>
+    <div class="card-tag">⚡ 5 min test</div>
+    <h2>I know some Chinese</h2>
+    <p>Find your level with a quick placement test and jump right in.</p>
+    <div class="pill-list">
+      <span class="pill">HSK 1 – 6</span>
+      <span class="pill">~30–35 questions</span>
+      <span class="pill">Auto-place</span>
+    </div>
+    <button class="card-btn" id="testBtn" onclick="chooseTest()">
+      <span id="testLabel">Take placement test</span>
+      <div class="spinner blue-spin" id="testSpinner"></div>
+    </button>
+  </div>
+
+</div>
+
+<!-- ── TOAST ───────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Supabase init ──────────────────────────────
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+  const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── Toast helper ───────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Set button loading state ───────────────────
+  function setLoading(id, loading) {
+    const btn     = document.getElementById(id + 'Btn');
+    const label   = document.getElementById(id + 'Label');
+    const spinner = document.getElementById(id + 'Spinner');
+    btn.disabled = loading;
+    label.style.opacity = loading ? '0' : '1';
+    spinner.style.display = loading ? 'block' : 'none';
+  }
+
+  // ── BEGINNER ───────────────────────────────────
+  async function chooseBeginner() {
+    setLoading('beginner', true);
+    try {
+      const { data: { user }, error: authErr } = await sb.auth.getUser();
+      if (authErr || !user) throw new Error('Not signed in');
+
+      const { error } = await sb
+        .from('profiles')
+        .update({ current_hsk_level: 1 })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      showToast('✅ HSK 1 selected — let\'s go!');
+      setTimeout(() => { window.location.href = '/app/dashboard.html'; }, 900);
+    } catch (err) {
+      console.error(err);
+      showToast('⚠️ ' + (err.message || 'Something went wrong'), true);
+      setLoading('beginner', false);
+    }
+  }
+
+  // ── PLACEMENT TEST ─────────────────────────────
+  function chooseTest() {
+    setLoading('test', true);
+    setTimeout(() => { window.location.href = '/app/test.html'; }, 300);
+  }
+</script>
+</body>
+</html>
