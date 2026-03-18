@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maobai – Review Mistakes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window._supabaseClient = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
+</script>
+<style>
+  :root {
+    --bg:        #0f1923;
+    --card:      #162235;
+    --card2:     #1c2d44;
+    --border:    #1f3550;
+    --border2:   #243d57;
+    --green:     #4ade80;
+    --green-dim: #22c55e;
+    --green-glow:rgba(74,222,128,.28);
+    --green-muted:rgba(74,222,128,.10);
+    --red:       #f87171;
+    --red-soft:  rgba(248,113,113,.10);
+    --yellow:    #fbbf24;
+    --blue:      #60a5fa;
+    --purple:    #a78bfa;
+    --text:      #e8f0f8;
+    --muted:     #6b8aaa;
+    --soft:      #4a6580;
+    --radius:    16px;
+    --t:         0.28s cubic-bezier(.4,0,.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  #app {
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    max-width: 520px; margin: 0 auto;
+    padding: 0 0 48px;
+  }
+
+  /* ── Header ── */
+  .lesson-header {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg);
+    padding: 16px 20px 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .btn-close {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: none; background: var(--card); color: var(--muted);
+    cursor: pointer; display: grid; place-items: center; flex-shrink: 0;
+    transition: background var(--t), color var(--t);
+  }
+  .btn-close:hover { background: var(--card2); color: var(--text); }
+  .btn-close svg { width: 16px; height: 16px; }
+  .progress-bar-wrap {
+    flex: 1; height: 10px; background: var(--card);
+    border-radius: 999px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-dim), var(--green));
+    border-radius: 999px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 8px rgba(74,222,128,.45);
+    width: 0%;
+  }
+  .review-count-badge {
+    background: rgba(248,113,113,.12);
+    border: 1px solid rgba(248,113,113,.25);
+    border-radius: 999px; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; color: var(--red);
+    white-space: nowrap; flex-shrink: 0;
+  }
+
+  /* ── Info bar ── */
+  .lesson-info-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px 10px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .lesson-tag {
+    background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.2);
+    border-radius: 999px; padding: 4px 10px; color: var(--red);
+  }
+  .lesson-phase-tag {
+    background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.2);
+    border-radius: 999px; padding: 4px 10px; color: var(--purple);
+  }
+
+  /* ── Step area ── */
+  .step-wrap { flex: 1; padding: 12px 20px 0; display: flex; flex-direction: column; gap: 20px; }
+  @keyframes slideIn  { from { opacity: 0; transform: translateX(36px); } to   { opacity: 1; transform: translateX(0); } }
+  @keyframes slideOut { from { opacity: 1; transform: translateX(0); }    to   { opacity: 0; transform: translateX(-36px); } }
+  .step-visible { animation: slideIn  0.36s cubic-bezier(.4,0,.2,1) forwards; }
+  .step-exit    { animation: slideOut 0.28s cubic-bezier(.4,0,.2,1) forwards; }
+
+  /* ── Labels ── */
+  .step-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: -8px; }
+  .review-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25);
+    border-radius: 999px; padding: 4px 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--red); text-transform: uppercase;
+    margin-bottom: -6px; width: fit-content;
+  }
+
+  /* ── Question card ── */
+  .question-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 22px;
+    position: relative; overflow: hidden;
+  }
+  .question-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(248,113,113,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .q-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .q-text  {
+    font-size: clamp(16px, 4.2vw, 19px); font-weight: 600;
+    line-height: 1.5; color: var(--text);
+  }
+  .q-word  { font-family: 'Noto Sans SC', sans-serif; font-size: 1.25em; color: var(--red); }
+  .q-hint  { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  /* ── Options ── */
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .options-grid.single-col { grid-template-columns: 1fr; }
+  .option-btn {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 12px; padding: 16px 12px;
+    font-family: 'Sora', sans-serif; font-size: 14px;
+    font-weight: 500; color: var(--text); cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform 0.15s;
+    text-align: center; line-height: 1.3;
+  }
+  .option-btn:hover:not(:disabled) { border-color: rgba(248,113,113,.45); background: var(--card2); transform: translateY(-1px); }
+  .option-btn.correct { border-color: var(--green); background: rgba(74,222,128,.12); color: var(--green); }
+  .option-btn.wrong   { border-color: var(--red);   background: var(--red-soft);       color: var(--red); }
+  .option-btn:disabled { cursor: not-allowed; }
+  .chinese-option { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; }
+
+  /* ── Typing ── */
+  .typing-input {
+    width: 100%; padding: 16px 18px; border-radius: 12px;
+    border: 2px solid var(--border); background: var(--card);
+    color: var(--text); font-family: 'Sora', sans-serif; font-size: 16px;
+    outline: none; transition: border-color var(--t);
+    caret-color: var(--red);
+  }
+  .typing-input:focus { border-color: rgba(248,113,113,.45); }
+  .typing-input.correct-input { border-color: var(--green); background: rgba(74,222,128,.06); }
+  .typing-input.wrong-input   { border-color: var(--red);   background: var(--red-soft); }
+  .typing-hint { font-size: 11px; color: var(--soft); margin-top: 6px; text-align: right; }
+
+  /* ── Matching ── */
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .match-col-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 6px; }
+  .match-item {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 12px; padding: 16px 10px;
+    font-size: 15px; font-weight: 500; text-align: center; cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform 0.15s;
+    min-height: 58px; display: flex; align-items: center; justify-content: center;
+    word-break: break-word;
+  }
+  .match-item.chinese-item { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; }
+  .match-item:hover:not(.matched):not(.disabled-match) { border-color: rgba(248,113,113,.4); background: var(--card2); transform: translateY(-1px); }
+  .match-item.selected { border-color: var(--red); background: rgba(248,113,113,.1); color: var(--red); }
+  .match-item.matched  { border-color: var(--green); background: rgba(74,222,128,.08); color: var(--green); opacity: 0.55; cursor: default; }
+  .match-item.wrong-shake { border-color: var(--red); background: var(--red-soft); animation: shake 0.4s ease; }
+  .match-item.disabled-match { opacity: 0.35; cursor: not-allowed; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 60% { transform: translateX(6px); } }
+
+  /* ── Feedback banner ── */
+  .feedback-banner {
+    border-radius: 12px; padding: 14px 18px;
+    font-size: 14px; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 10px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .feedback-banner.show { opacity: 1; transform: translateY(0); }
+  .feedback-banner.correct-fb { background: rgba(74,222,128,.12);  border: 1px solid rgba(74,222,128,.3);  color: var(--green); }
+  .feedback-banner.wrong-fb   { background: var(--red-soft);        border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+  .feedback-icon { font-size: 20px; flex-shrink: 0; margin-top: -1px; }
+  .fb-main { font-weight: 600; }
+  .fb-tip  { display: block; font-size: 12px; opacity: 0.8; margin-top: 4px; font-weight: 400; }
+
+  /* ── Bottom ── */
+  .bottom-area { padding: 20px 20px 0; display: flex; flex-direction: column; gap: 10px; }
+  .btn-primary {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: var(--green); color: #0a1a0f;
+    font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.02em;
+    transition: background var(--t), transform 0.15s, box-shadow var(--t);
+    box-shadow: 0 4px 16px rgba(74,222,128,.25);
+  }
+  .btn-primary:hover:not(:disabled) { background: #6bef9a; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(74,222,128,.35); }
+  .btn-primary:active  { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+  .btn-secondary {
+    width: 100%; padding: 14px; border-radius: 14px;
+    border: 2px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'Sora', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: border-color var(--t), color var(--t);
+  }
+  .btn-secondary:hover { border-color: var(--green-dim); color: var(--text); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 32px; text-align: center; gap: 16px;
+    animation: slideIn 0.4s ease;
+  }
+  .empty-emoji { font-size: 72px; animation: bounce 0.6s ease 0.1s both; }
+  @keyframes bounce { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); } }
+  .empty-title { font-size: 22px; font-weight: 700; color: var(--text); }
+  .empty-sub   { font-size: 14px; color: var(--muted); line-height: 1.7; max-width: 280px; }
+  .empty-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 8px; }
+
+  /* ── Ad gate overlay ── */
+  .overlay { position: fixed; inset: 0; background: rgba(10,18,28,.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: none; place-items: center; z-index: 100; padding: 24px; }
+  .overlay.show { display: grid; }
+  .overlay-card { background: var(--card); border: 1px solid var(--border2); border-radius: 20px; padding: 36px 28px; max-width: 360px; width: 100%; text-align: center; animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+  .overlay-icon  { font-size: 52px; margin-bottom: 16px; }
+  .overlay-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .overlay-sub   { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .overlay-actions { display: flex; flex-direction: column; gap: 10px; }
+  .ad-bar-wrap { background: var(--border); border-radius: 999px; height: 7px; overflow: hidden; margin: 12px 0 6px; }
+  .ad-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--blue), #818cf8); width: 0; transition: width 0.05s linear; }
+  .ad-label { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+  .btn-ad {
+    width: 100%; padding: 14px; border-radius: 14px;
+    border: 2px solid rgba(96,165,250,.35); background: rgba(96,165,250,.08);
+    color: var(--blue); font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all var(--t);
+  }
+  .btn-ad:hover { background: rgba(96,165,250,.14); border-color: var(--blue); }
+  .btn-ad:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Complete screen ── */
+  .complete-screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 36px 24px; text-align: center; gap: 20px;
+    animation: slideIn 0.4s ease;
+  }
+  .complete-emoji { font-size: 64px; animation: bounce 0.6s ease 0.15s both; }
+  .complete-title { font-size: 26px; font-weight: 700; color: var(--text); }
+  .complete-sub   { font-size: 14px; color: var(--muted); margin-top: -10px; line-height: 1.6; }
+  .xp-pill {
+    background: rgba(74,222,128,.14); border: 1px solid rgba(74,222,128,.3);
+    border-radius: 999px; padding: 10px 28px;
+    font-size: 22px; font-weight: 700; color: var(--green); letter-spacing: 0.02em;
+  }
+  .complete-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; width: 100%;
+  }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; text-align: center; }
+  .stat-val   { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .stat-label { font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .complete-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+  /* ── Toast ── */
+  #xp-toast {
+    position: fixed; top: 68px; left: 50%;
+    transform: translateX(-50%) translateY(-16px);
+    background: var(--green); color: #0a1a0f;
+    padding: 7px 18px; border-radius: 999px;
+    font-weight: 700; font-size: 13px;
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    z-index: 200; pointer-events: none; white-space: nowrap;
+  }
+  #xp-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Loading screen ── */
+  .loading-screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+  }
+  .spinner {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid var(--border2);
+    border-top-color: var(--green);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="lesson-header">
+    <button class="btn-close" id="btn-close" title="Back to dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+    <div class="review-count-badge" id="count-badge">0 / 0</div>
+  </header>
+
+  <div class="lesson-info-bar">
+    <span class="lesson-tag">🔁 Review Session</span>
+    <span class="lesson-phase-tag" id="phase-tag">Mistakes</span>
+  </div>
+
+  <div id="step-area" class="step-wrap"></div>
+  <div class="bottom-area" id="bottom-area"></div>
+</div>
+
+<!-- Ad gate overlay -->
+<div class="overlay" id="ad-overlay">
+  <div class="overlay-card">
+    <div class="overlay-icon">📺</div>
+    <div class="overlay-title" id="ad-title">Watch an Ad</div>
+    <div class="overlay-sub" id="ad-sub">Watch a short ad to unlock this review session.</div>
+    <div class="ad-bar-wrap" id="ad-bar-wrap" style="display:none">
+      <div class="ad-bar" id="ad-bar"></div>
+    </div>
+    <div class="ad-label" id="ad-label"></div>
+    <div class="overlay-actions" id="ad-actions"></div>
+  </div>
+</div>
+
+<!-- Limit reached overlay -->
+<div class="overlay" id="limit-overlay">
+  <div class="overlay-card">
+    <div class="overlay-icon">⏰</div>
+    <div class="overlay-title">Come Back Tomorrow</div>
+    <div class="overlay-sub">You've used all 3 review sessions for today. Keep practicing tomorrow!</div>
+    <div class="overlay-actions">
+      <button class="btn-primary" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<div id="xp-toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function stripTones(s) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[āáǎà]/g,"a").replace(/[ēéěè]/g,"e").replace(/[īíǐì]/g,"i")
+    .replace(/[ōóǒò]/g,"o").replace(/[ūúǔùǖǘǚǜ]/g,"u")
+    .replace(/\s+/g," ").trim().toLowerCase();
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let _userId    = null;
+let steps      = [];
+let currentStep = 0;
+let sessionCorrect = 0;
+let sessionWrong   = 0;
+let answered   = false;
+let matchState = null;
+let adTimer    = null;
+
+function key(name) { return `${name}_${_userId}`; }
+
+const stepArea   = document.getElementById("step-area");
+const bottomArea = document.getElementById("bottom-area");
+const progressBar = document.getElementById("progress-bar");
+const countBadge  = document.getElementById("count-badge");
+
+document.getElementById("btn-close").onclick = () => {
+  if (confirm("Leave review? Your progress will be lost.")) window.location.href = "dashboard.html";
+};
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+async function init() {
+  showLoading();
+
+  // 1. Get userId
+  try {
+    const { data } = await window._supabaseClient.auth.getUser();
+    _userId = data.user.id;
+  } catch(e) {
+    console.warn("Supabase user not found, using anonymous.", e);
+    _userId = "anonymous";
+  }
+
+  // 2. Check daily limit
+  const today    = new Date().toDateString();
+  const lastDate = localStorage.getItem(key("review_date"));
+  let count = Number(localStorage.getItem(key("review_count"))) || 0;
+
+  if (lastDate !== today) {
+    count = 0;
+    localStorage.setItem(key("review_date"),  today);
+    localStorage.setItem(key("review_count"), "0");
+  }
+
+  if (count >= 4) {
+    document.getElementById("limit-overlay").classList.add("show");
+    showLoading(false);
+    return;
+  }
+
+  // 3. Get mistakes
+  const raw = JSON.parse(localStorage.getItem(key("mistakes")) || "[]");
+
+  if (raw.length === 0) {
+    showEmpty();
+    return;
+  }
+
+  // 4. Gate: first session free, then require ad (max 3 ad sessions)
+  if (count >= 1) {
+    const adSessions = count - 1; // sessions after the free one
+    if (adSessions >= 3) {
+      document.getElementById("limit-overlay").classList.add("show");
+      showLoading(false);
+      return;
+    }
+    showAdGate(count, () => startReview(raw, count));
+    return;
+  }
+
+  startReview(raw, count);
+}
+
+function startReview(raw, count) {
+  // Increment count and save
+  localStorage.setItem(key("review_count"), String(count + 1));
+
+  // Build exercises from unique mistakes (dedupe by correct answer)
+  const seen = new Set();
+  const unique = raw.filter(m => {
+    if (seen.has(m.correct)) return false;
+    seen.add(m.correct); return true;
+  });
+
+  // Generate varied exercises — never same type twice in a row
+  steps = buildExercises(unique.slice(-20)); // last 20 unique mistakes
+  currentStep    = 0;
+  sessionCorrect = 0;
+  sessionWrong   = 0;
+
+  updateBadge();
+  renderStep(0);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXERCISE BUILDER
+// ═══════════════════════════════════════════════════════════
+function buildExercises(mistakes) {
+  const exerciseTypes = ["mcq_from_correct", "mcq_identify", "typing"];
+  const pool = [];
+  let lastType = null;
+
+  mistakes.forEach((m, i) => {
+    // Pick a type different from the last
+    let available = exerciseTypes.filter(t => t !== lastType);
+    const type = rand(available);
+    lastType = type;
+
+    switch(type) {
+      case "mcq_from_correct":
+        pool.push(makeMCQ_WhatIsThis(m, mistakes));
+        break;
+      case "mcq_identify":
+        pool.push(makeMCQ_PickCorrect(m, mistakes));
+        break;
+      case "typing":
+        pool.push(makeTyping(m));
+        break;
+    }
+  });
+
+  // Add a matching round if >= 4 mistakes
+  if (mistakes.length >= 4) {
+    const matchWords = shuffle(mistakes).slice(0, 4);
+    pool.splice(Math.floor(pool.length / 2), 0, makeMatching(matchWords));
+  }
+
+  return pool;
+}
+
+// MCQ: "What does X mean?"
+function makeMCQ_WhatIsThis(m, allMistakes) {
+  const distractors = shuffle(allMistakes.filter(x => x.correct !== m.correct))
+    .slice(0, 3).map(x => x.correct);
+  while (distractors.length < 3) {
+    const fallback = ["Hello", "Goodbye", "Water", "School", "One", "To eat", "I / Me", "Good", "House", "To go"];
+    const fb = rand(fallback);
+    if (!distractors.includes(fb) && fb !== m.correct) distractors.push(fb);
+  }
+  return {
+    type: "mcq",
+    question: `What does <span class='q-word'>${m.correct}</span> mean?`,
+    options: shuffle([m.userAnswer || m.correct, ...distractors.slice(0,3)].filter((v,i,a) => a.indexOf(v) === i)).slice(0,4),
+    correct: m.userAnswer || m.correct,
+    tip: `The correct answer was: <strong>${m.correct}</strong>`,
+    mistake: m
+  };
+}
+
+// MCQ: "Which one is correct?"
+function makeMCQ_PickCorrect(m, allMistakes) {
+  const distractors = shuffle(allMistakes.filter(x => x.correct !== m.correct))
+    .slice(0, 3).map(x => x.correct);
+  while (distractors.length < 3) {
+    const fallback = ["nǐ hǎo","zài jiàn","xiè xie","wǒ","tā","hǎo","qù","lái","zài","chī"];
+    const fb = rand(fallback);
+    if (!distractors.includes(fb) && fb !== m.correct) distractors.push(fb);
+  }
+  return {
+    type: "mcq",
+    isChineseQ: true,
+    question: `You answered incorrectly before.<br>The correct answer is:`,
+    subQuestion: `<span class='q-word'>${m.correct}</span>`,
+    options: shuffle([m.correct, ...distractors.slice(0,3)]),
+    correct: m.correct,
+    tip: `Remember: <strong>${m.correct}</strong> was the right answer.`,
+    mistake: m
+  };
+}
+
+// Typing exercise
+function makeTyping(m) {
+  return {
+    type: "typing",
+    prompt: `Type the correct answer:`,
+    subPrompt: `You previously answered this incorrectly.`,
+    correct: m.correct.toLowerCase().trim(),
+    correctDisplay: m.correct,
+    tip: `Correct answer: <strong>${m.correct}</strong>`,
+    mistake: m
+  };
+}
+
+// Matching exercise
+function makeMatching(mistakes) {
+  return {
+    type: "matching",
+    pairs: mistakes.map(m => ({ left: m.correct, right: m.userAnswer || "?" }))
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER STEP
+// ═══════════════════════════════════════════════════════════
+function renderStep(idx) {
+  answered   = false;
+  matchState = null;
+  updateProgress(idx);
+  updateBadge(idx);
+
+  const old = stepArea.querySelector(".step-visible");
+  if (old) {
+    old.classList.remove("step-visible");
+    old.classList.add("step-exit");
+    setTimeout(() => old.remove(), 280);
+  }
+
+  const step = steps[idx];
+  if (!step) return showComplete();
+
+  const wrap = document.createElement("div");
+  wrap.className = "step-visible";
+  wrap.style.display = "contents";
+
+  if (step.type === "mcq")      buildMCQ(wrap, step);
+  else if (step.type === "typing")   buildTyping(wrap, step);
+  else if (step.type === "matching") buildMatching(wrap, step);
+
+  stepArea.appendChild(wrap);
+  renderBottom(step);
+}
+
+function updateProgress(idx = currentStep) {
+  const pct = steps.length ? ((idx) / steps.length) * 100 : 0;
+  progressBar.style.width = Math.min(pct, 100) + "%";
+}
+
+function updateBadge(idx = currentStep) {
+  countBadge.textContent = `${idx} / ${steps.length}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MCQ
+// ═══════════════════════════════════════════════════════════
+function buildMCQ(wrap, step) {
+  // Review badge
+  const badge = document.createElement("div");
+  badge.className = "review-badge";
+  badge.textContent = "🔁 Review Mistake";
+  wrap.appendChild(badge);
+
+  // Question card
+  const card = document.createElement("div");
+  card.className = "question-card";
+  card.innerHTML = `
+    <div class="q-label">Question</div>
+    <div class="q-text">${step.question}</div>
+    ${step.subQuestion ? `<div style="margin-top:10px;font-size:clamp(22px,6vw,32px);font-family:'Noto Sans SC',sans-serif;font-weight:700;color:var(--red)">${step.subQuestion}</div>` : ""}
+  `;
+  wrap.appendChild(card);
+
+  // Options
+  const grid = document.createElement("div");
+  const isChinese = step.isChineseQ;
+  grid.className = "options-grid" + (step.options.some(o => o.length > 12) ? " single-col" : "");
+
+  step.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn" + (isChinese ? " chinese-option" : "");
+    btn.textContent = opt;
+    btn.onclick = () => {
+      if (answered) return;
+      answered = true;
+      const isCorrect = opt === step.correct;
+      if (isCorrect) sessionCorrect++; else sessionWrong++;
+      // Mark all buttons
+      grid.querySelectorAll(".option-btn").forEach(b => {
+        b.disabled = true;
+        if (b.textContent === step.correct) b.classList.add("correct");
+        else if (b === btn && !isCorrect) b.classList.add("wrong");
+      });
+      showFeedback(wrap, isCorrect, step.tip);
+      renderBottom(step, true);
+    };
+    grid.appendChild(btn);
+  });
+  wrap.appendChild(grid);
+
+  // Feedback placeholder
+  const fb = document.createElement("div");
+  fb.className = "feedback-banner";
+  fb.id = "feedback-" + Date.now();
+  wrap.appendChild(fb);
+  wrap._feedbackEl = fb;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TYPING
+// ═══════════════════════════════════════════════════════════
+function buildTyping(wrap, step) {
+  const badge = document.createElement("div");
+  badge.className = "review-badge";
+  badge.textContent = "🔁 Review Mistake";
+  wrap.appendChild(badge);
+
+  const card = document.createElement("div");
+  card.className = "question-card";
+  card.innerHTML = `
+    <div class="q-label">Recall</div>
+    <div class="q-text">${step.prompt}</div>
+    <div class="q-hint">${step.subPrompt}</div>
+  `;
+  wrap.appendChild(card);
+
+  const inputWrap = document.createElement("div");
+  inputWrap.className = "typing-input-wrap";
+
+  const input = document.createElement("input");
+  input.className = "typing-input";
+  input.type = "text";
+  input.placeholder = "Type your answer…";
+  input.autocomplete = "off";
+  input.autocorrect = "off";
+  input.spellcheck = false;
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !answered) submitTyping(wrap, step, input);
+  });
+  input.addEventListener("input", () => {
+    if (!answered) renderBottom(step, false, true);
+  });
+
+  const hint = document.createElement("div");
+  hint.className = "typing-hint";
+  hint.textContent = "Press Enter or tap Check Answer";
+
+  inputWrap.appendChild(input);
+  inputWrap.appendChild(hint);
+  wrap.appendChild(inputWrap);
+
+  const fb = document.createElement("div");
+  fb.className = "feedback-banner";
+  wrap.appendChild(fb);
+  wrap._feedbackEl = fb;
+  wrap._input = input;
+}
+
+function submitTyping(wrap, step, input) {
+  if (answered) return;
+  const val = input.value.trim().toLowerCase();
+  if (!val) return;
+  answered = true;
+
+  const isCorrect = val === step.correct || stripTones(val) === stripTones(step.correct);
+  if (isCorrect) {
+    sessionCorrect++;
+    input.classList.add("correct-input");
+  } else {
+    sessionWrong++;
+    input.classList.add("wrong-input");
+  }
+  input.disabled = true;
+  showFeedback(wrap, isCorrect, step.tip);
+  renderBottom(step, true);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MATCHING
+// ═══════════════════════════════════════════════════════════
+function buildMatching(wrap, step) {
+  const badge = document.createElement("div");
+  badge.className = "review-badge";
+  badge.textContent = "🔁 Match the Pairs";
+  wrap.appendChild(badge);
+
+  const titleCard = document.createElement("div");
+  titleCard.className = "question-card";
+  titleCard.innerHTML = `<div class="q-label">Matching</div><div class="q-text">Match each answer to what you previously got wrong.</div>`;
+  wrap.appendChild(titleCard);
+
+  const pairs  = shuffle(step.pairs);
+  const lefts  = shuffle(pairs.map(p => p.left));
+  const rights = shuffle(pairs.map(p => p.right));
+
+  matchState = { pairs, selected: null, matched: new Set(), errors: 0 };
+
+  const colLabels = document.createElement("div");
+  colLabels.className = "match-grid";
+  colLabels.innerHTML = `<div class="match-col-label">Correct</div><div class="match-col-label">Your Answer</div>`;
+  wrap.appendChild(colLabels);
+
+  const grid = document.createElement("div");
+  grid.className = "match-grid";
+
+  const makeItem = (text, side, isLeft) => {
+    const el = document.createElement("div");
+    el.className = "match-item" + (isLeft ? "" : "");
+    el.textContent = text;
+    el.dataset.val  = text;
+    el.dataset.side = side;
+    el.onclick = () => handleMatchClick(el, wrap, step);
+    grid.appendChild(el);
+    return el;
+  };
+
+  lefts.forEach(l  => makeItem(l, "left",  true));
+  rights.forEach(r => makeItem(r, "right", false));
+
+  wrap.appendChild(grid);
+  wrap._matchGrid = grid;
+
+  const fb = document.createElement("div");
+  fb.className = "feedback-banner";
+  wrap.appendChild(fb);
+  wrap._feedbackEl = fb;
+
+  renderBottom(step, false);
+}
+
+function handleMatchClick(el, wrap, step) {
+  if (!matchState || el.classList.contains("matched") || el.classList.contains("disabled-match")) return;
+
+  const ms = matchState;
+
+  if (!ms.selected) {
+    // First click — select
+    wrap._matchGrid.querySelectorAll(".match-item").forEach(i => i.classList.remove("selected"));
+    el.classList.add("selected");
+    ms.selected = el;
+    return;
+  }
+
+  // Second click — must be opposite side
+  if (ms.selected.dataset.side === el.dataset.side) {
+    wrap._matchGrid.querySelectorAll(".match-item").forEach(i => i.classList.remove("selected"));
+    el.classList.add("selected");
+    ms.selected = el;
+    return;
+  }
+
+  const leftVal  = ms.selected.dataset.side === "left" ? ms.selected.dataset.val : el.dataset.val;
+  const rightVal = ms.selected.dataset.side === "right" ? ms.selected.dataset.val : el.dataset.val;
+
+  const isMatch = ms.pairs.some(p => p.left === leftVal && p.right === rightVal);
+
+  if (isMatch) {
+    [ms.selected, el].forEach(e => {
+      e.classList.remove("selected");
+      e.classList.add("matched");
+    });
+    ms.matched.add(leftVal);
+
+    if (ms.matched.size === ms.pairs.length) {
+      sessionCorrect++;
+      showFeedback(wrap, true, "All pairs matched! 🎉");
+      answered = true;
+      renderBottom(step, true);
+    }
+  } else {
+    ms.errors++;
+    sessionWrong++;
+    [ms.selected, el].forEach(e => {
+      e.classList.remove("selected");
+      e.classList.add("wrong-shake");
+      setTimeout(() => e.classList.remove("wrong-shake"), 420);
+    });
+    if (ms.errors >= 2) {
+      showFeedback(wrap, false, "Keep trying — match the pairs!");
+    }
+  }
+  ms.selected = null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEEDBACK
+// ═══════════════════════════════════════════════════════════
+function showFeedback(wrap, isCorrect, tip) {
+  const fb = wrap._feedbackEl;
+  if (!fb) return;
+  fb.className = "feedback-banner " + (isCorrect ? "correct-fb" : "wrong-fb");
+  fb.innerHTML = `
+    <div class="feedback-icon">${isCorrect ? "✅" : "❌"}</div>
+    <div class="feedback-text">
+      <div class="fb-main">${isCorrect ? rand(["Perfect! 🔥", "Nice! You got it!", "Excellent! 🎯", "Well done!", "💪 Nailed it!"]) : "Not quite!"}</div>
+      <span class="fb-tip">${tip}</span>
+    </div>
+  `;
+  requestAnimationFrame(() => fb.classList.add("show"));
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOTTOM BUTTONS
+// ═══════════════════════════════════════════════════════════
+function renderBottom(step, isAnswered = false, isTyping = false) {
+  bottomArea.innerHTML = "";
+
+  if (step.type === "matching" && !isAnswered) return; // no button until matched
+
+  if (isAnswered || step.type === "matching") {
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    const isLast = currentStep >= steps.length - 1;
+    btn.textContent = isLast ? "See Results 🎉" : "Continue →";
+    btn.onclick = () => { currentStep++; renderStep(currentStep); };
+    bottomArea.appendChild(btn);
+  } else if (step.type === "typing" && isTyping) {
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.textContent = "Check Answer";
+    btn.onclick = () => {
+      const wrap = stepArea.querySelector(".step-visible");
+      if (wrap && wrap._input) submitTyping(wrap, step, wrap._input);
+    };
+    bottomArea.appendChild(btn);
+  } else if (step.type === "typing") {
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.disabled = true;
+    btn.textContent = "Type your answer";
+    bottomArea.appendChild(btn);
+  } else {
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.disabled = true;
+    btn.textContent = "Select an answer";
+    bottomArea.appendChild(btn);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// COMPLETE SCREEN
+// ═══════════════════════════════════════════════════════════
+function showComplete() {
+  progressBar.style.width = "100%";
+  stepArea.innerHTML = "";
+  bottomArea.innerHTML = "";
+
+  const total    = sessionCorrect + sessionWrong;
+  const accuracy = total > 0 ? Math.round((sessionCorrect / total) * 100) : 100;
+  const earnedXP = Math.max(5, sessionCorrect * 3);
+
+  // Save XP
+  const currentXP = parseInt(localStorage.getItem(key("xp")) || "0", 10);
+  localStorage.setItem(key("xp"), currentXP + earnedXP);
+
+  stepArea.innerHTML = `
+    <div class="complete-screen">
+      <div class="complete-emoji">🏆</div>
+      <div class="complete-title">Review Complete!</div>
+      <div class="complete-sub">You practiced ${steps.length} mistake${steps.length !== 1 ? "s" : ""}.<br>Keep it up — repetition is the key!</div>
+      <div class="xp-pill">+${earnedXP} XP</div>
+      <div class="complete-stats">
+        <div class="stat-box"><div class="stat-val">${sessionCorrect}</div><div class="stat-label">Correct</div></div>
+        <div class="stat-box"><div class="stat-val">${sessionWrong}</div><div class="stat-label">Mistakes</div></div>
+        <div class="stat-box"><div class="stat-val">${accuracy}%</div><div class="stat-label">Accuracy</div></div>
+      </div>
+      <div class="complete-actions" style="width:100%">
+        <button class="btn-primary" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => showToast(`+${earnedXP} XP 🔥`), 600);
+}
+
+// ═══════════════════════════════════════════════════════════
+// AD GATE
+// ═══════════════════════════════════════════════════════════
+function showAdGate(count, onComplete) {
+  const adSessions = count; // how many ad sessions used (count >= 1 means first is done)
+  const remaining  = 3 - (count - 1);
+
+  const overlay = document.getElementById("ad-overlay");
+  document.getElementById("ad-title").textContent = `Watch an Ad (${remaining} left today)`;
+  document.getElementById("ad-sub").textContent   = "Watch a short ad to unlock this review session.";
+  document.getElementById("ad-bar-wrap").style.display = "none";
+  document.getElementById("ad-label").textContent = "";
+
+  const actions = document.getElementById("ad-actions");
+  actions.innerHTML = "";
+
+  const watchBtn = document.createElement("button");
+  watchBtn.className = "btn-ad";
+  watchBtn.textContent = "📺 Watch Ad to Continue";
+  watchBtn.onclick = () => runAd(overlay, onComplete);
+  actions.appendChild(watchBtn);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn-secondary";
+  closeBtn.textContent = "← Back to Dashboard";
+  closeBtn.onclick = () => { window.location.href = "dashboard.html"; };
+  actions.appendChild(closeBtn);
+
+  overlay.classList.add("show");
+  showLoading(false);
+}
+
+function runAd(overlay, onComplete) {
+  document.getElementById("ad-bar-wrap").style.display = "block";
+  document.getElementById("ad-bar").style.width = "0%";
+  document.getElementById("ad-label").textContent = "Ad loading…";
+  document.getElementById("ad-actions").innerHTML =
+    `<button class="btn-ad" disabled style="opacity:.5;cursor:not-allowed">Watching… (5s)</button>`;
+
+  let elapsed = 0;
+  const duration = 5000, interval = 80;
+  clearInterval(adTimer);
+  adTimer = setInterval(() => {
+    elapsed += interval;
+    const pct  = Math.min(100, Math.round((elapsed / duration) * 100));
+    document.getElementById("ad-bar").style.width = pct + "%";
+    const remaining = Math.ceil((duration - elapsed) / 1000);
+    const btn = document.getElementById("ad-actions").querySelector("button");
+
+    if (elapsed >= duration) {
+      clearInterval(adTimer);
+      document.getElementById("ad-label").textContent = "Ad finished!";
+      if (btn) {
+        btn.disabled   = false;
+        btn.style.opacity = "1";
+        btn.style.cursor  = "pointer";
+        btn.textContent   = "Continue →";
+        btn.onclick = () => {
+          overlay.classList.remove("show");
+          onComplete();
+        };
+      }
+    } else {
+      if (btn) btn.textContent = `Watching… (${remaining}s)`;
+      document.getElementById("ad-label").textContent = `Please wait ${remaining}s…`;
+    }
+  }, interval);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EMPTY STATE
+// ═══════════════════════════════════════════════════════════
+function showEmpty() {
+  // Hide header elements
+  document.getElementById("progress-bar").parentElement.style.display = "none";
+  document.getElementById("count-badge").style.display = "none";
+
+  stepArea.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-emoji">🎉</div>
+      <div class="empty-title">You're doing great!</div>
+      <div class="empty-sub">No mistakes yet. Keep practicing lessons to build your review queue.</div>
+      <div class="empty-actions">
+        <button class="btn-primary" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOADING
+// ═══════════════════════════════════════════════════════════
+function showLoading(show = true) {
+  if (show) {
+    stepArea.innerHTML = `
+      <div class="loading-screen">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading your mistakes…</div>
+      </div>
+    `;
+  } else {
+    stepArea.innerHTML = "";
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("xp-toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+// ── Boot
+init();
+</script>
+</body>
+</html>
