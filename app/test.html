@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maobai – Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window._supabaseClient = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
+</script>
+<style>
+  :root {
+    --bg:          #0f1923;
+    --card:        #162235;
+    --card2:       #1c2d44;
+    --border:      #1f3550;
+    --border2:     #243d57;
+    --green:       #4ade80;
+    --green-dim:   #22c55e;
+    --green-glow:  rgba(74,222,128,.28);
+    --green-muted: rgba(74,222,128,.10);
+    --red:         #f87171;
+    --red-soft:    rgba(248,113,113,.10);
+    --yellow:      #fbbf24;
+    --yellow-soft: rgba(251,191,36,.10);
+    --blue:        #60a5fa;
+    --blue-soft:   rgba(96,165,250,.10);
+    --purple:      #a78bfa;
+    --purple-soft: rgba(167,139,250,.10);
+    --text:        #e8f0f8;
+    --muted:       #6b8aaa;
+    --soft:        #4a6580;
+    --radius:      16px;
+    --t:           0.28s cubic-bezier(.4,0,.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  #app {
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    max-width: 520px; margin: 0 auto;
+    padding: 0 0 48px;
+  }
+
+  /* ── Header ── */
+  .test-header {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg);
+    padding: 16px 20px 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .btn-close {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: none; background: var(--card); color: var(--muted);
+    cursor: pointer; display: grid; place-items: center; flex-shrink: 0;
+    transition: background var(--t), color var(--t);
+  }
+  .btn-close:hover { background: var(--card2); color: var(--text); }
+  .btn-close svg { width: 16px; height: 16px; }
+  .progress-bar-wrap {
+    flex: 1; height: 10px; background: var(--card);
+    border-radius: 999px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 999px; width: 0%;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 8px rgba(74,222,128,.45);
+  }
+  .progress-bar-fill.placement { background: linear-gradient(90deg, var(--purple), #c084fc); box-shadow: 0 0 8px rgba(167,139,250,.45); }
+  .progress-bar-fill.final     { background: linear-gradient(90deg, var(--green-dim), var(--green)); }
+  .q-counter {
+    border-radius: 999px; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; white-space: nowrap; flex-shrink: 0;
+  }
+  .q-counter.placement { background: var(--purple-soft); border: 1px solid rgba(167,139,250,.25); color: var(--purple); }
+  .q-counter.final     { background: var(--green-muted); border: 1px solid rgba(74,222,128,.25);  color: var(--green); }
+
+  /* ── Info bar ── */
+  .test-info-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .mode-tag {
+    border-radius: 999px; padding: 4px 10px;
+  }
+  .mode-tag.placement { background: var(--purple-soft); border: 1px solid rgba(167,139,250,.2); color: var(--purple); }
+  .mode-tag.final     { background: var(--yellow-soft); border: 1px solid rgba(251,191,36,.2);  color: var(--yellow); }
+  .hsk-tag {
+    background: var(--blue-soft); border: 1px solid rgba(96,165,250,.2);
+    border-radius: 999px; padding: 4px 10px; color: var(--blue);
+  }
+
+  /* ── Step area ── */
+  .step-wrap { flex: 1; padding: 4px 20px 0; display: flex; flex-direction: column; gap: 18px; }
+  @keyframes slideIn  { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes slideOut { from { opacity: 1; transform: translateX(0);    } to { opacity: 0; transform: translateX(-36px); } }
+  .step-visible { animation: slideIn  0.36s cubic-bezier(.4,0,.2,1) forwards; }
+  .step-exit    { animation: slideOut 0.28s cubic-bezier(.4,0,.2,1) forwards; }
+
+  /* ── Question card ── */
+  .question-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 22px;
+    position: relative; overflow: hidden;
+  }
+  .question-card.placement::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(167,139,250,.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .question-card.final::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(251,191,36,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .q-hsk-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 10px;
+    display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 999px; padding: 3px 10px;
+  }
+  .q-hsk-label.lv1 { background: rgba(74,222,128,.1);  color: var(--green);  border: 1px solid rgba(74,222,128,.2); }
+  .q-hsk-label.lv2 { background: rgba(96,165,250,.1);  color: var(--blue);   border: 1px solid rgba(96,165,250,.2); }
+  .q-hsk-label.lv3 { background: rgba(251,191,36,.1);  color: var(--yellow); border: 1px solid rgba(251,191,36,.2); }
+  .q-hsk-label.lv4 { background: rgba(248,113,113,.1); color: var(--red);    border: 1px solid rgba(248,113,113,.2); }
+  .q-hsk-label.lv5 { background: rgba(167,139,250,.1); color: var(--purple); border: 1px solid rgba(167,139,250,.2); }
+  .q-hsk-label.lv6 { background: rgba(251,191,36,.08); color: #fb923c;       border: 1px solid rgba(251,191,36,.2); }
+  .q-text {
+    font-size: clamp(15px, 4vw, 18px); font-weight: 600;
+    line-height: 1.5; color: var(--text);
+  }
+  .q-word { font-family: 'Noto Sans SC', sans-serif; font-size: 1.2em; color: var(--yellow); }
+  .q-word.final { color: var(--yellow); }
+  .q-word.placement { color: var(--purple); }
+
+  /* ── Options ── */
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .options-grid.single-col { grid-template-columns: 1fr; }
+  .option-btn {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 12px; padding: 16px 12px;
+    font-family: 'Sora', sans-serif; font-size: 14px;
+    font-weight: 500; color: var(--text); cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform 0.15s;
+    text-align: center; line-height: 1.3;
+  }
+  .option-btn.placement:hover:not(:disabled) { border-color: rgba(167,139,250,.5); background: var(--card2); transform: translateY(-1px); }
+  .option-btn.final:hover:not(:disabled)     { border-color: rgba(251,191,36,.5);  background: var(--card2); transform: translateY(-1px); }
+  .option-btn.correct  { border-color: var(--green);  background: rgba(74,222,128,.12); color: var(--green); }
+  .option-btn.wrong    { border-color: var(--red);    background: var(--red-soft);      color: var(--red); }
+  .option-btn:disabled { cursor: not-allowed; }
+  .option-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; }
+
+  /* ── Feedback ── */
+  .feedback-banner {
+    border-radius: 12px; padding: 14px 18px;
+    font-size: 14px; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 10px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .feedback-banner.show { opacity: 1; transform: translateY(0); }
+  .feedback-banner.correct-fb { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: var(--green); }
+  .feedback-banner.wrong-fb   { background: var(--red-soft);      border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+  .feedback-icon { font-size: 20px; flex-shrink: 0; margin-top: -1px; }
+  .fb-main { font-weight: 600; }
+  .fb-tip  { display: block; font-size: 12px; opacity: 0.8; margin-top: 4px; font-weight: 400; }
+
+  /* ── Bottom ── */
+  .bottom-area { padding: 20px 20px 0; display: flex; flex-direction: column; gap: 10px; }
+  .btn-primary {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: var(--green); color: #0a1a0f;
+    font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.02em;
+    transition: background var(--t), transform 0.15s, box-shadow var(--t);
+    box-shadow: 0 4px 16px rgba(74,222,128,.25);
+  }
+  .btn-primary:hover:not(:disabled) { background: #6bef9a; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(74,222,128,.35); }
+  .btn-primary:active  { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+  .btn-secondary {
+    width: 100%; padding: 14px; border-radius: 14px;
+    border: 2px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'Sora', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: border-color var(--t), color var(--t);
+  }
+  .btn-secondary:hover { border-color: var(--green-dim); color: var(--text); }
+
+  /* ── Intro screen ── */
+  .intro-screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center; gap: 20px;
+    animation: fadeUp 0.4s ease;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  .intro-emoji { font-size: 68px; animation: bounce 0.6s ease 0.1s both; }
+  @keyframes bounce { 0% { transform: scale(0); opacity:0; } 60% { transform:scale(1.2); opacity:1; } 100% { transform:scale(1); } }
+  .intro-title { font-size: 26px; font-weight: 700; color: var(--text); }
+  .intro-sub   { font-size: 14px; color: var(--muted); line-height: 1.7; max-width: 300px; }
+  .intro-cards {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    width: 100%; max-width: 340px; margin-top: 4px;
+  }
+  .intro-stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 10px; text-align: center;
+  }
+  .intro-stat-val   { font-size: 22px; font-weight: 700; color: var(--text); }
+  .intro-stat-label { font-size: 11px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .intro-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 340px; }
+
+  /* ── Result screen ── */
+  .result-screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 36px 24px; text-align: center; gap: 20px;
+    animation: slideIn 0.4s ease;
+  }
+  .result-emoji  { font-size: 64px; animation: bounce 0.6s ease 0.15s both; }
+  .result-title  { font-size: 26px; font-weight: 700; color: var(--text); }
+  .result-sub    { font-size: 14px; color: var(--muted); line-height: 1.6; margin-top: -10px; max-width: 300px; }
+
+  /* Score ring */
+  .score-ring-wrap { position: relative; width: 130px; height: 130px; }
+  .score-ring-wrap svg { transform: rotate(-90deg); }
+  .score-ring-track { fill: none; stroke: var(--card2); stroke-width: 8; }
+  .score-ring-fill  { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+  .score-ring-fill.pass { stroke: var(--green); }
+  .score-ring-fill.fail { stroke: var(--red); }
+  .score-ring-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .score-pct   { font-size: 28px; font-weight: 700; color: var(--text); }
+  .score-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Level badge (placement result) */
+  .level-badge-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .level-badge {
+    width: 80px; height: 80px; border-radius: 20px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 2.5px solid rgba(74,222,128,.3);
+    background: var(--green-muted);
+    animation: bounce 0.6s ease 0.3s both;
+  }
+  .level-badge-tag { font-size: 9px; font-weight: 900; letter-spacing: 0.6px; color: rgba(74,222,128,.7); }
+  .level-badge-num { font-size: 30px; font-weight: 700; color: var(--green); line-height: 1.1; }
+  .level-badge-desc { font-size: 13px; color: var(--muted); }
+
+  /* Pass / fail pill */
+  .result-pill {
+    border-radius: 999px; padding: 10px 28px;
+    font-size: 16px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .result-pill.pass { background: rgba(74,222,128,.14); border: 1px solid rgba(74,222,128,.3); color: var(--green); }
+  .result-pill.fail { background: var(--red-soft);     border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+
+  .result-stats {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    gap: 10px; width: 100%;
+  }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; text-align: center; }
+  .stat-val   { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .stat-label { font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .result-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+  /* ── Loading ── */
+  .loading-screen { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+  .spinner { width:40px; height:40px; border-radius:50%; border:3px solid var(--border2); border-top-color:var(--green); animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-size:14px; color:var(--muted); }
+
+  /* ── Toast ── */
+  #toast { position:fixed; top:68px; left:50%; transform:translateX(-50%) translateY(-16px); background:var(--green); color:#0a1a0f; padding:7px 18px; border-radius:999px; font-weight:700; font-size:13px; opacity:0; transition:opacity .3s,transform .3s; z-index:200; pointer-events:none; white-space:nowrap; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="test-header">
+    <button class="btn-close" id="btn-close" title="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+    <div class="q-counter" id="q-counter">0 / 0</div>
+  </header>
+
+  <div class="test-info-bar" id="test-info-bar">
+    <span class="mode-tag" id="mode-tag">Test</span>
+    <span class="hsk-tag"  id="hsk-tag">HSK</span>
+  </div>
+
+  <div id="step-area"  class="step-wrap"></div>
+  <div id="bottom-area" class="bottom-area"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// WORD BANK — HSK 1–6 (5 words per level for questions)
+// ═══════════════════════════════════════════════════════════
+const WORD_BANK = {
+  1: [
+    { hanzi:"你好",   pinyin:"nǐ hǎo",      meaning:"Hello" },
+    { hanzi:"再见",   pinyin:"zài jiàn",    meaning:"Goodbye" },
+    { hanzi:"谢谢",   pinyin:"xiè xie",     meaning:"Thank you" },
+    { hanzi:"我",     pinyin:"wǒ",          meaning:"I / Me" },
+    { hanzi:"你",     pinyin:"nǐ",          meaning:"You" },
+    { hanzi:"他",     pinyin:"tā",          meaning:"He / Him" },
+    { hanzi:"是",     pinyin:"shì",         meaning:"To be / Is" },
+    { hanzi:"不",     pinyin:"bù",          meaning:"No / Not" },
+    { hanzi:"有",     pinyin:"yǒu",         meaning:"To have" },
+    { hanzi:"好",     pinyin:"hǎo",         meaning:"Good" },
+    { hanzi:"吃",     pinyin:"chī",         meaning:"To eat" },
+    { hanzi:"喝",     pinyin:"hē",          meaning:"To drink" },
+    { hanzi:"水",     pinyin:"shuǐ",        meaning:"Water" },
+    { hanzi:"去",     pinyin:"qù",          meaning:"To go" },
+    { hanzi:"来",     pinyin:"lái",         meaning:"To come" },
+    { hanzi:"家",     pinyin:"jiā",         meaning:"Home / Family" },
+    { hanzi:"学校",   pinyin:"xuéxiào",     meaning:"School" },
+    { hanzi:"一",     pinyin:"yī",          meaning:"One" },
+    { hanzi:"两",     pinyin:"liǎng",       meaning:"Two" },
+    { hanzi:"今天",   pinyin:"jīn tiān",    meaning:"Today" },
+  ],
+  2: [
+    { hanzi:"打电话", pinyin:"dǎ diànhuà",  meaning:"To make a phone call" },
+    { hanzi:"看书",   pinyin:"kàn shū",     meaning:"To read a book" },
+    { hanzi:"运动",   pinyin:"yùn dòng",    meaning:"Sports / Exercise" },
+    { hanzi:"天气",   pinyin:"tiān qì",     meaning:"Weather" },
+    { hanzi:"身体",   pinyin:"shēn tǐ",     meaning:"Body / Health" },
+    { hanzi:"颜色",   pinyin:"yán sè",      meaning:"Color" },
+    { hanzi:"白",     pinyin:"bái",         meaning:"White" },
+    { hanzi:"黑",     pinyin:"hēi",         meaning:"Black" },
+    { hanzi:"红",     pinyin:"hóng",        meaning:"Red" },
+    { hanzi:"高兴",   pinyin:"gāo xìng",    meaning:"Happy" },
+    { hanzi:"觉得",   pinyin:"jué de",      meaning:"To feel / think" },
+    { hanzi:"知道",   pinyin:"zhī dào",     meaning:"To know" },
+    { hanzi:"帮助",   pinyin:"bāng zhù",    meaning:"To help" },
+    { hanzi:"第一",   pinyin:"dì yī",       meaning:"First" },
+    { hanzi:"每",     pinyin:"měi",         meaning:"Every / Each" },
+    { hanzi:"从",     pinyin:"cóng",        meaning:"From" },
+    { hanzi:"离",     pinyin:"lí",          meaning:"Away from" },
+    { hanzi:"向",     pinyin:"xiàng",       meaning:"Toward" },
+    { hanzi:"旁边",   pinyin:"páng biān",   meaning:"Beside / Next to" },
+    { hanzi:"一起",   pinyin:"yī qǐ",       meaning:"Together" },
+  ],
+  3: [
+    { hanzi:"经济",   pinyin:"jīng jì",     meaning:"Economy" },
+    { hanzi:"文化",   pinyin:"wén huà",     meaning:"Culture" },
+    { hanzi:"环境",   pinyin:"huán jìng",   meaning:"Environment" },
+    { hanzi:"科学",   pinyin:"kē xué",      meaning:"Science" },
+    { hanzi:"历史",   pinyin:"lì shǐ",      meaning:"History" },
+    { hanzi:"哲学",   pinyin:"zhé xué",     meaning:"Philosophy" },
+    { hanzi:"发展",   pinyin:"fā zhǎn",     meaning:"Development" },
+    { hanzi:"影响",   pinyin:"yǐng xiǎng",  meaning:"Influence / Impact" },
+    { hanzi:"解决",   pinyin:"jiě jué",     meaning:"To solve / resolve" },
+    { hanzi:"讨论",   pinyin:"tǎo lùn",     meaning:"To discuss" },
+    { hanzi:"建议",   pinyin:"jiàn yì",     meaning:"Suggestion" },
+    { hanzi:"选择",   pinyin:"xuǎn zé",     meaning:"To choose" },
+    { hanzi:"方法",   pinyin:"fāng fǎ",     meaning:"Method / Way" },
+    { hanzi:"目的",   pinyin:"mù dì",       meaning:"Purpose / Goal" },
+    { hanzi:"结果",   pinyin:"jié guǒ",     meaning:"Result / Outcome" },
+    { hanzi:"表示",   pinyin:"biǎo shì",    meaning:"To express / indicate" },
+    { hanzi:"表现",   pinyin:"biǎo xiàn",   meaning:"Performance / Show" },
+    { hanzi:"同意",   pinyin:"tóng yì",     meaning:"To agree" },
+    { hanzi:"支持",   pinyin:"zhī chí",     meaning:"To support" },
+    { hanzi:"反对",   pinyin:"fǎn duì",     meaning:"To oppose" },
+  ],
+  4: [
+    { hanzi:"抽象",   pinyin:"chōu xiàng",  meaning:"Abstract" },
+    { hanzi:"具体",   pinyin:"jù tǐ",       meaning:"Concrete / Specific" },
+    { hanzi:"批评",   pinyin:"pī píng",     meaning:"To criticize" },
+    { hanzi:"赞扬",   pinyin:"zàn yáng",    meaning:"To praise" },
+    { hanzi:"妥协",   pinyin:"tuǒ xié",     meaning:"To compromise" },
+    { hanzi:"坚持",   pinyin:"jiān chí",    meaning:"To persist / insist" },
+    { hanzi:"矛盾",   pinyin:"máo dùn",     meaning:"Contradiction" },
+    { hanzi:"逻辑",   pinyin:"luó jí",      meaning:"Logic" },
+    { hanzi:"规律",   pinyin:"guī lǜ",      meaning:"Rule / Pattern" },
+    { hanzi:"现象",   pinyin:"xiàn xiàng",  meaning:"Phenomenon" },
+    { hanzi:"本质",   pinyin:"běn zhì",     meaning:"Essence / Nature" },
+    { hanzi:"趋势",   pinyin:"qū shì",      meaning:"Trend" },
+    { hanzi:"缺乏",   pinyin:"quē fá",      meaning:"To lack / be short of" },
+    { hanzi:"丰富",   pinyin:"fēng fù",     meaning:"Rich / Abundant" },
+    { hanzi:"复杂",   pinyin:"fù zá",       meaning:"Complex / Complicated" },
+    { hanzi:"简单",   pinyin:"jiǎn dān",    meaning:"Simple" },
+    { hanzi:"严格",   pinyin:"yán gé",      meaning:"Strict / Rigorous" },
+    { hanzi:"灵活",   pinyin:"líng huó",    meaning:"Flexible" },
+    { hanzi:"积极",   pinyin:"jī jí",       meaning:"Positive / Active" },
+    { hanzi:"消极",   pinyin:"xiāo jí",     meaning:"Negative / Passive" },
+  ],
+  5: [
+    { hanzi:"辩证",   pinyin:"biàn zhèng",  meaning:"Dialectical" },
+    { hanzi:"传承",   pinyin:"chuán chéng", meaning:"To pass down / inherit" },
+    { hanzi:"融合",   pinyin:"róng hé",     meaning:"Integration / Fusion" },
+    { hanzi:"演变",   pinyin:"yǎn biàn",    meaning:"Evolution / Change" },
+    { hanzi:"制约",   pinyin:"zhì yuē",     meaning:"To restrict / constrain" },
+    { hanzi:"突破",   pinyin:"tū pò",       meaning:"Breakthrough" },
+    { hanzi:"局限",   pinyin:"jú xiàn",     meaning:"Limitation / Restriction" },
+    { hanzi:"启示",   pinyin:"qǐ shì",      meaning:"Revelation / Enlightenment" },
+    { hanzi:"升华",   pinyin:"shēng huá",   meaning:"Sublimation / Elevation" },
+    { hanzi:"渗透",   pinyin:"shèn tòu",    meaning:"Penetration / Permeation" },
+    { hanzi:"折射",   pinyin:"zhé shè",     meaning:"Refraction / Reflection" },
+    { hanzi:"萦绕",   pinyin:"yíng rào",    meaning:"To linger / hover around" },
+    { hanzi:"凝聚",   pinyin:"níng jù",     meaning:"To condense / coalesce" },
+    { hanzi:"颠覆",   pinyin:"diān fù",     meaning:"To subvert / overturn" },
+    { hanzi:"蔓延",   pinyin:"màn yán",     meaning:"To spread / extend" },
+    { hanzi:"侵蚀",   pinyin:"qīn shí",     meaning:"To erode / corrode" },
+    { hanzi:"孕育",   pinyin:"yùn yù",      meaning:"To nurture / breed" },
+    { hanzi:"彰显",   pinyin:"zhāng xiǎn",  meaning:"To highlight / manifest" },
+    { hanzi:"阐述",   pinyin:"chǎn shù",    meaning:"To elaborate / expound" },
+    { hanzi:"诠释",   pinyin:"quán shì",    meaning:"To interpret / explain" },
+  ],
+  6: [
+    { hanzi:"斡旋",   pinyin:"wò xuán",     meaning:"Mediation / Intercession" },
+    { hanzi:"跌宕",   pinyin:"diē dàng",    meaning:"Ups and downs / Turbulent" },
+    { hanzi:"藩篱",   pinyin:"fān lí",      meaning:"Fence / Barrier" },
+    { hanzi:"斑驳",   pinyin:"bān bó",      meaning:"Mottled / Dappled" },
+    { hanzi:"邈远",   pinyin:"miǎo yuǎn",   meaning:"Far and remote" },
+    { hanzi:"煊赫",   pinyin:"xuān hè",     meaning:"Illustrious / Prominent" },
+    { hanzi:"氤氲",   pinyin:"yīn yūn",     meaning:"Misty / Hazy atmosphere" },
+    { hanzi:"踟蹰",   pinyin:"chí chú",     meaning:"To hesitate / linger" },
+    { hanzi:"皈依",   pinyin:"guī yī",      meaning:"To convert / take refuge" },
+    { hanzi:"隽永",   pinyin:"juàn yǒng",   meaning:"Meaningful and lasting" },
+    { hanzi:"韬略",   pinyin:"tāo lüè",     meaning:"Military strategy / Tactics" },
+    { hanzi:"淬炼",   pinyin:"cuì liàn",    meaning:"To temper / refine" },
+    { hanzi:"磅礴",   pinyin:"páng bó",     meaning:"Grand / Magnificent" },
+    { hanzi:"旖旎",   pinyin:"yǐ nǐ",       meaning:"Gentle and beautiful" },
+    { hanzi:"嗟叹",   pinyin:"jiē tàn",     meaning:"To sigh / lament" },
+    { hanzi:"蹉跎",   pinyin:"cuō tuó",     meaning:"To waste time / idle away" },
+    { hanzi:"悱恻",   pinyin:"fěi cè",      meaning:"Deeply moved / Sorrowful" },
+    { hanzi:"怆然",   pinyin:"chuàng rán",  meaning:"Grieved / Sorrowful" },
+    { hanzi:"澄澈",   pinyin:"chéng chè",   meaning:"Clear and transparent" },
+    { hanzi:"玲珑",   pinyin:"líng lóng",   meaning:"Delicate and exquisite" },
+  ]
+};
+
+const HSK_NAMES = { 1:"Beginner", 2:"Elementary", 3:"Intermediate", 4:"Upper-Int.", 5:"Advanced", 6:"Mastery" };
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function rand(arr)  { return arr[Math.floor(Math.random() * arr.length)]; }
+function pick(arr, n) { return shuffle(arr).slice(0, n); }
+function stripTones(s) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[āáǎà]/g,"a").replace(/[ēéěè]/g,"e").replace(/[īíǐì]/g,"i")
+    .replace(/[ōóǒò]/g,"o").replace(/[ūúǔùǖǘǚǜ]/g,"u")
+    .replace(/\s+/g," ").trim().toLowerCase();
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const params       = new URLSearchParams(window.location.search);
+const isPlacement  = params.get("placement") === "true";
+const hskLevel     = isPlacement ? null : parseInt(params.get("hsk") || params.get("level") || "1", 10);
+
+let _userId        = null;
+let questions      = [];
+let currentQ       = 0;
+let correct        = 0;
+let answered       = false;
+
+function key(name) { return `${name}_${_userId}`; }
+
+// DOM
+const stepArea   = document.getElementById("step-area");
+const bottomArea = document.getElementById("bottom-area");
+const progressBar = document.getElementById("progress-bar");
+const qCounter    = document.getElementById("q-counter");
+
+document.getElementById("btn-close").onclick = () => {
+  if (confirm("Leave the test? Your progress will be lost.")) window.location.href = "dashboard.html";
+};
+
+// ─── Mode styling
+const modeTag = document.getElementById("mode-tag");
+const hskTag  = document.getElementById("hsk-tag");
+const qbar    = document.getElementById("progress-bar");
+
+if (isPlacement) {
+  modeTag.className = "mode-tag placement";
+  modeTag.textContent = "🧭 Placement Test";
+  hskTag.textContent  = "HSK 1–6";
+  qbar.classList.add("placement");
+  qCounter.className  = "q-counter placement";
+} else {
+  modeTag.className = "mode-tag final";
+  modeTag.textContent = `🎓 Final HSK ${hskLevel} Test`;
+  hskTag.textContent  = `HSK ${hskLevel} · ${HSK_NAMES[hskLevel] || ""}`;
+  qbar.classList.add("final");
+  qCounter.className  = "q-counter final";
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+async function init() {
+  showLoading();
+
+  try {
+    const { data } = await window._supabaseClient.auth.getUser();
+    _userId = data.user.id;
+  } catch(e) {
+    console.warn("Supabase user not found, using anonymous.", e);
+    _userId = "anonymous";
+  }
+
+  if (isPlacement) {
+    questions = buildPlacementTest();
+  } else {
+    questions = buildFinalTest(hskLevel);
+  }
+
+  showIntro();
+}
+
+// ═══════════════════════════════════════════════════════════
+// QUESTION BUILDERS
+// ═══════════════════════════════════════════════════════════
+
+// 30 questions, 5 per HSK level, mixed types
+function buildPlacementTest() {
+  const qs = [];
+  for (let lvl = 1; lvl <= 6; lvl++) {
+    const pool = shuffle(WORD_BANK[lvl]);
+    pick(pool, 5).forEach(word => {
+      qs.push(makeQuestion(word, lvl, "placement"));
+    });
+  }
+  return qs; // ordered easy→hard for placement
+}
+
+// 20 questions from target level, varied types
+function buildFinalTest(lvl) {
+  const pool = shuffle(WORD_BANK[lvl] || WORD_BANK[1]);
+  const words = pool.slice(0, 20);
+  const allWords = Object.values(WORD_BANK).flat();
+  return words.map(w => makeQuestion(w, lvl, "final", allWords));
+}
+
+const Q_TYPES = ["mcq_meaning", "mcq_hanzi", "mcq_pinyin"];
+let _lastQType = null;
+
+function makeQuestion(word, level, mode, allWords) {
+  // Rotate types, never repeat same back-to-back
+  const available = Q_TYPES.filter(t => t !== _lastQType);
+  const type = rand(available);
+  _lastQType = type;
+
+  // Build distractors from ALL levels for placement, same level for final
+  const pool = allWords || Object.values(WORD_BANK).flat();
+  const others = shuffle(pool.filter(w => w.hanzi !== word.hanzi));
+
+  let q;
+  switch(type) {
+    case "mcq_meaning": {
+      const opts = shuffle([word.meaning, ...pick(others, 3).map(w => w.meaning)]);
+      q = {
+        type,
+        question: `What does <span class="q-word ${mode}">${word.hanzi}</span> mean?`,
+        hint: word.pinyin,
+        options: opts,
+        correct: word.meaning,
+        tip: `${word.hanzi} (${word.pinyin}) = "${word.meaning}"`,
+        isChinese: false,
+      };
+      break;
+    }
+    case "mcq_hanzi": {
+      const opts = shuffle([word.hanzi, ...pick(others, 3).map(w => w.hanzi)]);
+      q = {
+        type,
+        question: `How do you write <em style="color:var(--yellow);font-style:normal">"${word.meaning}"</em> in Chinese?`,
+        options: opts,
+        correct: word.hanzi,
+        tip: `"${word.meaning}" = ${word.hanzi} (${word.pinyin})`,
+        isChinese: true,
+      };
+      break;
+    }
+    case "mcq_pinyin": {
+      const opts = shuffle([word.pinyin, ...pick(others, 3).map(w => w.pinyin)]);
+      q = {
+        type,
+        question: `What is the pinyin for <span class="q-word ${mode}">${word.hanzi}</span>?`,
+        hint: word.meaning,
+        options: opts,
+        correct: word.pinyin,
+        tip: `Pinyin for ${word.hanzi}: ${word.pinyin}`,
+        isChinese: false,
+      };
+      break;
+    }
+  }
+
+  q.level = level;
+  return q;
+}
+
+// ═══════════════════════════════════════════════════════════
+// INTRO SCREEN
+// ═══════════════════════════════════════════════════════════
+function showIntro() {
+  stepArea.innerHTML = "";
+  bottomArea.innerHTML = "";
+  progressBar.style.width = "0%";
+
+  const total = questions.length;
+  const timeEst = Math.ceil(total * 0.5); // ~30s per question
+
+  if (isPlacement) {
+    stepArea.innerHTML = `
+      <div class="intro-screen">
+        <div class="intro-emoji">🧭</div>
+        <div class="intro-title">Placement Test</div>
+        <div class="intro-sub">We'll ask ${total} questions across all HSK levels to find where you belong. Answer honestly — there's no penalty for wrong answers!</div>
+        <div class="intro-cards">
+          <div class="intro-stat"><div class="intro-stat-val">${total}</div><div class="intro-stat-label">Questions</div></div>
+          <div class="intro-stat"><div class="intro-stat-val">${timeEst}m</div><div class="intro-stat-label">Est. Time</div></div>
+          <div class="intro-stat"><div class="intro-stat-val">HSK 1–6</div><div class="intro-stat-label">Coverage</div></div>
+          <div class="intro-stat"><div class="intro-stat-val">No timer</div><div class="intro-stat-label">Pace</div></div>
+        </div>
+        <div class="intro-actions">
+          <button class="btn-primary" id="btn-start">Start Test →</button>
+          <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+        </div>
+      </div>
+    `;
+  } else {
+    stepArea.innerHTML = `
+      <div class="intro-screen">
+        <div class="intro-emoji">🎓</div>
+        <div class="intro-title">HSK ${hskLevel} Final Test</div>
+        <div class="intro-sub">Prove your ${HSK_NAMES[hskLevel]} Chinese. Score 70% or above to unlock HSK ${hskLevel + 1}!</div>
+        <div class="intro-cards">
+          <div class="intro-stat"><div class="intro-stat-val">${total}</div><div class="intro-stat-label">Questions</div></div>
+          <div class="intro-stat"><div class="intro-stat-val">70%</div><div class="intro-stat-label">Pass Score</div></div>
+          <div class="intro-stat"><div class="intro-stat-val">HSK ${hskLevel}</div><div class="intro-stat-label">Level</div></div>
+          <div class="intro-stat"><div class="intro-stat-val">No timer</div><div class="intro-stat-label">Pace</div></div>
+        </div>
+        <div class="intro-actions">
+          <button class="btn-primary" id="btn-start">Begin Test →</button>
+          <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back</button>
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById("btn-start").onclick = () => {
+    currentQ = 0; correct = 0; answered = false;
+    renderQuestion(0);
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER QUESTION
+// ═══════════════════════════════════════════════════════════
+function renderQuestion(idx) {
+  answered = false;
+  updateProgress(idx);
+
+  const old = stepArea.querySelector(".step-visible");
+  if (old) {
+    old.classList.remove("step-visible");
+    old.classList.add("step-exit");
+    setTimeout(() => old.remove(), 280);
+  }
+
+  const q = questions[idx];
+  if (!q) return showResult();
+
+  const wrap = document.createElement("div");
+  wrap.className = "step-visible";
+  wrap.style.display = "contents";
+
+  buildQuestion(wrap, q);
+  stepArea.appendChild(wrap);
+  renderBottom(false);
+}
+
+function updateProgress(idx = currentQ) {
+  const pct = questions.length ? (idx / questions.length) * 100 : 0;
+  progressBar.style.width = Math.min(pct, 100) + "%";
+  qCounter.textContent = `${idx} / ${questions.length}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// BUILD QUESTION UI
+// ═══════════════════════════════════════════════════════════
+function buildQuestion(wrap, q) {
+  // HSK level label (placement only shows level after answer)
+  if (!isPlacement) {
+    const lbl = document.createElement("div");
+    lbl.className = `q-hsk-label lv${q.level}`;
+    lbl.textContent = `HSK ${q.level} · ${HSK_NAMES[q.level]}`;
+    wrap.appendChild(lbl);
+  }
+
+  // Question card
+  const card = document.createElement("div");
+  card.className = `question-card ${isPlacement ? "placement" : "final"}`;
+  card.innerHTML = `
+    <div class="q-text">${q.question}</div>
+    ${q.hint ? `<div style="margin-top:8px;font-size:12px;color:var(--muted)">${q.hint}</div>` : ""}
+  `;
+  wrap.appendChild(card);
+
+  // Options
+  const longOption = q.options.some(o => o.length > 14);
+  const grid = document.createElement("div");
+  grid.className = "options-grid" + (longOption ? " single-col" : "");
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn " + (isPlacement ? "placement" : "final") + (q.isChinese ? " option-chinese" : "");
+    btn.textContent = opt;
+    btn.onclick = () => handleAnswer(btn, opt, q, grid, wrap);
+    grid.appendChild(btn);
+  });
+  wrap.appendChild(grid);
+
+  // Feedback
+  const fb = document.createElement("div");
+  fb.className = "feedback-banner";
+  wrap.appendChild(fb);
+  wrap._feedbackEl = fb;
+}
+
+function handleAnswer(btn, choice, q, grid, wrap) {
+  if (answered) return;
+  answered = true;
+
+  const isCorrect = choice === q.correct;
+  if (isCorrect) correct++;
+
+  // Mark options
+  grid.querySelectorAll(".option-btn").forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.correct) b.classList.add("correct");
+    else if (b === btn && !isCorrect) b.classList.add("wrong");
+  });
+
+  // Show feedback with HSK level reveal for placement
+  const fb = wrap._feedbackEl;
+  fb.className = "feedback-banner " + (isCorrect ? "correct-fb" : "wrong-fb");
+  const levelReveal = isPlacement ? `<span class="fb-tip" style="margin-top:6px;display:block">HSK ${q.level} · ${HSK_NAMES[q.level]}</span>` : "";
+  fb.innerHTML = `
+    <div class="feedback-icon">${isCorrect ? "✅" : "❌"}</div>
+    <div class="feedback-text">
+      <div class="fb-main">${isCorrect ? rand(["Perfect! 🔥","Nice work!","Excellent! 🎯","Well done!","💪 Correct!"]) : "Not quite!"}</div>
+      <span class="fb-tip">${q.tip}</span>
+      ${levelReveal}
+    </div>
+  `;
+  requestAnimationFrame(() => fb.classList.add("show"));
+  renderBottom(true);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOTTOM BUTTONS
+// ═══════════════════════════════════════════════════════════
+function renderBottom(isAnswered) {
+  bottomArea.innerHTML = "";
+  const btn = document.createElement("button");
+  btn.className = "btn-primary";
+
+  if (!isAnswered) {
+    btn.disabled = true;
+    btn.textContent = "Select an answer";
+  } else {
+    const isLast = currentQ >= questions.length - 1;
+    btn.textContent = isLast ? "See Results 🎉" : "Continue →";
+    btn.onclick = () => {
+      currentQ++;
+      renderQuestion(currentQ);
+    };
+  }
+  bottomArea.appendChild(btn);
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESULT SCREEN
+// ═══════════════════════════════════════════════════════════
+function showResult() {
+  progressBar.style.width = "100%";
+  qCounter.textContent = `${questions.length} / ${questions.length}`;
+  stepArea.innerHTML = "";
+  bottomArea.innerHTML = "";
+
+  const total    = questions.length;
+  const score    = Math.round((correct / total) * 100);
+  const wrong    = total - correct;
+  const circ     = 2 * Math.PI * 52;
+  const offset   = circ * (1 - score / 100);
+
+  if (isPlacement) {
+    showPlacementResult(score, correct, wrong, total, circ, offset);
+  } else {
+    showFinalResult(score, correct, wrong, total, circ, offset);
+  }
+}
+
+// ─── Placement result
+function showPlacementResult(score, correct, wrong, total, circ, offset) {
+  // Detect level
+  let detectedLevel;
+  if      (correct <= 5)  detectedLevel = 1;
+  else if (correct <= 10) detectedLevel = 2;
+  else if (correct <= 15) detectedLevel = 3;
+  else if (correct <= 20) detectedLevel = 4;
+  else if (correct <= 25) detectedLevel = 5;
+  else                    detectedLevel = 6;
+
+  // Save
+  localStorage.setItem(key("user_level"),  String(detectedLevel));
+  localStorage.setItem(key("user_lesson"), "1");
+
+  const isHigh = score >= 50;
+
+  stepArea.innerHTML = `
+    <div class="result-screen">
+      <div class="result-emoji">${isHigh ? "🧭" : "🌱"}</div>
+      <div class="result-title">Placement Complete!</div>
+      <div class="result-sub">Based on your answers, you've been placed at:</div>
+
+      <div class="level-badge-wrap">
+        <div class="level-badge">
+          <div class="level-badge-tag">HSK</div>
+          <div class="level-badge-num">${detectedLevel}</div>
+        </div>
+        <div class="level-badge-desc">${HSK_NAMES[detectedLevel]}</div>
+      </div>
+
+      <div class="score-ring-wrap">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle class="score-ring-track" cx="65" cy="65" r="52"/>
+          <circle class="score-ring-fill ${isHigh ? 'pass' : 'fail'}" cx="65" cy="65" r="52"
+            stroke-dasharray="${circ.toFixed(2)}"
+            stroke-dashoffset="${offset.toFixed(2)}"/>
+        </svg>
+        <div class="score-ring-text">
+          <div class="score-pct">${score}%</div>
+          <div class="score-label">Correct</div>
+        </div>
+      </div>
+
+      <div class="result-stats">
+        <div class="stat-box"><div class="stat-val">${correct}</div><div class="stat-label">Correct</div></div>
+        <div class="stat-box"><div class="stat-val">${wrong}</div><div class="stat-label">Wrong</div></div>
+        <div class="stat-box"><div class="stat-val">${total}</div><div class="stat-label">Total</div></div>
+      </div>
+
+      <div class="result-actions" style="width:100%">
+        <button class="btn-primary" onclick="window.location.href='dashboard.html'">Start Learning →</button>
+        <button class="btn-secondary" onclick="retakeTest()">↺ Retake Placement</button>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => showToast(`Placed at HSK ${detectedLevel} 🎯`), 600);
+}
+
+// ─── Final test result
+function showFinalResult(score, correct, wrong, total, circ, offset) {
+  const passed  = score >= 70;
+  const earnedXP = passed ? 50 : 15;
+
+  // Save XP
+  const currentXP = parseInt(localStorage.getItem(key("xp")) || "0", 10);
+  localStorage.setItem(key("xp"), currentXP + earnedXP);
+
+  // Unlock next level if passed
+  if (passed && hskLevel < 6) {
+    const currentLevel = parseInt(localStorage.getItem(key("user_level")) || "1", 10);
+    if (hskLevel >= currentLevel) {
+      localStorage.setItem(key("user_level"),  String(hskLevel + 1));
+      localStorage.setItem(key("user_lesson"), "1");
+    }
+  }
+
+  stepArea.innerHTML = `
+    <div class="result-screen">
+      <div class="result-emoji">${passed ? "🏆" : "📚"}</div>
+      <div class="result-title">${passed ? "Test Passed!" : "Keep Practicing"}</div>
+      <div class="result-sub">${passed
+        ? `Congratulations! You've unlocked HSK ${hskLevel < 6 ? hskLevel + 1 : 6} 🎉`
+        : `You scored ${score}%. You need 70% to pass. Keep studying and try again!`
+      }</div>
+
+      <div class="score-ring-wrap">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle class="score-ring-track" cx="65" cy="65" r="52"/>
+          <circle class="score-ring-fill ${passed ? 'pass' : 'fail'}" cx="65" cy="65" r="52"
+            stroke-dasharray="${circ.toFixed(2)}"
+            stroke-dashoffset="${offset.toFixed(2)}"/>
+        </svg>
+        <div class="score-ring-text">
+          <div class="score-pct">${score}%</div>
+          <div class="score-label">Score</div>
+        </div>
+      </div>
+
+      <div class="result-pill ${passed ? 'pass' : 'fail'}">${passed ? "✅ PASSED" : "❌ NOT PASSED"}</div>
+
+      <div class="result-stats">
+        <div class="stat-box"><div class="stat-val">${correct}</div><div class="stat-label">Correct</div></div>
+        <div class="stat-box"><div class="stat-val">${wrong}</div><div class="stat-label">Wrong</div></div>
+        <div class="stat-box"><div class="stat-val">+${earnedXP} XP</div><div class="stat-label">Earned</div></div>
+      </div>
+
+      <div class="result-actions" style="width:100%">
+        <button class="btn-primary" onclick="window.location.href='dashboard.html'">${passed ? "Continue to HSK " + (hskLevel < 6 ? hskLevel + 1 : 6) + " →" : "← Back to Dashboard"}</button>
+        ${!passed ? `<button class="btn-secondary" onclick="retakeTest()">↺ Retake Test</button>` : ""}
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => showToast(passed ? `HSK ${hskLevel + 1} Unlocked! 🔓` : `+${earnedXP} XP 📚`), 600);
+}
+
+function retakeTest() {
+  currentQ = 0; correct = 0; answered = false; _lastQType = null;
+  if (isPlacement) {
+    questions = buildPlacementTest();
+  } else {
+    questions = buildFinalTest(hskLevel);
+  }
+  showIntro();
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOADING + TOAST
+// ═══════════════════════════════════════════════════════════
+function showLoading() {
+  stepArea.innerHTML = `
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <div class="loading-text">${isPlacement ? "Preparing placement test…" : `Loading HSK ${hskLevel} test…`}</div>
+    </div>
+  `;
+}
+
+let _toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+// ── Boot
+init();
+</script>
+</body>
+</html>
