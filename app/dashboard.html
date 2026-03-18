@@ -904,9 +904,24 @@ let _userId = null;
 
 async function initUserId() {
   try {
-    const { data } = await window._supabaseClient.auth.getUser();
-    _userId = (data && data.user && data.user.id) ? data.user.id : 'anonymous';
+    // getSession reads from localStorage — no network round-trip, safe right after login
+    const { data: { session } } = await window._supabaseClient.auth.getSession();
+    console.log("Session:", session);
+
+    if (session?.user?.id) {
+      _userId = session.user.id;
+    } else {
+      // Session not ready yet — retry once after 500ms before falling back
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const { data: retry } = await window._supabaseClient.auth.getSession();
+      if (retry?.session?.user?.id) {
+        _userId = retry.session.user.id;
+      } else {
+        _userId = 'anonymous';
+      }
+    }
   } catch(e) {
+    console.warn('Session check failed:', e);
     _userId = 'anonymous';
   }
 
