@@ -931,6 +931,34 @@ async function initUserId() {
   localStorage.removeItem('user_level');
   localStorage.removeItem('user_lesson');
 
+  // ── Create profile row on first login
+  if (_userId !== 'anonymous') {
+    try {
+      const supabase = window._supabaseClient;
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+
+      if (user) {
+        const { data: existing } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+
+        if (!existing) {
+          await supabase.from('profiles').insert([{
+            id: user.id,
+            xp: 0,
+            hearts: 5
+          }]);
+          console.log('Profile created for:', user.id);
+        }
+      }
+    } catch(e) {
+      console.warn('Profile creation skipped:', e);
+    }
+  }
+
   // Sync XP from Supabase leaderboard → localStorage (source of truth)
   if (_userId !== 'anonymous') {
     try {
