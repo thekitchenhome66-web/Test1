@@ -7,6 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window._supabaseClient = window.supabase.createClient(
+      'https://cuiznbvvlqtwcoocehnd.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+    );
+  </script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -869,13 +876,39 @@
      JAVASCRIPT
 ════════════════════════════════════════════════════════ -->
 <script>
+/* ─── USER ID (Supabase) ─────────────────────────────── */
+let _userId = null;
+
+async function initUserId() {
+  try {
+    const { data } = await window._supabaseClient.auth.getUser();
+    _userId = data.user.id;
+  } catch(e) {
+    console.warn('Could not get Supabase user, falling back to anonymous key.', e);
+    _userId = 'anonymous';
+  }
+
+  // Remove old global keys (runs once per session after userId is known)
+  localStorage.removeItem('hearts');
+  localStorage.removeItem('xp');
+  localStorage.removeItem('user_level');
+  localStorage.removeItem('user_lesson');
+
+  render();
+  renderStats();
+}
+
+function key(name) {
+  return `${name}_${_userId}`;
+}
+
 /* ─── USER STATE ─────────────────────────────────────── */
 const user = {
-  get level()  { return Number(localStorage.getItem('user_level')  || 1) },
-  get lesson() { return Number(localStorage.getItem('user_lesson') || 1) },
-  get xp()     { return Number(localStorage.getItem('xp')          || 0) },
-  get hearts() { return Number(localStorage.getItem('hearts')       || 5) },
-  get streak() { return Number(localStorage.getItem('streak')       || 0) },
+  get level()  { return Number(localStorage.getItem(key('user_level'))  || 1) },
+  get lesson() { return Number(localStorage.getItem(key('user_lesson')) || 1) },
+  get xp()     { return Number(localStorage.getItem(key('xp'))          || 0) },
+  get hearts() { return Number(localStorage.getItem(key('hearts'))       || 5) },
+  get streak() { return Number(localStorage.getItem(key('streak'))       || 0) },
 };
 
 /* ─── HEART LOCK ─────────────────────────────────────── */
@@ -935,7 +968,7 @@ function runHeartAd() {
         skipBtn.style.width = '100%';
         skipBtn.onclick = () => {
           const newHearts = Math.min(5, user.hearts + 1);
-          localStorage.setItem('hearts', newHearts);
+          localStorage.setItem(key('hearts'), newHearts);
           renderStats();
           closeModal();
         };
@@ -992,7 +1025,7 @@ function renderStats() {
 
 /* ─── DAILY PROGRESS ─────────────────────────────────── */
 function syncDailyProgress() {
-  const done   = Number(localStorage.getItem('daily_done') || 0);
+  const done   = Number(localStorage.getItem(key('daily_done')) || 0);
   const target = 3;
   const pct    = Math.min(100, Math.round((done / target) * 100));
   const label  = `${Math.min(done,target)} / ${target} lessons done`;
@@ -1006,13 +1039,13 @@ function syncDailyProgress() {
 
 /* ─── REVIEW LOGIC ───────────────────────────────────── */
 function getReviewState() {
-  const freeUsed = localStorage.getItem('review_free_used') === 'true';
+  const freeUsed = localStorage.getItem(key('review_free_used')) === 'true';
   const today    = new Date().toDateString();
-  const adDay    = localStorage.getItem('review_ad_day');
-  let   adsUsed  = adDay === today ? Number(localStorage.getItem('review_ads_used') || 0) : 0;
+  const adDay    = localStorage.getItem(key('review_ad_day'));
+  let   adsUsed  = adDay === today ? Number(localStorage.getItem(key('review_ads_used')) || 0) : 0;
   if (adDay !== today) {
-    localStorage.setItem('review_ad_day',   today);
-    localStorage.setItem('review_ads_used', '0');
+    localStorage.setItem(key('review_ad_day'),   today);
+    localStorage.setItem(key('review_ads_used'), '0');
     adsUsed = 0;
   }
   return { freeUsed, adsUsed };
@@ -1041,7 +1074,7 @@ function handleReview() {
   const { freeUsed, adsUsed } = getReviewState();
 
   if (!freeUsed) {
-    localStorage.setItem('review_free_used','true');
+    localStorage.setItem(key('review_free_used'),'true');
     syncReviewStatus();
     window.location.href = '/app/review.html';
     return;
@@ -1088,7 +1121,7 @@ function showAdModal(currentAds) {
         skipBtn.className = 'btn btn-blue';
         skipBtn.onclick = () => {
           const used = currentAds + 1;
-          localStorage.setItem('review_ads_used', used);
+          localStorage.setItem(key('review_ads_used'), used);
           syncReviewStatus();
           closeModal();
           window.location.href = '/app/review.html';
@@ -1281,9 +1314,7 @@ function render() {
   HSK_LEVELS.forEach(hsk => list.appendChild(buildHSK(hsk)));
 }
 
-render();
-
-/* scroll active into view after paint */
+initUserId();
 window.addEventListener('load', () => {
   const active = document.querySelector('.active-node');
   if (active) setTimeout(() => active.scrollIntoView({behavior:'smooth',block:'center'}), 400);
