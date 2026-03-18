@@ -1054,11 +1054,16 @@ function renderStep(idx) {
   matchState       = null;
   updateProgress();
 
-  const old = stepArea.querySelector(".step-visible");
-  if (old) {
-    old.classList.remove("step-visible");
-    old.classList.add("step-exit");
-    setTimeout(() => old.remove(), 280);
+  // Clear loading spinner on first step, slide-out on subsequent steps
+  if (idx === 0) {
+    stepArea.innerHTML = "";
+  } else {
+    const old = stepArea.querySelector(".step-visible");
+    if (old) {
+      old.classList.remove("step-visible");
+      old.classList.add("step-exit");
+      setTimeout(() => old.remove(), 280);
+    }
   }
 
   const step = steps[idx];
