@@ -347,6 +347,12 @@
   .score-pct  { font-size: 26px; font-weight: 700; color: var(--text); }
   .score-sub  { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
+  /* ── Checkpoint fail screen ── */
+  .fail-pill { background: rgba(248,113,113,.14); border: 1px solid rgba(248,113,113,.3); border-radius: 999px; padding: 10px 28px; font-size: 18px; font-weight: 700; color: var(--red); letter-spacing: 0.02em; }
+  .score-ring-fill.fail { stroke: var(--red); }
+  .btn-retry { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--red); color: #fff; font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: background var(--t), transform 0.15s, box-shadow var(--t); box-shadow: 0 4px 16px rgba(248,113,113,.25); }
+  .btn-retry:hover { background: #f87171cc; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(248,113,113,.35); }
+
   /* ── Toast ── */
   #xp-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-16px); background: var(--green); color: #0a1a0f; padding: 7px 18px; border-radius: 999px; font-weight: 700; font-size: 13px; opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 200; pointer-events: none; white-space: nowrap; }
   #xp-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -738,7 +744,10 @@ async function initLesson() {
   steps  = lesson.steps;
 
   // 8. Update UI labels
-  document.getElementById("lesson-tag").textContent       = `HSK ${_level} · Lesson ${_lessonNum}`;
+  const isCheckpointLesson = lesson.config.isCheckpoint;
+  document.getElementById("lesson-tag").textContent       = isCheckpointLesson
+    ? `HSK ${_level} · Checkpoint`
+    : `HSK ${_level} · Lesson ${_lessonNum}`;
   document.getElementById("lesson-phase-tag").textContent = lesson.config.phase;
 
   if (hearts <= 0) overlay.classList.add("show");
@@ -766,17 +775,19 @@ function getDistractorPinyin(correct, count=3) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// LESSON PLAN CONFIG
+// LESSON PLAN CONFIG — checkpoint every 5th lesson
 // ═══════════════════════════════════════════════════════════
 function getLessonConfig(lessonNum) {
-  const cycle = ((lessonNum - 1) % 6) + 1;
-  if (cycle === 6) return { newWordCount:0, reviewWordCount:5, grammarCount:0, isCheckpoint:true, phase:"Checkpoint" };
+  // Every 5th lesson is a checkpoint
+  if (lessonNum % 5 === 0) {
+    return { newWordCount:0, reviewWordCount:0, grammarCount:0, isCheckpoint:true, phase:"Checkpoint" };
+  }
+  const cycle = ((lessonNum - 1) % 4) + 1; // 4 regular lesson types
   return {
     1: { newWordCount:5, reviewWordCount:0, grammarCount:1, isCheckpoint:false, phase:"New Words"   },
-    2: { newWordCount:1, reviewWordCount:4, grammarCount:0, isCheckpoint:false, phase:"Review + New" },
-    3: { newWordCount:2, reviewWordCount:3, grammarCount:1, isCheckpoint:false, phase:"Expand"       },
-    4: { newWordCount:3, reviewWordCount:3, grammarCount:0, isCheckpoint:false, phase:"Build Up"     },
-    5: { newWordCount:2, reviewWordCount:4, grammarCount:1, isCheckpoint:false, phase:"Consolidate"  },
+    2: { newWordCount:3, reviewWordCount:3, grammarCount:0, isCheckpoint:false, phase:"Review + New" },
+    3: { newWordCount:4, reviewWordCount:2, grammarCount:1, isCheckpoint:false, phase:"Expand"       },
+    4: { newWordCount:2, reviewWordCount:4, grammarCount:0, isCheckpoint:false, phase:"Consolidate"  },
   }[cycle];
 }
 
@@ -794,6 +805,7 @@ function getReviewWords(lessonNum, count) {
   if (total === 0) return [];
   const start = ((lessonNum - 1) * 5) % total;
   const pool  = start > 0 ? _hskWords.slice(0, start) : _hskWords.slice(5);
+  if (count === -1) return pool; // -1 = all previous words
   return pick(pool, count);
 }
 
@@ -928,31 +940,42 @@ function generateLesson(lessonNum) {
   const steps       = [];
   const lessonWords = getNewWordsForLesson(lessonNum);
 
-  // ── CHECKPOINT LESSON
+  // ── CHECKPOINT LESSON (every 5th lesson)
   if (config.isCheckpoint) {
-    const reviewWords = getReviewWords(lessonNum, 10);
-    const useWords    = reviewWords.length >= 5 ? reviewWords : shuffle(lessonWords);
+    // Gather all previously introduced words for this lesson
+    const allPrevWords = getReviewWords(lessonNum, -1); // -1 = all
+    const fallback     = _hskWords.slice(0, Math.min(10, _hskWords.length));
+    const pool         = allPrevWords.length >= 4 ? allPrevWords : fallback;
+    // Pick up to 10 words for the checkpoint
+    const useWords     = shuffle(pool).slice(0, Math.min(10, pool.length));
 
     steps.push({ type:"checkpoint_intro", lessonNum, totalQ: useWords.length });
 
+    // Harder mixed exercises — rotate through all types
+    const hardTypes = [
+      (w) => makeMCQ_MeaningFromHanzi(w, false, true),
+      (w) => makeMCQ_HanziFromMeaning(w, false, true),
+      (w) => makeMCQ_PinyinFromHanzi(w, false, true),
+      (w) => makeTypingPinyin(w, false, true),
+      (w) => makeSentenceMCQ(w, true),
+      (w) => makeWordBankFill(w, true),
+    ];
     useWords.forEach((word, i) => {
-      const exTypes = [
-        makeMCQ_MeaningFromHanzi(word, false, true),
-        makeMCQ_HanziFromMeaning(word, false, true),
-        makeMCQ_PinyinFromHanzi(word, false, true),
-        makeTypingPinyin(word, false, true),
-        makeSentenceMCQ(word, true),
-        makeWordBankFill(word, true),
-      ];
-      steps.push(exTypes[i % exTypes.length]);
+      // Vary — never same type twice in a row, random within constraint
+      const typeIdx = (i + Math.floor(Math.random() * 2)) % hardTypes.length;
+      steps.push(hardTypes[typeIdx](word));
     });
 
-    steps.push(makeMatchStep(shuffle(useWords).slice(0, 4)));
+    // Matching round at the end
+    if (useWords.length >= 3) {
+      steps.push(makeMatchStep(shuffle(useWords).slice(0, Math.min(4, useWords.length))));
+    }
 
     return {
-      title: `Checkpoint ${Math.ceil(lessonNum / 6)}`,
+      title: \`Checkpoint Challenge · Lesson \${lessonNum}\`,
       words: useWords.map(w => w.hanzi),
-      steps, config
+      steps, config,
+      isCheckpointLesson: true,
     };
   }
 
@@ -1175,14 +1198,14 @@ function buildCheckpointIntro(wrap, step) {
   checkpointCorrect = 0;
   wrap.innerHTML = `
     <div class="checkpoint-header">
-      <div class="checkpoint-icon">🏁</div>
-      <div class="checkpoint-title">Checkpoint Test</div>
-      <div class="checkpoint-sub">Time to test everything you've learned so far!<br>${step.totalQ} questions · All word types</div>
+      <div class="checkpoint-icon">🏆</div>
+      <div class="checkpoint-title">Checkpoint Challenge</div>
+      <div class="checkpoint-sub">${step.totalQ} questions from previous lessons.<br>Score 70% or above to continue!</div>
     </div>
-    <div class="grammar-card" style="text-align:center">
+    <div class="grammar-card" style="text-align:center;border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.04)">
       <div class="grammar-body">
-        This checkpoint covers words from the <strong style="color:var(--text)">last few lessons</strong>.<br>
-        Each correct answer earns bonus XP. Let's go! 💪
+        This is a <strong style="color:var(--yellow)">harder test</strong> — mixed exercises, typing, and reading.<br>
+        You need <strong style="color:var(--text)">70%+</strong> to pass. Each correct answer earns XP. 💪
       </div>
     </div>
   `;
@@ -1522,9 +1545,90 @@ function logMistake(step, userAnswer) {
 // ═══════════════════════════════════════════════════════════
 function showComplete() {
   progressBar.style.width = "100%";
-  stepArea.innerHTML  = "";
+  stepArea.innerHTML   = "";
   bottomArea.innerHTML = "";
 
+  const isCheckpoint = lesson.config.isCheckpoint;
+  const accuracy     = calculateAccuracy();
+  const mistakeCount = sessionMistakes.length;
+  const wordsLearned = lesson.words.length;
+
+  // ── CHECKPOINT: evaluate pass/fail at 70%
+  if (isCheckpoint && checkpointTotal > 0) {
+    const cpScore = Math.round((checkpointCorrect / checkpointTotal) * 100);
+    const passed  = cpScore >= 70;
+    const circ    = 2 * Math.PI * 52;
+    const offset  = circ * (1 - cpScore / 100);
+    const fillClass = passed ? "" : " fail";
+
+    // Award XP regardless (more for passing)
+    const earnedXP = passed ? sessionXP + 20 : Math.max(5, sessionXP);
+    xp += earnedXP;
+    localStorage.setItem(key("xp"), xp);
+
+    if (passed) {
+      // Mark complete and advance lesson
+      if (!alreadyCompleted) {
+        localStorage.setItem(key("completed_lessons"), JSON.stringify([...completedLessons, lessonId]));
+      }
+      const savedLesson = parseInt(localStorage.getItem(key("user_lesson")) || "1", 10);
+      if (lessonId >= savedLesson) {
+        localStorage.setItem(key("user_lesson"), String(lessonId + 1));
+      }
+    }
+    // If failed: do NOT advance lesson — user stays on same checkpoint
+
+    stepArea.innerHTML = `
+      <div class="complete-screen">
+        <div class="complete-emoji">${passed ? "🏆" : "😔"}</div>
+        <div class="complete-title">${passed ? "Checkpoint Passed!" : "Checkpoint Failed"}</div>
+        <div class="complete-sub">${passed
+          ? "Excellent work! You cleared the checkpoint."
+          : "You need 70% to pass. Review the words and try again!"
+        }</div>
+        <div class="checkpoint-result">
+          <div class="score-ring">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle class="score-ring-track" cx="60" cy="60" r="52"/>
+              <circle class="score-ring-fill${fillClass}" cx="60" cy="60" r="52"
+                stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"/>
+            </svg>
+            <div class="score-ring-text">
+              <div class="score-pct">${cpScore}%</div>
+              <div class="score-sub">Score</div>
+            </div>
+          </div>
+          <div class="${passed ? "xp-pill" : "fail-pill"}">
+            ${passed ? "+" + earnedXP + " XP 🎉" : cpScore + "% — Need 70%"}
+          </div>
+        </div>
+        <div class="complete-stats">
+          <div class="stat-box"><div class="stat-val">${checkpointCorrect}</div><div class="stat-label">Correct</div></div>
+          <div class="stat-box"><div class="stat-val">${checkpointTotal - checkpointCorrect}</div><div class="stat-label">Wrong</div></div>
+          <div class="stat-box"><div class="stat-val">${cpScore}%</div><div class="stat-label">Score</div></div>
+          <div class="stat-box"><div class="stat-val">${hearts}<span style="font-size:12px"> ❤️</span></div><div class="stat-label">Hearts</div></div>
+        </div>
+        <div class="complete-actions" style="width:100%">
+          ${passed
+            ? '<button class="btn-primary" id="btn-continue-lesson">Continue →</button><button class="btn-ad" id="btn-double-xp">🎥 Watch Ad for +10 Bonus XP</button>'
+            : '<button class="btn-retry" id="btn-retry-checkpoint">↺ Retry Checkpoint</button><button class="btn-secondary" id="btn-continue-lesson" style="margin-top:4px">Back to Dashboard</button>'
+          }
+        </div>
+      </div>
+    `;
+
+    if (passed) {
+      document.getElementById("btn-continue-lesson").onclick = () => { window.location.href = "dashboard.html"; };
+      document.getElementById("btn-double-xp").onclick = doubleXP;
+    } else {
+      // Retry: reload same lesson
+      document.getElementById("btn-retry-checkpoint").onclick = () => { window.location.reload(); };
+      document.getElementById("btn-continue-lesson").onclick  = () => { window.location.href = "dashboard.html"; };
+    }
+    return;
+  }
+
+  // ── REGULAR LESSON COMPLETE
   let earnedXP = sessionXP;
   if (!alreadyCompleted) {
     earnedXP += 10;
@@ -1535,48 +1639,16 @@ function showComplete() {
   }
   localStorage.setItem(key("xp"), xp);
 
-  // ── Advance lesson counter
   const savedLesson = parseInt(localStorage.getItem(key("user_lesson")) || "1", 10);
   if (lessonId >= savedLesson) {
     localStorage.setItem(key("user_lesson"), String(lessonId + 1));
   }
 
-  const accuracy     = calculateAccuracy();
-  const mistakeCount = sessionMistakes.length;
-  const wordsLearned = lesson.words.length;
-
-  const isCheckpoint = lesson.config.isCheckpoint;
-  const cpScore = isCheckpoint && checkpointTotal > 0
-    ? Math.round((checkpointCorrect / checkpointTotal) * 100)
-    : null;
-
-  let ringHtml = "";
-  if (cpScore !== null) {
-    const circ   = 2 * Math.PI * 52;
-    const offset = circ * (1 - cpScore / 100);
-    ringHtml = `
-      <div class="checkpoint-result">
-        <div class="score-ring">
-          <svg width="120" height="120" viewBox="0 0 120 120">
-            <circle class="score-ring-track" cx="60" cy="60" r="52"/>
-            <circle class="score-ring-fill"  cx="60" cy="60" r="52"
-              stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
-          </svg>
-          <div class="score-ring-text">
-            <div class="score-pct">${cpScore}%</div>
-            <div class="score-sub">Score</div>
-          </div>
-        </div>
-        <div style="font-size:14px;color:var(--muted)">Checkpoint ${Math.ceil(lessonId/6)} complete!</div>
-      </div>`;
-  }
-
   stepArea.innerHTML = `
     <div class="complete-screen">
-      <div class="complete-emoji">${isCheckpoint ? "🏆" : "🎉"}</div>
-      <div class="complete-title">${isCheckpoint ? "Checkpoint Passed!" : "Lesson Complete!"}</div>
+      <div class="complete-emoji">🎉</div>
+      <div class="complete-title">Lesson Complete!</div>
       <div class="complete-sub">${lesson.title}</div>
-      ${ringHtml}
       <div class="xp-pill" id="xp-pill">+${earnedXP} XP</div>
       <div class="complete-stats">
         <div class="stat-box"><div class="stat-val">${wordsLearned}</div><div class="stat-label">Words</div></div>
