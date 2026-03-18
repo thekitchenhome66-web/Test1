@@ -6,6 +6,13 @@
 <title>Maobai – Lesson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window._supabaseClient = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
+</script>
 <style>
   :root {
     --bg:        #0f1923;
@@ -752,29 +759,30 @@ function buildTitle(id) {
 // ═══════════════════════════════════════════════════════════
 const params    = new URLSearchParams(location.search);
 const lessonId  = parseInt(params.get("lesson") || "1", 10);
-const userId    = params.get("userId") || "default";
 const sessionId = Date.now();
 
-let hearts = parseInt(localStorage.getItem("hearts") ?? "5", 10);
-if (hearts <= 0) document.getElementById("no-hearts-overlay").classList.add("show");
+// userId-scoped key helper
+let _userId = null;
+function key(name) { return `${name}_${_userId}`; }
 
 const lesson = generateLesson(lessonId);
 const steps  = lesson.steps;
 
-let currentStep    = 0;
-let xp             = parseInt(localStorage.getItem("xp") || "0", 10);
-let sessionXP      = 0;
-let answeredStep   = false;
-let matchState     = null;
-let typingAnswered = false;
+let currentStep      = 0;
+let hearts           = 5;
+let xp               = 0;
+let sessionXP        = 0;
+let answeredStep     = false;
+let matchState       = null;
+let typingAnswered   = false;
 let wordBankAnswered = false;
 let checkpointCorrect = 0;
 let checkpointTotal   = 0;
 
-const allMistakes      = JSON.parse(localStorage.getItem("mistakes") || "[]");
-const sessionMistakes  = [];
-const completedLessons = JSON.parse(localStorage.getItem("completed_lessons") || "[]");
-const alreadyCompleted = completedLessons.includes(lessonId);
+let allMistakes      = [];
+let sessionMistakes  = [];
+let completedLessons = [];
+let alreadyCompleted = false;
 
 // ── DOM
 const stepArea    = document.getElementById("step-area");
@@ -783,7 +791,7 @@ const progressBar = document.getElementById("progress-bar");
 const heartsEl    = document.getElementById("hearts-display");
 const overlay     = document.getElementById("no-hearts-overlay");
 
-document.getElementById("lesson-tag").textContent   = `HSK 1 · Lesson ${lessonId}`;
+document.getElementById("lesson-tag").textContent       = `HSK 1 · Lesson ${lessonId}`;
 document.getElementById("lesson-phase-tag").textContent = lesson.config.phase;
 
 document.getElementById("btn-close").onclick = () => {
@@ -791,8 +799,36 @@ document.getElementById("btn-close").onclick = () => {
 };
 document.getElementById("btn-watch-ad").onclick = watchAd;
 
-renderHearts();
-if (hearts > 0) renderStep(0);
+// ── INIT: resolve userId then boot
+async function initLesson() {
+  try {
+    const { data } = await window._supabaseClient.auth.getUser();
+    _userId = data.user.id;
+  } catch(e) {
+    console.warn("Could not get Supabase user, using anonymous key.", e);
+    _userId = "anonymous";
+  }
+
+  // Remove old global (unscoped) keys once
+  localStorage.removeItem("hearts");
+  localStorage.removeItem("xp");
+  localStorage.removeItem("user_level");
+  localStorage.removeItem("user_lesson");
+
+  // Load user-scoped values with correct defaults
+  hearts           = parseInt(localStorage.getItem(key("hearts")) ?? "5", 10);
+  xp               = parseInt(localStorage.getItem(key("xp"))     || "0", 10);
+  allMistakes      = JSON.parse(localStorage.getItem(key("mistakes"))          || "[]");
+  completedLessons = JSON.parse(localStorage.getItem(key("completed_lessons")) || "[]");
+  alreadyCompleted = completedLessons.includes(lessonId);
+
+  if (hearts <= 0) overlay.classList.add("show");
+
+  renderHearts();
+  if (hearts > 0) renderStep(0);
+}
+
+initLesson();
 
 // ═══════════════════════════════════════════════════════════
 // HEARTS
@@ -808,14 +844,14 @@ function renderHearts() {
 }
 function loseHeart() {
   hearts = Math.max(0, hearts - 1);
-  localStorage.setItem("hearts", hearts);
+  localStorage.setItem(key("hearts"), hearts);
   renderHearts();
   if (hearts === 0) setTimeout(() => overlay.classList.add("show"), 400);
 }
 function watchAd() {
   overlay.classList.remove("show");
   hearts = 5;
-  localStorage.setItem("hearts", hearts);
+  localStorage.setItem(key("hearts"), hearts);
   renderHearts();
   showToast("❤️ Hearts restored!");
   if (currentStep === 0 && !stepArea.querySelector(".step-visible")) renderStep(0);
@@ -1287,7 +1323,7 @@ function logMistake(step, userAnswer) {
   const entry = { sessionId, lessonId, type:step.type||"mcq", correct:step.correct, userAnswer, timestamp:Date.now() };
   sessionMistakes.push(entry);
   allMistakes.push(entry);
-  localStorage.setItem("mistakes", JSON.stringify(allMistakes));
+  localStorage.setItem(key("mistakes"), JSON.stringify(allMistakes));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1302,16 +1338,15 @@ function showComplete() {
   if (!alreadyCompleted) {
     earnedXP += 10;
     xp += earnedXP;
-    localStorage.setItem("completed_lessons", JSON.stringify([...completedLessons, lessonId]));
+    localStorage.setItem(key("completed_lessons"), JSON.stringify([...completedLessons, lessonId]));
   } else {
     xp += sessionXP;
   }
-  localStorage.setItem("xp", xp);
+  localStorage.setItem(key("xp"), xp);
 
-  const userLesson = parseInt(localStorage.getItem(`user_lesson_${userId}`) || localStorage.getItem("user_lesson") || "1", 10);
+  const userLesson = parseInt(localStorage.getItem(key("user_lesson")) || "1", 10);
   if (lessonId >= userLesson) {
-    localStorage.setItem(`user_lesson_${userId}`, lessonId + 1);
-    localStorage.setItem("user_lesson", lessonId + 1);
+    localStorage.setItem(key("user_lesson"), lessonId + 1);
   }
 
   const accuracy     = calculateAccuracy();
@@ -1375,7 +1410,7 @@ function doubleXP() {
   btn.textContent = "🎥 Loading ad...";
   setTimeout(() => {
     xp += 10;
-    localStorage.setItem("xp", xp);
+    localStorage.setItem(key("xp"), xp);
     const pill = document.getElementById("xp-pill");
     if (pill) { const cur = parseInt(pill.textContent.replace(/\D/g,"")) || 0; pill.textContent = `+${cur + 10} XP 🔥`; }
     btn.textContent = "✅ Bonus XP Claimed!";
