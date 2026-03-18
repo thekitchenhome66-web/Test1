@@ -1568,6 +1568,32 @@ async function saveXP(xpGained) {
   }
 }
 
+async function addXP(amount) {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('xp')
+      .eq('id', user.id)
+      .single();
+
+    const currentXP = profile?.xp || 0;
+    const newXP = currentXP + amount;
+
+    await supabase
+      .from('profiles')
+      .update({ xp: newXP })
+      .eq('id', user.id);
+
+    console.log('XP updated:', newXP);
+  } catch(e) {
+    console.error('addXP error:', e);
+  }
+}
+
 async function syncXPToLeaderboard(xpValue) {
   if (!_userId || _userId === "anonymous") return;
   try {
@@ -1607,6 +1633,7 @@ function showComplete() {
   localStorage.setItem(key("xp"), xp);
   syncXPToLeaderboard(xp);
   saveXP(20); // Award 20 XP per lesson completion
+  addXP(10);   // Sync +10 XP to profiles table
 
   // ── Advance lesson counter
   const savedLesson = parseInt(localStorage.getItem(key("user_lesson")) || "1", 10);
