@@ -257,6 +257,7 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -282,216 +283,56 @@
   </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-console.log("SCRIPT STARTED");
-document.body.innerHTML = "<div style='color:white;padding:20px'>SCRIPT LOADED</div>";
+  console.log("SCRIPT STARTED");
 
-// ── SUPABASE — use shared client (same as dashboard/lesson)
-window._supabaseClient = window.supabase.createClient(
-  "https://cuiznbvvlqtwcoocehnd.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w"
-);
-const supabase = window._supabaseClient;
+  const supabase = window.supabase.createClient(
+    "https://cuiznbvvlqtwcoocehnd.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w"
+  );
 
-const main = document.getElementById("main");
-let currentUserId = null;
+  async function init() {
+    document.body.innerHTML = "<div style='color:white;font-family:monospace;padding:20px'>INIT RUNNING</div>";
 
-// ── HELPERS
-function medal(rank) {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return "";
-}
-function rankClass(rank) {
-  return rank <= 3 ? `rank-${rank}` : "";
-}
-function rankColor(rank) {
-  if (rank === 1) return "r1";
-  if (rank === 2) return "r2";
-  if (rank === 3) return "r3";
-  return "rn";
-}
-function displayName(id) {
-  // Show first 6 chars of UUID as a short ID
-  return "Learner " + id.slice(0, 6).toUpperCase();
-}
-function subLabel(rank) {
-  if (rank === 1) return "👑 Champion";
-  if (rank <= 3)  return "🔥 Top 3";
-  if (rank <= 10) return "⚡ Top 10";
-  return "📚 Studying";
-}
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log("USER:", user);
 
-// ── BUILD UI
-function buildUI(top20, allUsers, userId) {
-  main.innerHTML = "";
+      if (!user) {
+        document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>NO USER — not logged in</div>";
+        return;
+      }
 
-  const me        = allUsers.find(u => u.id === userId);
-  const userRank  = allUsers.findIndex(u => u.id === userId) + 1;
-  const inTop20   = top20.some(u => u.id === userId);
+      document.body.innerHTML = "<div style='color:lime;font-family:monospace;padding:20px'>USER OK — loading leaderboard...</div>";
+      loadLeaderboard();
 
-  // ── Your card
-  if (me) {
-    const card = document.createElement("div");
-    card.className = "user-card";
-    card.innerHTML = `
-      <div class="user-rank-badge">
-        <div class="rank-label">RANK</div>
-        <div class="rank-num">${userRank > 0 ? "#" + userRank : "—"}</div>
-      </div>
-      <div class="user-info">
-        <div class="user-you">Your standing</div>
-        <div class="user-name">${displayName(me.id)}</div>
-        <div class="user-xp"><span>${me.xp.toLocaleString()} XP</span></div>
-      </div>
-    `;
-    main.appendChild(card);
-  }
-
-  // ── Empty state
-  if (top20.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-wrap";
-    empty.innerHTML = `
-      <div class="empty-emoji">🚀</div>
-      <div class="empty-title">Be the first!</div>
-      <div class="empty-sub">No one on the leaderboard yet. Complete a lesson to claim the top spot!</div>
-    `;
-    main.appendChild(empty);
-    return;
-  }
-
-  // ── Heading
-  const heading = document.createElement("div");
-  heading.className = "section-heading";
-  heading.textContent = `Top ${top20.length} Learners`;
-  main.appendChild(heading);
-
-  // ── List
-  const list = document.createElement("div");
-  list.className = "lb-list";
-
-  top20.forEach((u, i) => {
-    const rank = i + 1;
-    const isMe = u.id === userId;
-
-    // Add divider after rank 3
-    if (rank === 4) {
-      const div = document.createElement("div");
-      div.className = "divider";
-      list.appendChild(div);
+    } catch (e) {
+      document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>INIT ERROR: " + e.message + "</div>";
     }
-
-    const row = document.createElement("div");
-    row.className = `lb-row ${rankClass(rank)} ${isMe ? "is-me" : ""}`;
-    row.innerHTML = `
-      ${isMe ? '<div class="you-badge">YOU</div>' : ""}
-      <div class="lb-rank ${rankColor(rank)}">${rank <= 3 ? "" : "#" + rank}</div>
-      <div class="lb-medal">${medal(rank)}</div>
-      <div class="lb-info">
-        <div class="lb-name">${displayName(u.id)}</div>
-        <div class="lb-sub">${subLabel(rank)}</div>
-      </div>
-      <div class="lb-xp"><span class="xi">⚡</span>${u.xp.toLocaleString()}</div>
-    `;
-    list.appendChild(row);
-  });
-
-  main.appendChild(list);
-
-  // ── Not in top 20 message
-  if (!inTop20 && me && userRank > 0) {
-    const banner = document.createElement("div");
-    banner.className = "not-ranked";
-    banner.innerHTML = `You're ranked <strong>#${userRank}</strong> globally — keep studying to reach the top 20! 💪`;
-    main.appendChild(banner);
   }
 
-  // ── Refresh button
-  const refreshBtn = document.createElement("button");
-  refreshBtn.className = "btn-refresh";
-  refreshBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="23 4 23 10 17 10"/>
-      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-    </svg>
-    Refresh
-  `;
-  refreshBtn.onclick = async () => {
-    refreshBtn.classList.add("spinning");
-    refreshBtn.disabled = true;
-    await loadLeaderboard(currentUserId);
-    refreshBtn.classList.remove("spinning");
-    refreshBtn.disabled = false;
-  };
-  main.appendChild(refreshBtn);
-}
+  async function loadLeaderboard() {
+    document.body.innerHTML = "<div style='color:white;font-family:monospace;padding:20px'>LOADING DATA...</div>";
 
-// ── LOAD DATA — fetches all users from profiles, ordered by XP
-async function loadLeaderboard() {
-  document.body.innerHTML = "<div style='color:white;padding:20px'>LOADING DATA...</div>";
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, xp")
+        .order("xp", { ascending: false });
 
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, xp")
-      .order("xp", { ascending: false })
-      .limit(10);
+      if (error) {
+        document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>DB ERROR:<br>" + JSON.stringify(error) + "</div>";
+        return;
+      }
 
-    if (error) {
-      document.body.innerHTML = "<div style='color:red;padding:20px'>" + JSON.stringify(error) + "</div>";
-      return;
+      document.body.innerHTML = "<pre style='color:lime;font-family:monospace;padding:20px;white-space:pre-wrap'>" + JSON.stringify(data, null, 2) + "</pre>";
+
+    } catch (e) {
+      document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>LOAD ERROR: " + e.message + "</div>";
     }
-
-    document.body.innerHTML = "<div style='color:lime;padding:20px'>" + JSON.stringify(data) + "</div>";
-
-  } catch (e) {
-    document.body.innerHTML = "<div style='color:red;padding:20px'>LOAD ERROR: " + e.message + "</div>";
   }
-}
 
-function showEmptyState() {
-  main.innerHTML = "";
-  const empty = document.createElement("div");
-  empty.className = "empty-wrap";
-  empty.innerHTML = `
-    <div class="empty-emoji">🚀</div>
-    <div class="empty-title">Be the first!</div>
-    <div class="empty-sub">No one on the leaderboard yet. Complete a lesson to claim the top spot!</div>
-  `;
-  main.appendChild(empty);
-}
-
-function renderLeaderboard(users, userId) {
-  buildUI(users.slice(0, 20), users, userId);
-}
-
-// ── INIT
-async function init() {
-  console.log("INIT RUNNING");
-
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    console.log("USER:", user);
-
-    if (!user) {
-      document.body.innerHTML = "<div style='color:red;padding:20px'>NO USER</div>";
-      return;
-    }
-
-    document.body.innerHTML = "<div style='color:lime;padding:20px'>USER OK - loading leaderboard...</div>";
-
-    loadLeaderboard();
-
-  } catch (e) {
-    document.body.innerHTML = "<div style='color:red;padding:20px'>INIT ERROR: " + e.message + "</div>";
-  }
-}
-
-init();
+  init();
 </script>
 </body>
 </html>
