@@ -1534,6 +1534,27 @@ function logMistake(step, userAnswer) {
 // ═══════════════════════════════════════════════════════════
 // LEADERBOARD SYNC
 // ═══════════════════════════════════════════════════════════
+async function saveXP(xpGained) {
+  try {
+    const { data: { user } } = await window._supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await window._supabaseClient
+      .from("profiles")
+      .select("xp")
+      .eq("id", user.id)
+      .single();
+
+    const newXP = (profile?.xp || 0) + xpGained;
+
+    await window._supabaseClient
+      .from("profiles")
+      .upsert({ id: user.id, xp: newXP });
+  } catch(e) {
+    console.error("saveXP error:", e);
+  }
+}
+
 async function syncXPToLeaderboard(xpValue) {
   if (!_userId || _userId === "anonymous") return;
   try {
@@ -1572,6 +1593,7 @@ function showComplete() {
   }
   localStorage.setItem(key("xp"), xp);
   syncXPToLeaderboard(xp);
+  saveXP(earnedXP);
 
   // ── Advance lesson counter
   const savedLesson = parseInt(localStorage.getItem(key("user_lesson")) || "1", 10);
