@@ -426,29 +426,31 @@ function buildUI(top20, allUsers, userId) {
   main.appendChild(refreshBtn);
 }
 
-// ── LOAD DATA
+// ── LOAD DATA — fetches from profiles table, ordered by XP
 async function loadLeaderboard(userId) {
   try {
-    const [top20Res, allRes] = await Promise.all([
-      _sb
-        .from("leaderboard")
-        .select("id, xp")
-        .order("xp", { ascending: false })
-        .limit(20),
-      _sb
-        .from("leaderboard")
-        .select("id, xp")
-        .order("xp", { ascending: false }),
-    ]);
+    const { data, error } = await _sb
+      .from("profiles")
+      .select("*")
+      .order("xp", { ascending: false })
+      .limit(50);
 
-    if (top20Res.error) throw top20Res.error;
-    if (allRes.error)   throw allRes.error;
+    if (error) {
+      console.error("Leaderboard fetch error:", error);
+      main.innerHTML = `<div class="error-wrap">⚠️ Could not load leaderboard — check your connection and try again.</div>`;
+      return;
+    }
 
-    buildUI(top20Res.data || [], allRes.data || [], userId);
+    displayLeaderboard(data || [], userId);
   } catch(err) {
     console.error("Leaderboard fetch error:", err);
     main.innerHTML = `<div class="error-wrap">⚠️ Could not load leaderboard — check your connection and try again.</div>`;
   }
+}
+
+// Alias so refresh button still works
+function displayLeaderboard(users, userId) {
+  buildUI(users.slice(0, 20), users, userId);
 }
 
 // ── INIT
