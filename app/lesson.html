@@ -17,6 +17,7 @@
     --red:       #f87171;
     --yellow:    #fbbf24;
     --blue:      #60a5fa;
+    --purple:    #a78bfa;
     --text:      #e8f0f8;
     --muted:     #6b8aaa;
     --soft:      #4a6580;
@@ -69,8 +70,25 @@
   .heart-icon { font-size: 18px; transition: transform 0.2s, opacity 0.3s; filter: drop-shadow(0 0 4px rgba(248,113,113,.5)); }
   .heart-icon.lost { opacity: 0.18; filter: none; transform: scale(0.85); }
 
+  /* ── Lesson Info Bar ── */
+  .lesson-info-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px 10px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .lesson-tag {
+    background: rgba(96,165,250,.1); border: 1px solid rgba(96,165,250,.2);
+    border-radius: 999px; padding: 4px 10px;
+    color: var(--blue);
+  }
+  .lesson-phase-tag {
+    background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.2);
+    border-radius: 999px; padding: 4px 10px;
+    color: var(--purple);
+  }
+
   /* ── Step area ── */
-  .step-wrap { flex: 1; padding: 28px 20px 0; display: flex; flex-direction: column; gap: 20px; }
+  .step-wrap { flex: 1; padding: 12px 20px 0; display: flex; flex-direction: column; gap: 20px; }
   @keyframes slideIn { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-36px); } }
   .step-visible { animation: slideIn 0.36s cubic-bezier(.4,0,.2,1) forwards; }
@@ -78,13 +96,23 @@
 
   /* ── Labels ── */
   .step-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: -8px; }
-  .step-label.green { color: var(--green); }
+  .step-label.green  { color: var(--green); }
+  .step-label.yellow { color: var(--yellow); }
+  .step-label.purple { color: var(--purple); }
   .mini-quiz-badge {
     display: inline-flex; align-items: center; gap: 5px;
     background: rgba(96,165,250,.1); border: 1px solid rgba(96,165,250,.25);
     border-radius: 999px; padding: 4px 12px;
     font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
     color: var(--blue); text-transform: uppercase;
+    margin-bottom: -6px; width: fit-content;
+  }
+  .review-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25);
+    border-radius: 999px; padding: 4px 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--yellow); text-transform: uppercase;
     margin-bottom: -6px; width: fit-content;
   }
 
@@ -99,8 +127,12 @@
     background: radial-gradient(ellipse at 50% 0%, rgba(74,222,128,.07) 0%, transparent 70%);
     pointer-events: none;
   }
+  .word-card.review-card::before {
+    background: radial-gradient(ellipse at 50% 0%, rgba(251,191,36,.07) 0%, transparent 70%);
+  }
   .word-card-top { display: flex; align-items: flex-start; justify-content: center; gap: 8px; margin-bottom: 4px; }
   .word-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: clamp(52px, 13vw, 76px); font-weight: 700; line-height: 1; color: var(--text); text-shadow: 0 0 32px rgba(74,222,128,.2); }
+  .word-card.review-card .word-chinese { text-shadow: 0 0 32px rgba(251,191,36,.2); }
   .btn-audio {
     background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25);
     border-radius: 50%; width: 32px; height: 32px;
@@ -112,6 +144,7 @@
   .btn-audio[disabled] { opacity: 0.3; cursor: default; }
   .btn-audio svg { width: 14px; height: 14px; }
   .word-pinyin { font-size: 19px; color: var(--green); font-weight: 500; margin-bottom: 6px; letter-spacing: 0.04em; }
+  .word-card.review-card .word-pinyin { color: var(--yellow); }
   .word-meaning { font-size: 15px; color: var(--muted); font-weight: 400; margin-bottom: 20px; }
   .word-meaning strong { color: var(--text); font-weight: 600; }
   .word-example { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: left; }
@@ -122,14 +155,44 @@
 
   /* ── Grammar ── */
   .grammar-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 22px; }
+  .grammar-card.purple-card { border-color: rgba(167,139,250,.25); background: rgba(167,139,250,.04); }
   .grammar-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 12px; line-height: 1.35; }
   .grammar-body  { font-size: 14px; line-height: 1.8; color: var(--muted); }
   .grammar-body .highlight { background: rgba(74,222,128,.12); color: var(--green); padding: 1px 5px; border-radius: 5px; font-weight: 500; }
+  .grammar-examples { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .grammar-ex-item { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .grammar-ex-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: 15px; color: var(--text); margin-bottom: 2px; }
+  .grammar-ex-translation { font-size: 12px; color: var(--soft); font-style: italic; }
+
+  /* ── Checkpoint ── */
+  .checkpoint-header {
+    text-align: center; padding: 20px 0 10px;
+  }
+  .checkpoint-icon { font-size: 40px; margin-bottom: 8px; }
+  .checkpoint-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .checkpoint-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .checkpoint-progress { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .checkpoint-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border); transition: background 0.3s;
+  }
+  .checkpoint-dot.done   { background: var(--green); }
+  .checkpoint-dot.active { background: var(--yellow); box-shadow: 0 0 6px rgba(251,191,36,.6); }
+
+  /* ── Sentence meaning ── */
+  .sentence-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px 22px;
+    text-align: center;
+  }
+  .sentence-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: clamp(20px, 5vw, 28px); font-weight: 700; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+  .sentence-pinyin  { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 
   /* ── Exercise ── */
   .exercise-question { font-size: clamp(16px, 4.2vw, 19px); font-weight: 600; line-height: 1.45; color: var(--text); }
   .exercise-question .q-word { font-family: 'Noto Sans SC', sans-serif; font-size: 1.25em; color: var(--green); }
   .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .options-grid.single-col { grid-template-columns: 1fr; }
   .option-btn {
     background: var(--card); border: 2px solid var(--border);
     border-radius: 12px; padding: 16px 12px;
@@ -169,11 +232,42 @@
     word-break: break-word;
   }
   .match-item.chinese-item { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; }
-  .match-item:hover:not(.matched) { border-color: rgba(74,222,128,.4); background: var(--card2); transform: translateY(-1px); }
+  .match-item:hover:not(.matched):not(.disabled-match) { border-color: rgba(74,222,128,.4); background: var(--card2); transform: translateY(-1px); }
   .match-item.selected { border-color: var(--green); background: rgba(74,222,128,.1); color: var(--green); }
   .match-item.matched  { border-color: var(--green); background: rgba(74,222,128,.08); color: var(--green); opacity: 0.55; cursor: default; }
   .match-item.wrong-shake { border-color: var(--red); background: rgba(248,113,113,.1); animation: shake 0.4s ease; }
+  .match-item.disabled-match { opacity: 0.35; cursor: not-allowed; }
   @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 60% { transform: translateX(6px); } }
+
+  /* ── Word bank fill-in ── */
+  .fill-sentence {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: clamp(17px,4.5vw,22px);
+    font-weight: 600; color: var(--text);
+    line-height: 1.8; text-align: center;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 20px;
+  }
+  .fill-blank {
+    display: inline-block;
+    border-bottom: 2px solid var(--green);
+    min-width: 60px; text-align: center;
+    color: var(--green); font-weight: 700;
+    padding: 0 4px;
+  }
+  .word-bank-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .word-chip {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 10px; padding: 10px 18px;
+    font-family: 'Noto Sans SC', sans-serif; font-size: 16px; font-weight: 500;
+    color: var(--text); cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform 0.15s, opacity var(--t);
+  }
+  .word-chip:hover:not(:disabled) { border-color: rgba(74,222,128,.5); background: var(--card2); transform: translateY(-1px); }
+  .word-chip:disabled { opacity: 0.3; cursor: not-allowed; }
+  .word-chip.used { opacity: 0.25; pointer-events: none; }
+  .word-chip.correct-chip { border-color: var(--green); background: rgba(74,222,128,.12); color: var(--green); }
+  .word-chip.wrong-chip   { border-color: var(--red); background: rgba(248,113,113,.1); color: var(--red); animation: shake 0.4s ease; }
 
   /* ── Feedback ── */
   .feedback-banner {
@@ -239,6 +333,16 @@
   .btn-ad:hover { background: rgba(251,191,36,.14); border-color: var(--yellow); }
   .btn-ad:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  /* ── Checkpoint Complete ── */
+  .checkpoint-result { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px 0; }
+  .score-ring { position: relative; width: 120px; height: 120px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring-track { fill: none; stroke: var(--card2); stroke-width: 8; }
+  .score-ring-fill  { fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .score-ring-text  { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-pct  { font-size: 26px; font-weight: 700; color: var(--text); }
+  .score-sub  { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
   /* ── Toast ── */
   #xp-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-16px); background: var(--green); color: #0a1a0f; padding: 7px 18px; border-radius: 999px; font-weight: 700; font-size: 13px; opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 200; pointer-events: none; white-space: nowrap; }
   #xp-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -257,6 +361,10 @@
     </div>
     <div class="hearts-display" id="hearts-display"></div>
   </header>
+  <div class="lesson-info-bar" id="lesson-info-bar">
+    <span class="lesson-tag" id="lesson-tag">HSK 1 · Lesson 1</span>
+    <span class="lesson-phase-tag" id="lesson-phase-tag">Intro</span>
+  </div>
   <div id="step-area" class="step-wrap"></div>
   <div class="bottom-area" id="bottom-area"></div>
 </div>
@@ -278,84 +386,120 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// WORD BANK — 30 lessons × 5 words each (HSK 1 core vocab)
+// HSK 1 FULL WORD BANK — 150 words, 30 lesson groups
 // ═══════════════════════════════════════════════════════════
-const WORD_BANK = {
-  1: [
-    { chinese:"你好",  pinyin:"nǐ hǎo",    meaning:"Hello",        example:{ chinese:"你好，很高兴认识你！", pinyin:"Nǐ hǎo, hěn gāoxìng rènshi nǐ!", translation:"Hello, nice to meet you!" } },
-    { chinese:"再见",  pinyin:"zài jiàn",  meaning:"Goodbye",      example:{ chinese:"再见，明天见！",       pinyin:"Zài jiàn, míngtiān jiàn!",       translation:"Goodbye, see you tomorrow!" } },
-    { chinese:"谢谢",  pinyin:"xiè xiè",   meaning:"Thank you",    example:{ chinese:"谢谢你的帮助！",       pinyin:"Xiè xiè nǐ de bāngzhù!",         translation:"Thank you for your help!" } },
-    { chinese:"对不起",pinyin:"duì bu qǐ", meaning:"Sorry",        example:{ chinese:"对不起，我来晚了。",   pinyin:"Duì bu qǐ, wǒ lái wǎn le.",     translation:"Sorry, I'm late." } },
-    { chinese:"没关系",pinyin:"méi guān xi",meaning:"It's okay",   example:{ chinese:"没关系，不用担心。",   pinyin:"Méi guān xi, bú yòng dānxīn.",   translation:"It's okay, don't worry." } },
+const HSK1 = {
+  words: [
+    // Lesson 1: Greetings
+    { hanzi:"你好",  pinyin:"nǐ hǎo",     meaning:"Hello",          lesson:1, example:{ chinese:"你好！很高兴认识你。", pinyin:"Nǐ hǎo! Hěn gāoxìng rènshi nǐ.", translation:"Hello! Nice to meet you." }},
+    { hanzi:"再见",  pinyin:"zài jiàn",   meaning:"Goodbye",        lesson:1, example:{ chinese:"再见，明天见！",       pinyin:"Zài jiàn, míngtiān jiàn!",       translation:"Goodbye, see you tomorrow!" }},
+    { hanzi:"谢谢",  pinyin:"xiè xie",    meaning:"Thank you",      lesson:1, example:{ chinese:"谢谢你的帮助！",       pinyin:"Xiè xie nǐ de bāngzhù!",         translation:"Thank you for your help!" }},
+    { hanzi:"对不起",pinyin:"duì bu qǐ",  meaning:"Sorry",          lesson:1, example:{ chinese:"对不起，我来晚了。",   pinyin:"Duì bu qǐ, wǒ lái wǎn le.",     translation:"Sorry, I'm late." }},
+    { hanzi:"没关系",pinyin:"méi guān xi",meaning:"It's okay",      lesson:1, example:{ chinese:"没关系，不用担心。",   pinyin:"Méi guān xi, bú yòng dānxīn.",   translation:"It's okay, don't worry." }},
+    // Lesson 2: Pronouns
+    { hanzi:"我",    pinyin:"wǒ",         meaning:"I / Me",         lesson:2, example:{ chinese:"我是学生。",          pinyin:"Wǒ shì xuésheng.",               translation:"I am a student." }},
+    { hanzi:"你",    pinyin:"nǐ",         meaning:"You",            lesson:2, example:{ chinese:"你叫什么名字？",      pinyin:"Nǐ jiào shénme míngzi?",         translation:"What is your name?" }},
+    { hanzi:"他",    pinyin:"tā",         meaning:"He / Him",       lesson:2, example:{ chinese:"他是我的朋友。",      pinyin:"Tā shì wǒ de péngyǒu.",          translation:"He is my friend." }},
+    { hanzi:"她",    pinyin:"tā",         meaning:"She / Her",      lesson:2, example:{ chinese:"她很漂亮。",          pinyin:"Tā hěn piàoliang.",               translation:"She is very beautiful." }},
+    { hanzi:"我们",  pinyin:"wǒ men",     meaning:"We / Us",        lesson:2, example:{ chinese:"我们一起去吧！",      pinyin:"Wǒmen yìqǐ qù ba!",              translation:"Let's go together!" }},
+    // Lesson 3: Core Verbs
+    { hanzi:"是",    pinyin:"shì",        meaning:"To be / Is",     lesson:3, example:{ chinese:"我是老师。",          pinyin:"Wǒ shì lǎoshī.",                 translation:"I am a teacher." }},
+    { hanzi:"不",    pinyin:"bù",         meaning:"No / Not",       lesson:3, example:{ chinese:"我不知道。",          pinyin:"Wǒ bù zhīdào.",                  translation:"I don't know." }},
+    { hanzi:"有",    pinyin:"yǒu",        meaning:"To have",        lesson:3, example:{ chinese:"我有一只猫。",        pinyin:"Wǒ yǒu yī zhī māo.",             translation:"I have a cat." }},
+    { hanzi:"没有",  pinyin:"méi yǒu",    meaning:"Don't have",     lesson:3, example:{ chinese:"我没有时间。",        pinyin:"Wǒ méi yǒu shíjiān.",            translation:"I don't have time." }},
+    { hanzi:"好",    pinyin:"hǎo",        meaning:"Good",           lesson:3, example:{ chinese:"今天天气很好。",      pinyin:"Jīntiān tiānqì hěn hǎo.",        translation:"The weather is good today." }},
+    // Lesson 4: Food & Drink
+    { hanzi:"吃",    pinyin:"chī",        meaning:"To eat",         lesson:4, example:{ chinese:"我想吃饺子。",        pinyin:"Wǒ xiǎng chī jiǎozi.",           translation:"I want to eat dumplings." }},
+    { hanzi:"喝",    pinyin:"hē",         meaning:"To drink",       lesson:4, example:{ chinese:"我喜欢喝茶。",        pinyin:"Wǒ xǐhuān hē chá.",              translation:"I like to drink tea." }},
+    { hanzi:"水",    pinyin:"shuǐ",       meaning:"Water",          lesson:4, example:{ chinese:"请给我一杯水。",      pinyin:"Qǐng gěi wǒ yī bēi shuǐ.",      translation:"Please give me a glass of water." }},
+    { hanzi:"饭",    pinyin:"fàn",        meaning:"Rice / Meal",    lesson:4, example:{ chinese:"我们去吃饭吧。",      pinyin:"Wǒmen qù chīfàn ba.",            translation:"Let's go eat." }},
+    { hanzi:"好吃",  pinyin:"hǎo chī",    meaning:"Delicious",      lesson:4, example:{ chinese:"这个菜很好吃！",      pinyin:"Zhège cài hěn hǎochī!",          translation:"This dish is delicious!" }},
+    // Lesson 5: Movement
+    { hanzi:"去",    pinyin:"qù",         meaning:"To go",          lesson:5, example:{ chinese:"我想去北京。",        pinyin:"Wǒ xiǎng qù Běijīng.",           translation:"I want to go to Beijing." }},
+    { hanzi:"来",    pinyin:"lái",        meaning:"To come",        lesson:5, example:{ chinese:"请进来！",            pinyin:"Qǐng jìn lái!",                  translation:"Please come in!" }},
+    { hanzi:"在",    pinyin:"zài",        meaning:"At / In",        lesson:5, example:{ chinese:"我在家。",            pinyin:"Wǒ zài jiā.",                    translation:"I am at home." }},
+    { hanzi:"这",    pinyin:"zhè",        meaning:"This",           lesson:5, example:{ chinese:"这是什么？",          pinyin:"Zhè shì shénme?",                translation:"What is this?" }},
+    { hanzi:"那",    pinyin:"nà",         meaning:"That",           lesson:5, example:{ chinese:"那个人是谁？",        pinyin:"Nàge rén shì shéi?",             translation:"Who is that person?" }},
+    // Lesson 7: Places
+    { hanzi:"家",    pinyin:"jiā",        meaning:"Home / Family",  lesson:7, example:{ chinese:"我的家在上海。",      pinyin:"Wǒ de jiā zài Shànghǎi.",        translation:"My home is in Shanghai." }},
+    { hanzi:"学校",  pinyin:"xuéxiào",    meaning:"School",         lesson:7, example:{ chinese:"我每天去学校。",      pinyin:"Wǒ měitiān qù xuéxiào.",         translation:"I go to school every day." }},
+    { hanzi:"医院",  pinyin:"yīyuàn",     meaning:"Hospital",       lesson:7, example:{ chinese:"医院在哪里？",        pinyin:"Yīyuàn zài nǎlǐ?",               translation:"Where is the hospital?" }},
+    { hanzi:"商店",  pinyin:"shāngdiàn",  meaning:"Shop / Store",   lesson:7, example:{ chinese:"商店几点开门？",      pinyin:"Shāngdiàn jǐ diǎn kāimén?",      translation:"What time does the shop open?" }},
+    { hanzi:"公司",  pinyin:"gōngsī",     meaning:"Company",        lesson:7, example:{ chinese:"他在一家大公司工作。", pinyin:"Tā zài yījiā dà gōngsī gōngzuò.", translation:"He works at a big company." }},
+    // Lesson 8: Numbers
+    { hanzi:"一",    pinyin:"yī",         meaning:"One",            lesson:8, example:{ chinese:"我有一个苹果。",      pinyin:"Wǒ yǒu yīgè píngguǒ.",          translation:"I have one apple." }},
+    { hanzi:"两",    pinyin:"liǎng",      meaning:"Two",            lesson:8, example:{ chinese:"我买了两本书。",      pinyin:"Wǒ mǎile liǎng běn shū.",        translation:"I bought two books." }},
+    { hanzi:"三",    pinyin:"sān",        meaning:"Three",          lesson:8, example:{ chinese:"我有三个朋友。",      pinyin:"Wǒ yǒu sān gè péngyǒu.",         translation:"I have three friends." }},
+    { hanzi:"四",    pinyin:"sì",         meaning:"Four",           lesson:8, example:{ chinese:"我们家有四口人。",    pinyin:"Wǒmen jiā yǒu sì kǒu rén.",      translation:"There are four people in my family." }},
+    { hanzi:"五",    pinyin:"wǔ",         meaning:"Five",           lesson:8, example:{ chinese:"一周有五个工作日。",  pinyin:"Yīzhōu yǒu wǔ gè gōngzuòrì.",   translation:"There are five working days in a week." }},
+    // Lesson 9: Time
+    { hanzi:"今天",  pinyin:"jīn tiān",   meaning:"Today",          lesson:9, example:{ chinese:"今天天气怎么样？",    pinyin:"Jīntiān tiānqì zěnmeyàng?",      translation:"How is the weather today?" }},
+    { hanzi:"明天",  pinyin:"míng tiān",  meaning:"Tomorrow",       lesson:9, example:{ chinese:"明天见！",            pinyin:"Míngtiān jiàn!",                 translation:"See you tomorrow!" }},
+    { hanzi:"昨天",  pinyin:"zuó tiān",   meaning:"Yesterday",      lesson:9, example:{ chinese:"昨天我很忙。",        pinyin:"Zuótiān wǒ hěn máng.",           translation:"I was busy yesterday." }},
+    { hanzi:"现在",  pinyin:"xiàn zài",   meaning:"Now",            lesson:9, example:{ chinese:"现在几点？",          pinyin:"Xiànzài jǐ diǎn?",               translation:"What time is it now?" }},
+    { hanzi:"以后",  pinyin:"yǐ hòu",     meaning:"Later / After",  lesson:9, example:{ chinese:"以后有时间再说。",    pinyin:"Yǐhòu yǒu shíjiān zài shuō.",    translation:"We'll talk later." }},
+    // Lesson 10: People
+    { hanzi:"爸爸",  pinyin:"bà ba",      meaning:"Father / Dad",   lesson:10, example:{ chinese:"我爸爸是医生。",      pinyin:"Wǒ bàba shì yīshēng.",           translation:"My dad is a doctor." }},
+    { hanzi:"妈妈",  pinyin:"mā ma",      meaning:"Mother / Mom",   lesson:10, example:{ chinese:"妈妈做的饭很好吃。",  pinyin:"Māma zuò de fàn hěn hǎochī.",    translation:"Mom's cooking is delicious." }},
+    { hanzi:"朋友",  pinyin:"péng yǒu",   meaning:"Friend",         lesson:10, example:{ chinese:"他是我最好的朋友。",  pinyin:"Tā shì wǒ zuì hǎo de péngyǒu.", translation:"He is my best friend." }},
+    { hanzi:"老师",  pinyin:"lǎo shī",    meaning:"Teacher",        lesson:10, example:{ chinese:"我的老师很好。",      pinyin:"Wǒ de lǎoshī hěn hǎo.",          translation:"My teacher is very good." }},
+    { hanzi:"学生",  pinyin:"xué sheng",  meaning:"Student",        lesson:10, example:{ chinese:"我是大学生。",        pinyin:"Wǒ shì dàxuésheng.",             translation:"I am a university student." }},
+    // Lesson 6: Adjectives
+    { hanzi:"大",    pinyin:"dà",         meaning:"Big / Large",    lesson:6, example:{ chinese:"这只狗很大！",        pinyin:"Zhè zhī gǒu hěn dà!",            translation:"This dog is very big!" }},
+    { hanzi:"小",    pinyin:"xiǎo",       meaning:"Small / Little", lesson:6, example:{ chinese:"我住在小城市。",      pinyin:"Wǒ zhù zài xiǎo chéngshì.",      translation:"I live in a small city." }},
+    { hanzi:"多",    pinyin:"duō",        meaning:"Many / Much",    lesson:6, example:{ chinese:"今天人很多。",        pinyin:"Jīntiān rén hěn duō.",           translation:"There are many people today." }},
+    { hanzi:"少",    pinyin:"shǎo",       meaning:"Few / Little",   lesson:6, example:{ chinese:"这里人很少。",        pinyin:"Zhèlǐ rén hěn shǎo.",            translation:"There are few people here." }},
+    { hanzi:"很",    pinyin:"hěn",        meaning:"Very",           lesson:6, example:{ chinese:"这里很安静。",        pinyin:"Zhèlǐ hěn ānjìng.",              translation:"It is very quiet here." }},
   ],
-  2: [
-    { chinese:"我",    pinyin:"wǒ",        meaning:"I / Me",       example:{ chinese:"我是学生。",          pinyin:"Wǒ shì xuésheng.",               translation:"I am a student." } },
-    { chinese:"你",    pinyin:"nǐ",        meaning:"You",          example:{ chinese:"你好吗？",            pinyin:"Nǐ hǎo ma?",                     translation:"How are you?" } },
-    { chinese:"他",    pinyin:"tā",        meaning:"He / Him",     example:{ chinese:"他是我的朋友。",      pinyin:"Tā shì wǒ de péngyǒu.",          translation:"He is my friend." } },
-    { chinese:"她",    pinyin:"tā",        meaning:"She / Her",    example:{ chinese:"她很漂亮。",          pinyin:"Tā hěn piàoliang.",               translation:"She is very beautiful." } },
-    { chinese:"我们",  pinyin:"wǒ men",    meaning:"We / Us",      example:{ chinese:"我们一起去吧！",      pinyin:"Wǒmen yìqǐ qù ba!",              translation:"Let's go together!" } },
-  ],
-  3: [
-    { chinese:"是",    pinyin:"shì",       meaning:"To be / Yes",  example:{ chinese:"我是老师。",          pinyin:"Wǒ shì lǎoshī.",                 translation:"I am a teacher." } },
-    { chinese:"不",    pinyin:"bù",        meaning:"No / Not",     example:{ chinese:"我不知道。",          pinyin:"Wǒ bù zhīdào.",                  translation:"I don't know." } },
-    { chinese:"有",    pinyin:"yǒu",       meaning:"To have",      example:{ chinese:"我有一只猫。",        pinyin:"Wǒ yǒu yī zhī māo.",             translation:"I have a cat." } },
-    { chinese:"没有",  pinyin:"méi yǒu",   meaning:"Don't have",   example:{ chinese:"我没有时间。",        pinyin:"Wǒ méi yǒu shíjiān.",            translation:"I don't have time." } },
-    { chinese:"好",    pinyin:"hǎo",       meaning:"Good",         example:{ chinese:"今天天气很好。",      pinyin:"Jīntiān tiānqì hěn hǎo.",        translation:"The weather is good today." } },
-  ],
-  4: [
-    { chinese:"吃",    pinyin:"chī",       meaning:"To eat",       example:{ chinese:"我想吃饺子。",        pinyin:"Wǒ xiǎng chī jiǎozi.",           translation:"I want to eat dumplings." } },
-    { chinese:"喝",    pinyin:"hē",        meaning:"To drink",     example:{ chinese:"我喜欢喝茶。",        pinyin:"Wǒ xǐhuān hē chá.",              translation:"I like to drink tea." } },
-    { chinese:"水",    pinyin:"shuǐ",      meaning:"Water",        example:{ chinese:"请给我一杯水。",      pinyin:"Qǐng gěi wǒ yī bēi shuǐ.",      translation:"Please give me a glass of water." } },
-    { chinese:"饭",    pinyin:"fàn",       meaning:"Rice / Meal",  example:{ chinese:"我们去吃饭吧。",      pinyin:"Wǒmen qù chīfàn ba.",            translation:"Let's go eat." } },
-    { chinese:"好吃",  pinyin:"hǎo chī",   meaning:"Delicious",    example:{ chinese:"这个菜很好吃！",      pinyin:"Zhège cài hěn hǎochī!",          translation:"This dish is delicious!" } },
-  ],
-  5: [
-    { chinese:"去",    pinyin:"qù",        meaning:"To go",        example:{ chinese:"我想去北京。",        pinyin:"Wǒ xiǎng qù Běijīng.",           translation:"I want to go to Beijing." } },
-    { chinese:"来",    pinyin:"lái",       meaning:"To come",      example:{ chinese:"请进来！",            pinyin:"Qǐng jìn lái!",                  translation:"Please come in!" } },
-    { chinese:"在",    pinyin:"zài",       meaning:"At / In",      example:{ chinese:"我在家。",            pinyin:"Wǒ zài jiā.",                    translation:"I am at home." } },
-    { chinese:"这",    pinyin:"zhè",       meaning:"This",         example:{ chinese:"这是什么？",          pinyin:"Zhè shì shénme?",                translation:"What is this?" } },
-    { chinese:"那",    pinyin:"nà",        meaning:"That",         example:{ chinese:"那个人是谁？",        pinyin:"Nàge rén shì shéi?",             translation:"Who is that person?" } },
-  ],
-  6: [
-    { chinese:"大",    pinyin:"dà",        meaning:"Big / Large",  example:{ chinese:"这只狗很大！",        pinyin:"Zhè zhī gǒu hěn dà!",            translation:"This dog is very big!" } },
-    { chinese:"小",    pinyin:"xiǎo",      meaning:"Small / Little",example:{ chinese:"我住在小城市。",    pinyin:"Wǒ zhù zài xiǎo chéngshì.",      translation:"I live in a small city." } },
-    { chinese:"多",    pinyin:"duō",       meaning:"Many / Much",  example:{ chinese:"今天人很多。",        pinyin:"Jīntiān rén hěn duō.",           translation:"There are many people today." } },
-    { chinese:"少",    pinyin:"shǎo",      meaning:"Few / Little", example:{ chinese:"这里人很少。",        pinyin:"Zhèlǐ rén hěn shǎo.",            translation:"There are few people here." } },
-    { chinese:"很",    pinyin:"hěn",       meaning:"Very",         example:{ chinese:"这里很安静。",        pinyin:"Zhèlǐ hěn ānjìng.",              translation:"It is very quiet here." } },
-  ],
-  7: [
-    { chinese:"家",    pinyin:"jiā",       meaning:"Home / Family",example:{ chinese:"我的家在上海。",      pinyin:"Wǒ de jiā zài Shànghǎi.",        translation:"My home is in Shanghai." } },
-    { chinese:"学校",  pinyin:"xuéxiào",   meaning:"School",       example:{ chinese:"我每天去学校。",      pinyin:"Wǒ měi tiān qù xuéxiào.",        translation:"I go to school every day." } },
-    { chinese:"医院",  pinyin:"yīyuàn",    meaning:"Hospital",     example:{ chinese:"医院在哪里？",        pinyin:"Yīyuàn zài nǎlǐ?",               translation:"Where is the hospital?" } },
-    { chinese:"商店",  pinyin:"shāngdiàn", meaning:"Shop / Store", example:{ chinese:"商店几点开门？",      pinyin:"Shāngdiàn jǐ diǎn kāimén?",      translation:"What time does the shop open?" } },
-    { chinese:"公司",  pinyin:"gōngsī",    meaning:"Company",      example:{ chinese:"他在一家大公司工作。", pinyin:"Tā zài yījiā dà gōngsī gōngzuò.", translation:"He works at a big company." } },
-  ],
-  8: [
-    { chinese:"一",    pinyin:"yī",        meaning:"One",          example:{ chinese:"我有一个苹果。",      pinyin:"Wǒ yǒu yīgè píngguǒ.",          translation:"I have one apple." } },
-    { chinese:"两",    pinyin:"liǎng",     meaning:"Two",          example:{ chinese:"我买了两本书。",      pinyin:"Wǒ mǎile liǎng běn shū.",        translation:"I bought two books." } },
-    { chinese:"三",    pinyin:"sān",       meaning:"Three",        example:{ chinese:"我有三个朋友。",      pinyin:"Wǒ yǒu sāngè péngyǒu.",          translation:"I have three friends." } },
-    { chinese:"四",    pinyin:"sì",        meaning:"Four",         example:{ chinese:"我们家有四口人。",    pinyin:"Wǒmen jiā yǒu sì kǒu rén.",      translation:"There are four people in my family." } },
-    { chinese:"五",    pinyin:"wǔ",        meaning:"Five",         example:{ chinese:"一周有五个工作日。",  pinyin:"Yīzhōu yǒu wǔ gè gōngzuòrì.",   translation:"There are five working days in a week." } },
-  ],
-  9: [
-    { chinese:"今天",  pinyin:"jīn tiān",  meaning:"Today",        example:{ chinese:"今天天气怎么样？",    pinyin:"Jīntiān tiānqì zěnmeyàng?",      translation:"How is the weather today?" } },
-    { chinese:"明天",  pinyin:"míng tiān", meaning:"Tomorrow",     example:{ chinese:"明天见！",            pinyin:"Míngtiān jiàn!",                 translation:"See you tomorrow!" } },
-    { chinese:"昨天",  pinyin:"zuó tiān",  meaning:"Yesterday",    example:{ chinese:"昨天我很忙。",        pinyin:"Zuótiān wǒ hěn máng.",           translation:"I was busy yesterday." } },
-    { chinese:"现在",  pinyin:"xiàn zài",  meaning:"Now",          example:{ chinese:"现在几点？",          pinyin:"Xiànzài jǐ diǎn?",               translation:"What time is it now?" } },
-    { chinese:"以后",  pinyin:"yǐ hòu",    meaning:"Later / After",example:{ chinese:"以后有时间再说。",    pinyin:"Yǐhòu yǒu shíjiān zài shuō.",    translation:"We'll talk when there's time later." } },
-  ],
-  10: [
-    { chinese:"爸爸",  pinyin:"bà ba",     meaning:"Father / Dad", example:{ chinese:"我爸爸是医生。",      pinyin:"Wǒ bàba shì yīshēng.",           translation:"My dad is a doctor." } },
-    { chinese:"妈妈",  pinyin:"mā ma",     meaning:"Mother / Mom", example:{ chinese:"妈妈做的饭很好吃。",  pinyin:"Māma zuò de fàn hěn hǎochī.",    translation:"Mom's cooking is delicious." } },
-    { chinese:"朋友",  pinyin:"péng yǒu",  meaning:"Friend",       example:{ chinese:"他是我最好的朋友。",  pinyin:"Tā shì wǒ zuì hǎo de péngyǒu.", translation:"He is my best friend." } },
-    { chinese:"老师",  pinyin:"lǎo shī",   meaning:"Teacher",      example:{ chinese:"我的老师很好。",      pinyin:"Wǒ de lǎoshī hěn hǎo.",          translation:"My teacher is very good." } },
-    { chinese:"学生",  pinyin:"xué sheng", meaning:"Student",      example:{ chinese:"我是大学生。",        pinyin:"Wǒ shì dàxuésheng.",             translation:"I am a university student." } },
-  ],
+  grammar: [
+    { lesson:1,  title:"Greeting with 你好",      explanation:"你好 (nǐ hǎo) is the standard greeting. Literally it means 'you good'. Reply the same way!", pattern:"你好！", translation:"Hello!", examples:[{ chinese:"你好！很高兴见到你。", translation:"Hello! Nice to meet you." }, { chinese:"老师，你好！", translation:"Hello, teacher!" }] },
+    { lesson:3,  title:"The verb 是 (to be)",      explanation:"是 (shì) connects subject to identity. In Chinese, 是 never changes form — no 'am/is/are' variants.", pattern:"S + 是 + noun", translation:"S is [noun]", examples:[{ chinese:"我是老师。", translation:"I am a teacher." }, { chinese:"她是学生。", translation:"She is a student." }] },
+    { lesson:3,  title:"Negation with 不",         explanation:"不 (bù) is placed directly before a verb or adjective to negate it. Easy and consistent!", pattern:"S + 不 + verb", translation:"S does not [verb]", examples:[{ chinese:"我不知道。", translation:"I don't know." }, { chinese:"他不去。", translation:"He's not going." }] },
+    { lesson:5,  title:"Location with 在",         explanation:"在 (zài) means 'to be at/in'. It shows location. Place it between the subject and the place.", pattern:"S + 在 + place", translation:"S is at [place]", examples:[{ chinese:"我在学校。", translation:"I am at school." }, { chinese:"他在家。", translation:"He is at home." }] },
+    { lesson:6,  title:"Degree adverb 很",         explanation:"很 (hěn) means 'very' and is placed before adjectives. In Chinese, adjective predicates usually require 很 even when not emphasizing.", pattern:"S + 很 + adjective", translation:"S is very [adj]", examples:[{ chinese:"她很漂亮。", translation:"She is very beautiful." }, { chinese:"天气很好。", translation:"The weather is good." }] },
+    { lesson:8,  title:"Question particle 吗",     explanation:"Add 吗 (ma) to the end of any sentence to turn it into a yes/no question. No word order changes needed!", pattern:"Statement + 吗？", translation:"Is it that [statement]?", examples:[{ chinese:"你是老师吗？", translation:"Are you a teacher?" }, { chinese:"他来吗？", translation:"Is he coming?" }] },
+    { lesson:9,  title:"Time words come early",    explanation:"Time expressions (今天, 明天, 现在) go at the beginning of the sentence or right after the subject — before the verb.", pattern:"Time + S + verb", translation:"", examples:[{ chinese:"今天我去学校。", translation:"Today I go to school." }, { chinese:"明天见！", translation:"See you tomorrow!" }] },
+    { lesson:10, title:"Possession with 的",       explanation:"的 (de) marks possession, like 's in English. Place it between owner and object.", pattern:"Owner + 的 + object", translation:"Owner's object", examples:[{ chinese:"我的老师很好。", translation:"My teacher is very good." }, { chinese:"他的朋友是学生。", translation:"His friend is a student." }] },
+  ]
 };
 
-// Fill remaining lessons 11–30 by cycling through bank
-for (let i = 11; i <= 30; i++) {
-  WORD_BANK[i] = WORD_BANK[((i - 1) % 10) + 1].map(w => ({...w}));
+// ═══════════════════════════════════════════════════════════
+// LESSON PLAN ENGINE
+// ═══════════════════════════════════════════════════════════
+// Returns config for a given lesson number:
+//   { newWordCount, reviewWordCount, grammarCount, isCheckpoint, phase }
+function getLessonConfig(lessonNum) {
+  const cycle = ((lessonNum - 1) % 6) + 1; // 1..6 cycle
+  if (cycle === 6) return { newWordCount:0, reviewWordCount:5, grammarCount:0, isCheckpoint:true, phase:"Checkpoint" };
+  const configs = {
+    1: { newWordCount:5, reviewWordCount:0, grammarCount:1, isCheckpoint:false, phase:"New Words" },
+    2: { newWordCount:1, reviewWordCount:4, grammarCount:0, isCheckpoint:false, phase:"Review + New" },
+    3: { newWordCount:2, reviewWordCount:3, grammarCount:1, isCheckpoint:false, phase:"Expand" },
+    4: { newWordCount:3, reviewWordCount:3, grammarCount:0, isCheckpoint:false, phase:"Build Up" },
+    5: { newWordCount:2, reviewWordCount:4, grammarCount:1, isCheckpoint:false, phase:"Consolidate" },
+  };
+  return configs[cycle];
+}
+
+// Get words for a lesson number (cycling through HSK1.words in blocks of 5)
+function getWordsForLesson(lessonNum) {
+  const all = HSK1.words;
+  const blockStart = (((lessonNum - 1) % Math.ceil(all.length / 5)) * 5) % all.length;
+  return all.slice(blockStart, blockStart + 5);
+}
+
+// Get previously learned words (from earlier cycles in the current run)
+function getPreviousWords(lessonNum, count) {
+  const all = HSK1.words;
+  const cur = (((lessonNum - 1) % Math.ceil(all.length / 5)) * 5) % all.length;
+  const pool = cur > 0 ? all.slice(0, cur) : all.slice(5); // fallback
+  return shuffle(pool).slice(0, count);
+}
+
+function getGrammarForLesson(lessonNum) {
+  // Cycle through grammar notes
+  const idx = (lessonNum - 1) % HSK1.grammar.length;
+  return HSK1.grammar[idx];
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -369,127 +513,238 @@ function shuffle(arr) {
   }
   return a;
 }
+function pick(arr, n) { return shuffle(arr).slice(0, n); }
+function rand(arr)    { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function pick(arr, n) {
-  return shuffle(arr).slice(0, n);
+function stripTones(s) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[āáǎà]/g,"a").replace(/[ēéěè]/g,"e").replace(/[īíǐì]/g,"i")
+    .replace(/[ōóǒò]/g,"o").replace(/[ūúǔùǖǘǚǜ]/g,"u")
+    .replace(/\s+/g," ").trim().toLowerCase();
 }
 
-function rand(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+function getDistractorMeanings(correct, count=3) {
+  const pool = shuffle(HSK1.words.filter(w => w.meaning !== correct)).map(w=>w.meaning);
+  return shuffle([correct, ...pool.slice(0,count)]);
+}
+function getDistractorHanzi(correct, count=3) {
+  const pool = shuffle(HSK1.words.filter(w => w.hanzi !== correct)).map(w=>w.hanzi);
+  return shuffle([correct, ...pool.slice(0,count)]);
+}
+function getDistractorPinyin(correct, count=3) {
+  const pool = shuffle(HSK1.words.filter(w => stripTones(w.pinyin) !== stripTones(correct))).map(w=>w.pinyin);
+  return shuffle([correct, ...pool.slice(0,count)]);
 }
 
 // ═══════════════════════════════════════════════════════════
-// LESSON GENERATOR
+// EXERCISE GENERATORS (randomised, never hardcoded)
 // ═══════════════════════════════════════════════════════════
-function generateLesson(lessonId) {
-  const words = WORD_BANK[lessonId] || WORD_BANK[1];
-  const steps = [];
 
-  // All meanings for distractor pool
-  const allMeanings = Object.values(WORD_BANK).flat().map(w => w.meaning);
-  const allChinese  = Object.values(WORD_BANK).flat().map(w => w.chinese);
+function makeWordStep(word, isReview=false) {
+  return { type:"word", ...word, isReview };
+}
 
-  function getDistractors(correct, pool, count = 3) {
-    const others = shuffle(pool.filter(x => x !== correct));
-    return shuffle([correct, ...others.slice(0, count)]);
+function makeMCQ_MeaningFromHanzi(word, isMini=false, isReview=false) {
+  return {
+    type:"multiple_choice", isMini, isReview,
+    question:`What does <span class='q-word'>${word.hanzi}</span> mean?`,
+    options: getDistractorMeanings(word.meaning),
+    correct: word.meaning,
+    tip:`${word.hanzi} (${word.pinyin}) = "${word.meaning}".`
+  };
+}
+
+function makeMCQ_HanziFromMeaning(word, isMini=false, isReview=false) {
+  return {
+    type:"multiple_choice", isMini, chineseOptions:true, isReview,
+    question:`How do you say <em style="color:var(--green);font-style:normal">"${word.meaning}"</em> in Chinese?`,
+    options: getDistractorHanzi(word.hanzi),
+    correct: word.hanzi,
+    tip:`"${word.meaning}" in Chinese is ${word.hanzi} (${word.pinyin}).`
+  };
+}
+
+function makeMCQ_PinyinFromHanzi(word, isMini=false, isReview=false) {
+  return {
+    type:"multiple_choice", isMini, isReview,
+    question:`What is the pinyin for <span class='q-word'>${word.hanzi}</span>?`,
+    options: getDistractorPinyin(word.pinyin),
+    correct: word.pinyin,
+    tip:`The pinyin for ${word.hanzi} is ${word.pinyin}.`
+  };
+}
+
+function makeTypingPinyin(word, isMini=false, isReview=false) {
+  return {
+    type:"typing", isMini, isReview,
+    subtype:"pinyin",
+    prompt:`Type the <strong>pinyin</strong> for <span class='q-word'>${word.hanzi}</span> <span style="color:var(--muted);font-size:0.85em">(${word.meaning})</span>`,
+    correct: stripTones(word.pinyin),
+    correctDisplay: word.pinyin,
+    tip:`Pinyin: ${word.pinyin}`
+  };
+}
+
+function makeTypingMeaning(word, isMini=false, isReview=false) {
+  return {
+    type:"typing", isMini, isReview,
+    subtype:"meaning",
+    prompt:`Type the <strong>English meaning</strong> of <span class='q-word'>${word.hanzi}</span>`,
+    correct: word.meaning.toLowerCase().split(" / ")[0],
+    correctDisplay: word.meaning,
+    tip:`Meaning: ${word.meaning}`
+  };
+}
+
+function makeMatchStep(words) {
+  return {
+    type:"matching",
+    pairs: words.map(w=>({ chinese:w.hanzi, english:w.meaning, pinyin:w.pinyin }))
+  };
+}
+
+function makeSentenceMCQ(word, isReview=false) {
+  const ex = word.example;
+  if (!ex) return makeMCQ_MeaningFromHanzi(word, false, isReview);
+  return {
+    type:"sentence_mcq", isReview,
+    sentence: ex.chinese,
+    pinyin:   ex.pinyin,
+    question: `What does this sentence mean?`,
+    options:  shuffle([ex.translation, ...pick(HSK1.words.filter(w=>w.hanzi!==word.hanzi),3).map(w=>w.example?.translation||w.meaning)].filter(Boolean)).slice(0,4),
+    correct:  ex.translation,
+    tip:`The sentence means: "${ex.translation}"`
+  };
+}
+
+function makeWordBankFill(word, isReview=false) {
+  // Build a simplified sentence with blank for the target word
+  const ex = word.example;
+  if (!ex) return makeMCQ_MeaningFromHanzi(word, false, isReview);
+  // Replace first occurrence of hanzi in example
+  const idx = ex.chinese.indexOf(word.hanzi);
+  if (idx === -1) return makeMCQ_HanziFromMeaning(word, false, isReview);
+  const before = ex.chinese.slice(0, idx);
+  const after  = ex.chinese.slice(idx + word.hanzi.length);
+  const distractors = shuffle(HSK1.words.filter(w=>w.hanzi!==word.hanzi)).slice(0,3).map(w=>w.hanzi);
+  return {
+    type: "word_bank",
+    isReview,
+    before, after,
+    hint: ex.translation,
+    correct: word.hanzi,
+    options: shuffle([word.hanzi, ...distractors]),
+    tip:`The missing word is ${word.hanzi} (${word.pinyin}) — ${word.meaning}.`
+  };
+}
+
+// Pick a random exercise type for a word (excluding word card)
+function randomExercise(word, isMini=false, isReview=false) {
+  const types = ["mcq_meaning","mcq_hanzi","mcq_pinyin","typing_pinyin","sentence_mcq","word_bank"];
+  const t = rand(types);
+  switch(t) {
+    case "mcq_meaning":   return makeMCQ_MeaningFromHanzi(word, isMini, isReview);
+    case "mcq_hanzi":     return makeMCQ_HanziFromMeaning(word, isMini, isReview);
+    case "mcq_pinyin":    return makeMCQ_PinyinFromHanzi(word, isMini, isReview);
+    case "typing_pinyin": return makeTypingPinyin(word, isMini, isReview);
+    case "sentence_mcq":  return makeSentenceMCQ(word, isReview);
+    case "word_bank":     return makeWordBankFill(word, isReview);
+    default:              return makeMCQ_MeaningFromHanzi(word, isMini, isReview);
   }
+}
 
-  // Helper: pick a random exercise type for review steps
-  const exerciseTypes = ["mcq", "reverse", "typing"];
+// ═══════════════════════════════════════════════════════════
+// LESSON GENERATOR (structured, lesson-aware)
+// ═══════════════════════════════════════════════════════════
+function generateLesson(lessonNum) {
+  const config = getLessonConfig(lessonNum);
+  const steps  = [];
+  const lessonWords = getWordsForLesson(lessonNum);
 
-  words.forEach((word, idx) => {
-    // ── 1. Word introduction
-    steps.push({ type: "word", ...word });
+  // ── CHECKPOINT LESSON ────────────────────────────────────
+  if (config.isCheckpoint) {
+    const reviewWords = getPreviousWords(lessonNum, 10);
+    const useWords = reviewWords.length >= 5 ? reviewWords : shuffle(lessonWords);
 
-    // ── 2. Immediate mini-quiz: MCQ "What does X mean?"
-    steps.push({
-      type: "multiple_choice",
-      isMini: true,
-      question: `What does <span class='q-word'>${word.chinese}</span> mean?`,
-      options: getDistractors(word.meaning, allMeanings),
-      correct: word.meaning,
-      chinese: word.chinese,
-      tip: `${word.chinese} (${word.pinyin}) means "${word.meaning}".`
+    steps.push({ type:"checkpoint_intro", lessonNum, totalQ: useWords.length });
+
+    useWords.forEach((word, i) => {
+      // Vary exercise for each word in checkpoint
+      const exTypes = [
+        makeMCQ_MeaningFromHanzi(word, false, true),
+        makeMCQ_HanziFromMeaning(word, false, true),
+        makeMCQ_PinyinFromHanzi(word, false, true),
+        makeTypingPinyin(word, false, true),
+        makeSentenceMCQ(word, true),
+        makeWordBankFill(word, true),
+      ];
+      steps.push(exTypes[i % exTypes.length]);
     });
 
-    // ── 3. Reverse mini-quiz: "How do you say X in Chinese?" (randomised)
-    const reverseType = rand(["reverse_mcq", "typing"]);
+    // Matching at end
+    steps.push(makeMatchStep(shuffle(useWords).slice(0,4)));
+    return { title:`Checkpoint ${Math.ceil(lessonNum/6)}`, words:useWords.map(w=>w.hanzi), steps, config };
+  }
 
-    if (reverseType === "reverse_mcq") {
-      steps.push({
-        type: "multiple_choice",
-        isMini: true,
-        chineseOptions: true,
-        question: `How do you say <em style="color:var(--green);font-style:normal">${word.meaning}</em> in Chinese?`,
-        options: getDistractors(word.chinese, allChinese),
-        correct: word.chinese,
-        chinese: word.chinese,
-        tip: `The Chinese word is ${word.chinese} — ${word.pinyin}.`
-      });
+  // ── REGULAR LESSON ───────────────────────────────────────
+  const newWords    = shuffle(lessonWords).slice(0, config.newWordCount);
+  const reviewWords = config.reviewWordCount > 0 ? getPreviousWords(lessonNum, config.reviewWordCount) : [];
+
+  // 1. Introduce new words with immediate mini-quiz
+  newWords.forEach(word => {
+    steps.push(makeWordStep(word, false));
+    // Immediate recall: randomise between MCQ and typing
+    if (Math.random() > 0.4) {
+      steps.push(makeMCQ_MeaningFromHanzi(word, true, false));
     } else {
-      steps.push({
-        type: "typing",
-        isMini: true,
-        prompt: `Type the <strong>pinyin</strong> for <span class='q-word'>${word.chinese}</span> (${word.meaning})`,
-        correct: word.pinyin.replace(/[āáǎà]/g,"a").replace(/[ēéěè]/g,"e").replace(/[īíǐì]/g,"i").replace(/[ōóǒò]/g,"o").replace(/[ūúǔù]/g,"u").replace(/[ǖǘǚǜü]/g,"u").toLowerCase(),
-        correctDisplay: word.pinyin,
-        chinese: word.chinese,
-        tip: `The pinyin is ${word.pinyin}.`
-      });
+      steps.push(makeTypingPinyin(word, true, false));
     }
+    // Second immediate exercise (different type)
+    steps.push(rand([
+      makeMCQ_HanziFromMeaning(word, true, false),
+      makeWordBankFill(word, true, false),
+    ]));
   });
 
-  // ── Midpoint grammar note
-  const grammarNotes = [
-    { title:"Tones matter!", body:`In Mandarin, every syllable has a tone. <span class="highlight">mā (妈)</span> means mother, but <span class="highlight">mǎ (马)</span> means horse! The tone marks above vowels tell you which one to use.` },
-    { title:"No verb conjugation", body:`Unlike English, Chinese verbs <span class="highlight">never change form</span>. Whether it's past, present or future — the verb stays the same. Context and time words do the work!` },
-    { title:"Measure words", body:`Chinese uses <span class="highlight">measure words</span> between numbers and nouns. For books you say <span class="highlight">一本书 (yī běn shū)</span> — literally "one [flat-thing] book". Each noun type has its own measure word.` },
-    { title:"Subject-Verb-Object", body:`Like English, Chinese follows <span class="highlight">Subject → Verb → Object</span> order. "I eat rice" = <span class="highlight">我吃饭 (Wǒ chī fàn)</span>. Simple and consistent!` },
-    { title:"Question particles", body:`To turn a statement into a yes/no question, just add <span class="highlight">吗 (ma)</span> at the end. "You are a student" → "Are you a student?" = <span class="highlight">你是学生吗？</span>` },
-  ];
-  steps.splice(Math.floor(steps.length / 2), 0, {
-    type: "grammar",
-    ...rand(grammarNotes)
+  // 2. Grammar note (if applicable) — inserted at midpoint of new words
+  if (config.grammarCount > 0) {
+    const g = getGrammarForLesson(lessonNum);
+    const insertAt = Math.max(1, Math.floor(steps.length / 2));
+    steps.splice(insertAt, 0, { type:"grammar", ...g });
+  }
+
+  // 3. Review words section
+  if (reviewWords.length > 0) {
+    // Section divider
+    steps.push({ type:"review_intro", words: reviewWords });
+    // Each review word: show it briefly + 1 randomised exercise
+    reviewWords.forEach(word => {
+      steps.push(makeWordStep(word, true));
+      steps.push(randomExercise(word, true, true));
+    });
+  }
+
+  // 4. Mixed practice: matching (3-4 words from lesson pool)
+  const matchPool = shuffle([...newWords, ...reviewWords]).slice(0,4);
+  if (matchPool.length >= 3) {
+    steps.push(makeMatchStep(matchPool));
+  }
+
+  // 5. Final review blast: sentence MCQ or word bank for new words
+  newWords.forEach(word => {
+    steps.push(rand([makeSentenceMCQ(word), makeWordBankFill(word)]));
   });
 
-  // ── Matching exercise using all 5 words
-  steps.push({
-    type: "matching",
-    pairs: words.map(w => ({ chinese: w.chinese, english: w.meaning, pinyin: w.pinyin }))
-  });
-
-  // ── Final review round: 1 MCQ per word (randomised question style)
-  const reviewWords = shuffle(words);
-  reviewWords.forEach(word => {
-    const style = rand(["meaning", "chinese"]);
-    if (style === "meaning") {
-      steps.push({
-        type: "multiple_choice",
-        question: `What does <span class='q-word'>${word.chinese}</span> mean?`,
-        options: getDistractors(word.meaning, allMeanings),
-        correct: word.meaning,
-        chinese: word.chinese,
-        tip: `${word.chinese} (${word.pinyin}) = "${word.meaning}".`
-      });
-    } else {
-      steps.push({
-        type: "multiple_choice",
-        chineseOptions: true,
-        question: `How do you say <em style="color:var(--green);font-style:normal">${word.meaning}</em>?`,
-        options: getDistractors(word.chinese, allChinese),
-        correct: word.chinese,
-        chinese: word.chinese,
-        tip: `"${word.meaning}" in Chinese is ${word.chinese} (${word.pinyin}).`
-      });
-    }
-  });
-
-  return { title: buildTitle(lessonId), words: words.map(w => w.chinese), steps };
+  return {
+    title: buildTitle(lessonNum),
+    words: [...newWords.map(w=>w.hanzi), ...reviewWords.map(w=>w.hanzi)],
+    steps, config
+  };
 }
 
 function buildTitle(id) {
-  const titles = { 1:"Greetings",2:"Pronouns",3:"Basic Verbs",4:"Food & Drink",5:"Movement",6:"Adjectives",7:"Places",8:"Numbers",9:"Time",10:"People" };
-  return titles[id] || `Lesson ${id}`;
+  const titles = {1:"Greetings",2:"Pronouns",3:"Core Verbs",4:"Food & Drink",5:"Movement",6:"Adjectives",7:"Places",8:"Numbers",9:"Time",10:"People"};
+  return titles[((id-1)%10)+1] || `Lesson ${id}`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -497,17 +752,14 @@ function buildTitle(id) {
 // ═══════════════════════════════════════════════════════════
 const params    = new URLSearchParams(location.search);
 const lessonId  = parseInt(params.get("lesson") || "1", 10);
+const userId    = params.get("userId") || "default";
 const sessionId = Date.now();
 
-// Block entry if no hearts
 let hearts = parseInt(localStorage.getItem("hearts") ?? "5", 10);
-if (hearts <= 0) {
-  // Show blocked overlay immediately
-  document.getElementById("no-hearts-overlay").classList.add("show");
-}
+if (hearts <= 0) document.getElementById("no-hearts-overlay").classList.add("show");
 
-const lesson  = generateLesson(lessonId);
-const steps   = lesson.steps;
+const lesson = generateLesson(lessonId);
+const steps  = lesson.steps;
 
 let currentStep    = 0;
 let xp             = parseInt(localStorage.getItem("xp") || "0", 10);
@@ -515,25 +767,27 @@ let sessionXP      = 0;
 let answeredStep   = false;
 let matchState     = null;
 let typingAnswered = false;
+let wordBankAnswered = false;
+let checkpointCorrect = 0;
+let checkpointTotal   = 0;
 
 const allMistakes      = JSON.parse(localStorage.getItem("mistakes") || "[]");
 const sessionMistakes  = [];
 const completedLessons = JSON.parse(localStorage.getItem("completed_lessons") || "[]");
 const alreadyCompleted = completedLessons.includes(lessonId);
 
-// ═══════════════════════════════════════════════════════════
-// DOM
-// ═══════════════════════════════════════════════════════════
+// ── DOM
 const stepArea    = document.getElementById("step-area");
 const bottomArea  = document.getElementById("bottom-area");
 const progressBar = document.getElementById("progress-bar");
 const heartsEl    = document.getElementById("hearts-display");
 const overlay     = document.getElementById("no-hearts-overlay");
 
+document.getElementById("lesson-tag").textContent   = `HSK 1 · Lesson ${lessonId}`;
+document.getElementById("lesson-phase-tag").textContent = lesson.config.phase;
+
 document.getElementById("btn-close").onclick = () => {
-  if (confirm("Leave this lesson? Your progress will be lost.")) {
-    window.location.href = "dashboard.html";
-  }
+  if (confirm("Leave this lesson? Your progress will be lost.")) window.location.href = "dashboard.html";
 };
 document.getElementById("btn-watch-ad").onclick = watchAd;
 
@@ -564,10 +818,7 @@ function watchAd() {
   localStorage.setItem("hearts", hearts);
   renderHearts();
   showToast("❤️ Hearts restored!");
-  // If blocked on entry, start lesson now
-  if (currentStep === 0 && !stepArea.querySelector(".step-visible")) {
-    renderStep(0);
-  }
+  if (currentStep === 0 && !stepArea.querySelector(".step-visible")) renderStep(0);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -582,9 +833,10 @@ function updateProgress() {
 // RENDER STEP
 // ═══════════════════════════════════════════════════════════
 function renderStep(idx) {
-  answeredStep   = false;
-  typingAnswered = false;
-  matchState     = null;
+  answeredStep    = false;
+  typingAnswered  = false;
+  wordBankAnswered= false;
+  matchState      = null;
   updateProgress();
 
   const old = stepArea.querySelector(".step-visible");
@@ -602,12 +854,16 @@ function renderStep(idx) {
   wrapper.style.display = "contents";
 
   switch (step.type) {
-    case "word":            buildWordStep(wrapper, step);    break;
-    case "grammar":         buildGrammarStep(wrapper, step); break;
-    case "multiple_choice": buildMCStep(wrapper, step);      break;
-    case "matching":        buildMatchStep(wrapper, step);   break;
-    case "typing":          buildTypingStep(wrapper, step);  break;
-    default:                buildGrammarStep(wrapper, step); break;
+    case "word":             buildWordStep(wrapper, step);        break;
+    case "grammar":          buildGrammarStep(wrapper, step);     break;
+    case "multiple_choice":  buildMCStep(wrapper, step);          break;
+    case "matching":         buildMatchStep(wrapper, step);       break;
+    case "typing":           buildTypingStep(wrapper, step);      break;
+    case "sentence_mcq":     buildSentenceMCQ(wrapper, step);     break;
+    case "word_bank":        buildWordBank(wrapper, step);        break;
+    case "checkpoint_intro": buildCheckpointIntro(wrapper, step); break;
+    case "review_intro":     buildReviewIntro(wrapper, step);     break;
+    default:                 buildGrammarStep(wrapper, step);     break;
   }
 
   stepArea.appendChild(wrapper);
@@ -618,12 +874,16 @@ function renderStep(idx) {
 // WORD STEP
 // ═══════════════════════════════════════════════════════════
 function buildWordStep(wrap, step) {
+  const reviewClass = step.isReview ? "review-card" : "";
+  const label = step.isReview
+    ? `<div class="review-badge">🔄 Review Word</div>`
+    : `<div class="step-label green">New Word</div>`;
   wrap.innerHTML = `
-    <div class="step-label green">New Word</div>
-    <div class="word-card">
+    ${label}
+    <div class="word-card ${reviewClass}">
       <div class="word-card-top">
-        <div class="word-chinese">${step.chinese}</div>
-        <button class="btn-audio" ${step.audio ? '' : 'disabled'} title="${step.audio ? 'Listen' : 'Audio coming soon'}">
+        <div class="word-chinese">${step.hanzi}</div>
+        <button class="btn-audio" disabled title="Audio coming soon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
@@ -647,25 +907,72 @@ function buildWordStep(wrap, step) {
 // GRAMMAR STEP
 // ═══════════════════════════════════════════════════════════
 function buildGrammarStep(wrap, step) {
+  const examplesHtml = step.examples ? `
+    <div class="grammar-examples">
+      ${step.examples.map(e=>`
+        <div class="grammar-ex-item">
+          <div class="grammar-ex-chinese">${e.chinese}</div>
+          <div class="grammar-ex-translation">${e.translation}</div>
+        </div>
+      `).join("")}
+    </div>` : "";
+  const patternHtml = step.pattern ? `<p style="margin-top:10px"><span class="highlight">${step.pattern}</span></p>` : "";
   wrap.innerHTML = `
-    <div class="step-label">Grammar Note</div>
-    <div class="grammar-card">
+    <div class="step-label purple">Grammar Note</div>
+    <div class="grammar-card purple-card">
       <div class="grammar-title">${step.title}</div>
-      <div class="grammar-body">${step.body}</div>
+      <div class="grammar-body">${step.explanation}${patternHtml}${examplesHtml}</div>
     </div>
   `;
 }
 
 // ═══════════════════════════════════════════════════════════
-// MULTIPLE CHOICE (MCQ + REVERSE)
+// REVIEW INTRO
+// ═══════════════════════════════════════════════════════════
+function buildReviewIntro(wrap, step) {
+  const wordChips = step.words.map(w=>`<span style="font-family:'Noto Sans SC',sans-serif;font-size:16px;color:var(--yellow)">${w.hanzi}</span>`).join(", ");
+  wrap.innerHTML = `
+    <div class="review-badge">🔄 Review Section</div>
+    <div class="grammar-card" style="border-color:rgba(251,191,36,.2);background:rgba(251,191,36,.04)">
+      <div class="grammar-title" style="color:var(--yellow)">Let's review previous words!</div>
+      <div class="grammar-body">Time to practice what you've learned. These words will appear: ${wordChips}</div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHECKPOINT INTRO
+// ═══════════════════════════════════════════════════════════
+function buildCheckpointIntro(wrap, step) {
+  checkpointTotal = step.totalQ;
+  checkpointCorrect = 0;
+  wrap.innerHTML = `
+    <div class="checkpoint-header">
+      <div class="checkpoint-icon">🏁</div>
+      <div class="checkpoint-title">Checkpoint Test</div>
+      <div class="checkpoint-sub">Time to test everything you've learned so far!<br>${step.totalQ} questions · All word types</div>
+    </div>
+    <div class="grammar-card" style="text-align:center">
+      <div class="grammar-body">
+        This checkpoint covers words from the <strong style="color:var(--text)">last ${Math.min(lessonId, 5)} lessons</strong>.<br>
+        Each correct answer earns bonus XP. Let's go! 💪
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MCQ (multiple choice)
 // ═══════════════════════════════════════════════════════════
 function buildMCStep(wrap, step) {
   const isChinese = !!step.chineseOptions;
-  const isMini    = !!step.isMini;
-  wrap.innerHTML = `
-    ${isMini
+  const badge = step.isReview
+    ? `<div class="review-badge">🔄 Review</div>`
+    : step.isMini
       ? `<div class="mini-quiz-badge">⚡ Quick Check</div>`
-      : `<div class="step-label green">Exercise</div>`}
+      : `<div class="step-label green">Exercise</div>`;
+  wrap.innerHTML = `
+    ${badge}
     <div class="exercise-question">${step.question}</div>
     <div class="options-grid" id="options-grid"></div>
     <div class="feedback-banner" id="feedback-banner"></div>
@@ -684,9 +991,9 @@ function buildMCStep(wrap, step) {
 function handleMCAnswer(btn, chosen, step, wrap) {
   if (answeredStep) return;
   answeredStep = true;
-  const allBtns   = wrap.querySelectorAll(".option-btn");
+  const allBtns = wrap.querySelectorAll(".option-btn");
   const isCorrect = chosen === step.correct;
-  const fb        = wrap.querySelector("#feedback-banner");
+  const fb = wrap.querySelector("#feedback-banner");
   allBtns.forEach(b => {
     b.disabled = true;
     if (b.textContent === step.correct) b.classList.add("correct");
@@ -700,6 +1007,86 @@ function handleMCAnswer(btn, chosen, step, wrap) {
     fb.className = "feedback-banner wrong-fb show";
   } else {
     sessionXP += 2;
+    if (step.isReview) checkpointCorrect++;
+    showToast("+2 XP");
+    fb.innerHTML = `<span class="feedback-icon">✅</span><span class="feedback-text"><span class="fb-main">${pickPraise()}</span></span>`;
+    fb.className = "feedback-banner correct-fb show";
+  }
+  renderBottom(step, true);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SENTENCE MCQ
+// ═══════════════════════════════════════════════════════════
+function buildSentenceMCQ(wrap, step) {
+  const badge = step.isReview ? `<div class="review-badge">🔄 Review</div>` : `<div class="step-label green">Sentence Meaning</div>`;
+  wrap.innerHTML = `
+    ${badge}
+    <div class="sentence-card">
+      <div class="sentence-chinese">${step.sentence}</div>
+      <div class="sentence-pinyin">${step.pinyin}</div>
+    </div>
+    <div class="exercise-question">${step.question}</div>
+    <div class="options-grid single-col" id="options-grid"></div>
+    <div class="feedback-banner" id="feedback-banner"></div>
+  `;
+  const grid = wrap.querySelector("#options-grid");
+  step.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.style.textAlign = "left";
+    btn.textContent = opt;
+    btn.onclick = () => handleMCAnswer(btn, opt, step, wrap);
+    grid.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// WORD BANK FILL-IN
+// ═══════════════════════════════════════════════════════════
+function buildWordBank(wrap, step) {
+  const badge = step.isReview ? `<div class="review-badge">🔄 Review</div>` : `<div class="step-label green">Fill in the Blank</div>`;
+  wrap.innerHTML = `
+    ${badge}
+    <div class="fill-sentence">
+      ${step.before}<span class="fill-blank" id="fill-blank">＿</span>${step.after}
+    </div>
+    <div class="step-label" style="font-size:10px;color:var(--soft)">Translation hint: ${step.hint}</div>
+    <div class="word-bank-chips" id="word-bank-chips"></div>
+    <div class="feedback-banner" id="feedback-banner"></div>
+  `;
+  const chipsWrap = wrap.querySelector("#word-bank-chips");
+  step.options.forEach(opt => {
+    const chip = document.createElement("button");
+    chip.className = "word-chip";
+    chip.textContent = opt;
+    chip.onclick = () => handleWordBank(chip, opt, step, wrap);
+    chipsWrap.appendChild(chip);
+  });
+}
+
+function handleWordBank(chip, chosen, step, wrap) {
+  if (wordBankAnswered) return;
+  wordBankAnswered = true;
+  answeredStep = true;
+  const isCorrect = chosen === step.correct;
+  const fb = wrap.querySelector("#feedback-banner");
+  const blank = wrap.querySelector("#fill-blank");
+  wrap.querySelectorAll(".word-chip").forEach(c => c.disabled = true);
+  blank.textContent = chosen;
+  if (!isCorrect) {
+    chip.classList.add("wrong-chip");
+    blank.style.color = "var(--red)";
+    blank.style.borderBottomColor = "var(--red)";
+    loseHeart();
+    logMistake(step, chosen);
+    const tipHtml = step.tip ? `<span class="fb-tip">💡 ${step.tip}</span>` : "";
+    fb.innerHTML = `<span class="feedback-icon">❌</span><span class="feedback-text"><span class="fb-main">Incorrect! The answer is <strong style="font-family:'Noto Sans SC',sans-serif">${step.correct}</strong></span>${tipHtml}</span>`;
+    fb.className = "feedback-banner wrong-fb show";
+  } else {
+    chip.classList.add("correct-chip");
+    blank.style.color = "var(--green)";
+    sessionXP += 2;
     showToast("+2 XP");
     fb.innerHTML = `<span class="feedback-icon">✅</span><span class="feedback-text"><span class="fb-main">${pickPraise()}</span></span>`;
     fb.className = "feedback-banner correct-fb show";
@@ -711,22 +1098,24 @@ function handleMCAnswer(btn, chosen, step, wrap) {
 // TYPING STEP
 // ═══════════════════════════════════════════════════════════
 function buildTypingStep(wrap, step) {
-  const isMini = !!step.isMini;
-  wrap.innerHTML = `
-    ${isMini
+  const badge = step.isReview
+    ? `<div class="review-badge">🔄 Review</div>`
+    : step.isMini
       ? `<div class="mini-quiz-badge">⚡ Quick Check</div>`
-      : `<div class="step-label green">Type It</div>`}
+      : `<div class="step-label green">Type It</div>`;
+  const hint = step.subtype === "meaning" ? "Type the English meaning" : "Type without tone marks (e.g. ni hao)";
+  wrap.innerHTML = `
+    ${badge}
     <div class="exercise-question">${step.prompt}</div>
     <div class="typing-input-wrap">
-      <input class="typing-input" id="typing-input" type="text" placeholder="Type your answer…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-      <div class="typing-hint">Type without tone marks (e.g. "ni hao")</div>
+      <input class="typing-input" id="typing-input" type="text" placeholder="Type your answer…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <div class="typing-hint">${hint}</div>
     </div>
     <div class="feedback-banner" id="feedback-banner"></div>
   `;
   const input = wrap.querySelector("#typing-input");
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter") submitTyping(wrap, step);
-  });
+  input.addEventListener("keydown", e => { if (e.key === "Enter") submitTyping(wrap, step); });
   input.focus();
   renderBottom(step, false, true);
 }
@@ -734,18 +1123,14 @@ function buildTypingStep(wrap, step) {
 function submitTyping(wrap, step) {
   if (typingAnswered) return;
   const input = wrap.querySelector("#typing-input");
-  const raw   = input.value.trim().toLowerCase();
+  const raw = input.value.trim().toLowerCase();
   if (!raw) return;
   typingAnswered = true;
-  answeredStep = true;
-
-  // Normalize: strip tones from correct answer for comparison
+  answeredStep   = true;
   const normalise = s => s.replace(/\s+/g," ").trim().toLowerCase();
   const isCorrect = normalise(raw) === normalise(step.correct);
-
   const fb = wrap.querySelector("#feedback-banner");
   input.disabled = true;
-
   if (!isCorrect) {
     input.classList.add("wrong-input");
     loseHeart();
@@ -764,7 +1149,7 @@ function submitTyping(wrap, step) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MATCHING
+// MATCHING STEP
 // ═══════════════════════════════════════════════════════════
 function buildMatchStep(wrap, step) {
   matchState = {
@@ -774,10 +1159,9 @@ function buildMatchStep(wrap, step) {
   };
   const chineseItems = shuffle(step.pairs);
   const englishItems = shuffle(step.pairs);
-
   wrap.innerHTML = `
-    <div class="step-label green">Matching</div>
-    <div class="exercise-question">Match each word to its meaning</div>
+    <div class="step-label green">Match the Words</div>
+    <div class="exercise-question">Match each Chinese word to its meaning</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="match-col-label">Chinese</div>
       <div class="match-col-label">English</div>
@@ -786,7 +1170,6 @@ function buildMatchStep(wrap, step) {
     <div class="feedback-banner" id="feedback-banner"></div>
   `;
   const grid = wrap.querySelector("#match-grid");
-
   chineseItems.forEach(p => {
     const el = document.createElement("div");
     el.className = "match-item chinese-item";
@@ -807,7 +1190,7 @@ function buildMatchStep(wrap, step) {
 
 function handleMatchClick(el, wrap, step) {
   const ms = matchState;
-  if (!ms || el.classList.contains("matched")) return;
+  if (!ms || el.classList.contains("matched") || el.classList.contains("disabled-match")) return;
   const side = el.dataset.side;
   if (el.classList.contains("selected")) {
     el.classList.remove("selected");
@@ -842,7 +1225,7 @@ function handleMatchClick(el, wrap, step) {
       }
     } else {
       loseHeart();
-      logMistake({ type:"matching", chinese:cKey, correct:cKey }, ms.selectedEnglish.textContent);
+      logMistake({ type:"matching", correct:cKey }, ms.selectedEnglish.textContent);
       const sc = ms.selectedChinese, se = ms.selectedEnglish;
       sc.classList.remove("selected"); se.classList.remove("selected");
       sc.classList.add("wrong-shake"); se.classList.add("wrong-shake");
@@ -858,19 +1241,19 @@ function handleMatchClick(el, wrap, step) {
 // ═══════════════════════════════════════════════════════════
 // BOTTOM BUTTONS
 // ═══════════════════════════════════════════════════════════
-function renderBottom(step, answered = false, isTyping = false) {
+function renderBottom(step, answered=false, isTyping=false) {
   bottomArea.innerHTML = "";
-  const isExercise = ["multiple_choice","matching","typing"].includes(step.type);
+  const isExercise = ["multiple_choice","matching","typing","sentence_mcq","word_bank"].includes(step.type);
+  const isPassive  = ["word","grammar","checkpoint_intro","review_intro"].includes(step.type);
   const isLast     = currentStep >= steps.length - 1;
 
-  if (!isExercise || answered) {
+  if (isPassive || (isExercise && answered)) {
     const btn = document.createElement("button");
     btn.className = "btn-primary";
-    btn.textContent = isLast ? "Finish Lesson" : "Continue →";
+    btn.textContent = isLast ? "Finish Lesson 🎉" : "Continue →";
     btn.onclick = nextStep;
     bottomArea.appendChild(btn);
   } else if (isTyping) {
-    // Typing: show "Check" button
     const btn = document.createElement("button");
     btn.className = "btn-primary";
     btn.textContent = "Check Answer";
@@ -879,7 +1262,7 @@ function renderBottom(step, answered = false, isTyping = false) {
       if (wrap) submitTyping(wrap, step);
     };
     bottomArea.appendChild(btn);
-  } else {
+  } else if (!answered) {
     const btn = document.createElement("button");
     btn.className = "btn-primary";
     btn.disabled = true;
@@ -901,14 +1284,7 @@ function nextStep() {
 // MISTAKES
 // ═══════════════════════════════════════════════════════════
 function logMistake(step, userAnswer) {
-  const entry = {
-    sessionId, lessonId,
-    type:       step.type || "multiple_choice",
-    chinese:    step.chinese || null,
-    correct:    step.correct,
-    userAnswer,
-    timestamp:  Date.now()
-  };
+  const entry = { sessionId, lessonId, type:step.type||"mcq", correct:step.correct, userAnswer, timestamp:Date.now() };
   sessionMistakes.push(entry);
   allMistakes.push(entry);
   localStorage.setItem("mistakes", JSON.stringify(allMistakes));
@@ -932,18 +1308,49 @@ function showComplete() {
   }
   localStorage.setItem("xp", xp);
 
-  const userLesson = parseInt(localStorage.getItem("user_lesson") || "1", 10);
-  if (lessonId >= userLesson) localStorage.setItem("user_lesson", lessonId + 1);
+  const userLesson = parseInt(localStorage.getItem(`user_lesson_${userId}`) || localStorage.getItem("user_lesson") || "1", 10);
+  if (lessonId >= userLesson) {
+    localStorage.setItem(`user_lesson_${userId}`, lessonId + 1);
+    localStorage.setItem("user_lesson", lessonId + 1);
+  }
 
   const accuracy     = calculateAccuracy();
   const mistakeCount = sessionMistakes.length;
   const wordsLearned = lesson.words.length;
 
+  // Checkpoint summary ring
+  const isCheckpoint = lesson.config.isCheckpoint;
+  const cpScore = isCheckpoint && checkpointTotal > 0
+    ? Math.round((checkpointCorrect / checkpointTotal) * 100)
+    : null;
+
+  let ringHtml = "";
+  if (cpScore !== null) {
+    const circ = 2 * Math.PI * 52;
+    const offset = circ * (1 - cpScore / 100);
+    ringHtml = `
+      <div class="checkpoint-result">
+        <div class="score-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle class="score-ring-track" cx="60" cy="60" r="52"/>
+            <circle class="score-ring-fill" cx="60" cy="60" r="52"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}" id="ring-fill"/>
+          </svg>
+          <div class="score-ring-text">
+            <div class="score-pct">${cpScore}%</div>
+            <div class="score-sub">Score</div>
+          </div>
+        </div>
+        <div style="font-size:14px;color:var(--muted)">Checkpoint ${Math.ceil(lessonId/6)} complete!</div>
+      </div>`;
+  }
+
   stepArea.innerHTML = `
     <div class="complete-screen">
-      <div class="complete-emoji">🎉</div>
-      <div class="complete-title">Lesson Complete!</div>
+      <div class="complete-emoji">${isCheckpoint ? "🏆" : "🎉"}</div>
+      <div class="complete-title">${isCheckpoint ? "Checkpoint Passed!" : "Lesson Complete!"}</div>
       <div class="complete-sub">${lesson.title}</div>
+      ${ringHtml}
       <div class="xp-pill" id="xp-pill">+${earnedXP} XP</div>
       <div class="complete-stats">
         <div class="stat-box"><div class="stat-val">${wordsLearned}</div><div class="stat-label">Words</div></div>
@@ -980,7 +1387,7 @@ function doubleXP() {
 // ACCURACY
 // ═══════════════════════════════════════════════════════════
 function calculateAccuracy() {
-  const exerciseSteps = steps.filter(s => ["multiple_choice","matching","typing"].includes(s.type));
+  const exerciseSteps = steps.filter(s => ["multiple_choice","matching","typing","sentence_mcq","word_bank"].includes(s.type));
   if (!exerciseSteps.length) return 100;
   const wrongs   = sessionMistakes.length;
   const attempts = exerciseSteps.length + wrongs;
@@ -990,7 +1397,7 @@ function calculateAccuracy() {
 // ═══════════════════════════════════════════════════════════
 // PRAISE + TOAST
 // ═══════════════════════════════════════════════════════════
-const PRAISES = ["🔥 Perfect!","Nice! You got it!","Excellent!","🎯 Spot on!","Keep it up!","Great memory!","You've got this!","💪 Nailed it!"];
+const PRAISES = ["🔥 Perfect!","Nice! You got it!","Excellent!","🎯 Spot on!","Keep it up!","Great memory!","You've got this!","💪 Nailed it!","Well done!","🌟 Outstanding!"];
 let lastPraiseIdx = -1;
 function pickPraise() {
   let idx;
