@@ -357,6 +357,10 @@
 const SUPABASE_URL = window.__SUPABASE_URL__ || '';
 const SUPABASE_KEY = window.__SUPABASE_KEY__ || '';
 
+// How many seconds after sign-up we still consider someone "new".
+// Supabase sets created_at at account creation time.
+const NEW_USER_THRESHOLD_SEC = 30;
+
 // ════════════════════════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════════════════════════
@@ -378,40 +382,105 @@ function setLoading(id, loading) {
   spinner.style.display = loading ? 'block' : 'none';
 }
 
-// Reveal the page (removes the loading gate overlay)
 function revealPage() {
   const gate = document.getElementById('loading-gate');
   gate.classList.add('hidden');
-  // Remove from DOM after transition so it can't block clicks
   setTimeout(() => gate.remove(), 350);
 }
 
+function redirectToDashboard() {
+  window.location.replace('/app/dashboard.html');
+}
+
 // ════════════════════════════════════════════════════════════
-// MAIN — all logic runs after DOM is ready
+// NEW-USER DETECTION — three-layer check
+//
+//  Layer 1 (fastest):  user_level_<id> already in localStorage
+//                      → definitely returning, go to dashboard
+//
+//  Layer 2 (reliable): user_metadata.level_chosen flag stored in
+//                      Supabase user metadata by this page after
+//                      the user picks a level.
+//                      → returning user on a fresh device/browser
+//
+//  Layer 3 (fallback): created_at recency — account was created
+//                      within the last NEW_USER_THRESHOLD_SEC seconds.
+//                      Only true during the actual sign-up flow.
+//
+// A user is shown this page ONLY when all three layers agree
+// they are genuinely new.
+// ════════════════════════════════════════════════════════════
+function isNewSignup(user) {
+  // Layer 3: created_at within threshold
+  const createdAt  = new Date(user.created_at).getTime();
+  const ageSeconds = (Date.now() - createdAt) / 1000;
+  return ageSeconds <= NEW_USER_THRESHOLD_SEC;
+}
+
+// ════════════════════════════════════════════════════════════
+// MAIN
 // ════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
 
   // ── Step 1: Get authenticated user ───────────────────────
   let userId = null;
+  let sbClient = null;
 
   try {
-    // Only initialise Supabase if credentials are present
     if (SUPABASE_URL && SUPABASE_KEY) {
       const { createClient } = window.supabase;
-      const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
-      const { data, error } = await sb.auth.getUser();
+      sbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+      const { data, error } = await sbClient.auth.getUser();
 
       if (error || !data?.user) {
-        // Not authenticated — redirect to sign-in
         window.location.replace('/app/login.html');
         return;
       }
+
       userId = data.user.id;
+
+      // ── Layer 1: localStorage fast-path ────────────────
+      if (localStorage.getItem(`user_level_${userId}`)) {
+        redirectToDashboard();
+        return;
+      }
+
+      // ── Layer 2: Supabase user_metadata flag ───────────
+      // Written by this page (see saveLevel below) so it
+      // survives the user clearing localStorage or using a
+      // different device.
+      const metaLevel = data.user.user_metadata?.level_chosen;
+      if (metaLevel) {
+        // Re-hydrate localStorage for this device and redirect
+        localStorage.setItem(`user_level_${userId}`, String(metaLevel));
+        localStorage.setItem(`user_lesson_${userId}`,
+          data.user.user_metadata?.lesson_start || '1');
+        redirectToDashboard();
+        return;
+      }
+
+      // ── Layer 3: created_at recency ────────────────────
+      // If the account is older than threshold it's a returning
+      // user who somehow lost their metadata — send to dashboard.
+      if (!isNewSignup(data.user)) {
+        // Edge case: returning user, no metadata, no localStorage.
+        // Default them to level 1 so they land somewhere sensible.
+        localStorage.setItem(`user_level_${userId}`, '1');
+        localStorage.setItem(`user_lesson_${userId}`, '1');
+        redirectToDashboard();
+        return;
+      }
+
+      // All three layers confirm: genuinely new user → show page
     } else {
-      // ── DEV / LOCAL fallback: use a fixed dev userId ──────
-      // Remove this block in production
+      // ── DEV fallback (no Supabase credentials) ─────────
       userId = localStorage.getItem('dev_user_id') || 'dev_user';
       localStorage.setItem('dev_user_id', userId);
+
+      if (localStorage.getItem(`user_level_${userId}`)) {
+        redirectToDashboard();
+        return;
+      }
     }
   } catch (err) {
     console.error('Auth error:', err);
@@ -420,50 +489,51 @@ window.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // ── Step 2: Check if user already has a level set ────────
-  // Keys are namespaced to userId so multiple users on same
-  // device never share state.
-  const existingLevel = localStorage.getItem(`user_level_${userId}`);
-
-  if (existingLevel) {
-    // Existing user — skip this page entirely
-    window.location.replace('/app/dashboard.html');
-    return; // guard: don't reveal or bind buttons
-  }
-
-  // ── New user — reveal the page ───────────────────────────
+  // ── New user confirmed — reveal the level picker ─────────
   revealPage();
 
+  // ── saveLevel: persist locally + write to Supabase metadata
+  async function saveLevel(level, lessonStart = '1') {
+    // Always write localStorage first (instant)
+    localStorage.setItem(`user_level_${userId}`, String(level));
+    localStorage.setItem(`user_lesson_${userId}`, lessonStart);
+
+    // Write to Supabase user_metadata so other devices/browsers
+    // can detect this user has already chosen a level (Layer 2)
+    if (sbClient) {
+      try {
+        await sbClient.auth.updateUser({
+          data: {
+            level_chosen:  level,
+            lesson_start:  lessonStart,
+          }
+        });
+      } catch (e) {
+        // Non-fatal — localStorage already saved
+        console.warn('metadata write failed:', e);
+      }
+    }
+  }
+
   // ── Step 3: Beginner button ───────────────────────────────
-  document.getElementById('beginnerBtn').addEventListener('click', () => {
-    if (document.getElementById('beginnerBtn').disabled) return;
+  document.getElementById('beginnerBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('beginnerBtn');
+    if (btn.disabled) return;
 
     setLoading('beginner', true);
-
-    // Persist with userId-namespaced keys
-    localStorage.setItem(`user_level_${userId}`, '1');
-    localStorage.setItem(`user_lesson_${userId}`, '1');
-
+    await saveLevel(1, '1');
     showToast("✅ HSK 1 selected — let's go!");
-
-    // Short delay so user sees the toast, then redirect
-    setTimeout(() => {
-      window.location.replace('/app/dashboard.html');
-    }, 900);
+    setTimeout(redirectToDashboard, 900);
   });
 
   // ── Step 4: Placement test button ────────────────────────
   document.getElementById('testBtn').addEventListener('click', () => {
-    if (document.getElementById('testBtn').disabled) return;
+    const btn = document.getElementById('testBtn');
+    if (btn.disabled) return;
 
     setLoading('test', true);
-
-    // Pass userId so the test page can write back to correct key
-    // and pass placement=true so test.html knows to auto-redirect
     const dest = `/app/test.html?placement=true&uid=${encodeURIComponent(userId)}`;
-    setTimeout(() => {
-      window.location.replace(dest);
-    }, 300);
+    setTimeout(() => window.location.replace(dest), 300);
   });
 
 });
