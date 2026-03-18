@@ -429,17 +429,14 @@ function buildUI(top20, allUsers, userId) {
 // ── LOAD DATA — fetches all users from profiles, ordered by XP
 async function loadLeaderboard(userId) {
   const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("xp", { ascending: false });
+    .from('profiles')
+    .select('id, xp')
+    .order('xp', { ascending: false });
 
   if (error) {
     console.error(error);
-    main.innerHTML = `<div class="error-wrap">⚠️ Could not load leaderboard — check your connection and try again.</div>`;
     return;
   }
-
-  console.log("Leaderboard data:", data);
 
   if (!data || data.length === 0) {
     showEmptyState();
