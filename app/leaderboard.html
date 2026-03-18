@@ -284,6 +284,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+console.log("SCRIPT STARTED");
+document.body.innerHTML = "<div style='color:white;padding:20px'>SCRIPT LOADED</div>";
+
 // ── SUPABASE — use shared client (same as dashboard/lesson)
 window._supabaseClient = window.supabase.createClient(
   "https://cuiznbvvlqtwcoocehnd.supabase.co",
@@ -427,39 +430,26 @@ function buildUI(top20, allUsers, userId) {
 }
 
 // ── LOAD DATA — fetches all users from profiles, ordered by XP
-async function loadLeaderboard(userId) {
-  main.innerHTML = "<div style='color:white;padding:20px'>DEBUG: loading started...</div>";
+async function loadLeaderboard() {
+  document.body.innerHTML = "<div style='color:white;padding:20px'>LOADING DATA...</div>";
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, xp')
-    .order('xp', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, xp")
+      .order("xp", { ascending: false })
+      .limit(10);
 
-  if (error) {
-    main.innerHTML = `
-      <div style="color:red;padding:20px">
-        ERROR:<br>
-        ${JSON.stringify(error)}
-      </div>
-    `;
-    return;
+    if (error) {
+      document.body.innerHTML = "<div style='color:red;padding:20px'>" + JSON.stringify(error) + "</div>";
+      return;
+    }
+
+    document.body.innerHTML = "<div style='color:lime;padding:20px'>" + JSON.stringify(data) + "</div>";
+
+  } catch (e) {
+    document.body.innerHTML = "<div style='color:red;padding:20px'>LOAD ERROR: " + e.message + "</div>";
   }
-
-  if (!data) {
-    main.innerHTML = `
-      <div style="color:orange;padding:20px">
-        NO DATA RETURNED
-      </div>
-    `;
-    return;
-  }
-
-  main.innerHTML = `
-    <div style="color:lime;padding:20px">
-      SUCCESS:<br>
-      ${JSON.stringify(data)}
-    </div>
-  `;
 }
 
 function showEmptyState() {
@@ -480,21 +470,24 @@ function renderLeaderboard(users, userId) {
 
 // ── INIT
 async function init() {
-  try {
-    const { data, error } = await supabase.auth.getSession();
+  console.log("INIT RUNNING");
 
-    if (error || !data?.session) {
-      window.location.href = "/auth/index.html";
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    console.log("USER:", user);
+
+    if (!user) {
+      document.body.innerHTML = "<div style='color:red;padding:20px'>NO USER</div>";
       return;
     }
 
-    const user = data.session.user;
-    currentUserId = user.id;
-    console.log("USER:", user);
-    await loadLeaderboard(currentUserId);
-  } catch(err) {
-    console.error("Auth error:", err);
-    main.innerHTML = `<div class="error-wrap">⚠️ Authentication failed. <a href="/auth/index.html" style="color:var(--green)">Sign in →</a></div>`;
+    document.body.innerHTML = "<div style='color:lime;padding:20px'>USER OK - loading leaderboard...</div>";
+
+    loadLeaderboard();
+
+  } catch (e) {
+    document.body.innerHTML = "<div style='color:red;padding:20px'>INIT ERROR: " + e.message + "</div>";
   }
 }
 
