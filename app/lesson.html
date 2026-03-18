@@ -903,7 +903,7 @@ function renderStep(idx) {
   }
 
   stepArea.appendChild(wrapper);
-  renderBottom(step);
+  renderBottom(step, false, step.type === "typing");
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -919,7 +919,7 @@ function buildWordStep(wrap, step) {
     <div class="word-card ${reviewClass}">
       <div class="word-card-top">
         <div class="word-chinese">${step.hanzi}</div>
-        <button class="btn-audio" disabled title="Audio coming soon">
+        <button class="btn-audio" id="btn-audio-word" title="Play pronunciation">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
@@ -937,6 +937,13 @@ function buildWordStep(wrap, step) {
       </div>` : ""}
     </div>
   `;
+  // Wire up audio button after innerHTML is set
+  const audioBtn = wrap.querySelector("#btn-audio-word");
+  if (audioBtn) {
+    audioBtn.addEventListener("click", () => speakChinese(step.hanzi));
+    // Auto-play on word card load
+    setTimeout(() => speakChinese(step.hanzi), 300);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1153,7 +1160,6 @@ function buildTypingStep(wrap, step) {
   const input = wrap.querySelector("#typing-input");
   input.addEventListener("keydown", e => { if (e.key === "Enter") submitTyping(wrap, step); });
   input.focus();
-  renderBottom(step, false, true);
 }
 
 function submitTyping(wrap, step) {
@@ -1448,6 +1454,40 @@ function showToast(msg) {
   t.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SPEECH — Web Speech API (Chinese TTS)
+// ═══════════════════════════════════════════════════════════
+function speakChinese(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  const utter  = new SpeechSynthesisUtterance(text);
+  utter.lang   = "zh-CN";
+  utter.rate   = 0.85;
+  utter.pitch  = 1;
+
+  // Prefer a native Chinese voice if the browser has one
+  const voices  = window.speechSynthesis.getVoices();
+  const zhVoice = voices.find(v =>
+    v.lang === "zh-CN" ||
+    v.lang === "zh_CN" ||
+    v.lang.startsWith("zh") ||
+    v.name.toLowerCase().includes("chinese") ||
+    v.name.toLowerCase().includes("mandarin")
+  );
+  if (zhVoice) utter.voice = zhVoice;
+
+  window.speechSynthesis.speak(utter);
+}
+
+// Voices load asynchronously on some browsers — pre-warm the list
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", () => {
+    window.speechSynthesis.getVoices();
+  });
 }
 </script>
 </body>
