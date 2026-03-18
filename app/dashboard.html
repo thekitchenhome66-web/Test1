@@ -601,6 +601,29 @@
     }
     .btn-rose:hover{box-shadow:0 6px 22px rgba(248,113,113,.42)}
 
+    /* ── HEART MODAL CONTENT ── */
+    .heart-modal-body{
+      display:flex;flex-direction:column;gap:14px;
+      margin-bottom:20px;text-align:left;
+    }
+    .heart-row{
+      display:flex;align-items:center;justify-content:space-between;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--radius-sm);padding:12px 16px;
+    }
+    .heart-row-label{font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:700;color:var(--text-mid)}
+    .heart-row-val{font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--text)}
+    .heart-icons-row{display:flex;gap:3px;font-size:20px;line-height:1}
+    .hi{transition:opacity .3s,transform .3s;filter:drop-shadow(0 0 4px rgba(248,113,113,.5))}
+    .hi.empty{opacity:.18;filter:none;transform:scale(.85)}
+    .regen-bar-wrap{background:var(--border);border-radius:999px;height:5px;overflow:hidden;margin-top:6px}
+    .regen-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--rose),#fb923c);transition:width .4s ease}
+    .regen-label{font-size:10.5px;color:var(--text-muted);margin-top:4px;font-family:'Nunito',sans-serif;font-weight:700}
+    .heart-tip{font-size:11.5px;color:var(--text-muted);text-align:center;line-height:1.55}
+    /* clickable heart pill */
+    .stat-pill.hearts-pill{cursor:pointer;transition:border-color var(--transition),background var(--transition)}
+    .stat-pill.hearts-pill:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08)}
+
     /* ════════════════════════════════════════
        TASKS PAGE
     ════════════════════════════════════════ */
@@ -698,7 +721,7 @@
       <span class="val" id="stat-xp">0</span>
       <span>XP</span>
     </div>
-    <div class="stat-pill">
+    <div class="stat-pill hearts-pill" id="hearts-pill" onclick="showHeartModal()">
       <span class="sicon">❤️</span>
       <span class="val" id="stat-hearts">5</span>
     </div>
@@ -882,20 +905,33 @@ let _userId = null;
 async function initUserId() {
   try {
     const { data } = await window._supabaseClient.auth.getUser();
-    _userId = data.user.id;
+    _userId = (data && data.user && data.user.id) ? data.user.id : 'anonymous';
   } catch(e) {
-    console.warn('Could not get Supabase user, falling back to anonymous key.', e);
     _userId = 'anonymous';
   }
 
-  // Remove old global keys (runs once per session after userId is known)
+  // Remove old global keys once
   localStorage.removeItem('hearts');
   localStorage.removeItem('xp');
   localStorage.removeItem('user_level');
   localStorage.removeItem('user_lesson');
 
+  // Run heart regeneration on load
+  regenHearts();
+
   render();
   renderStats();
+
+  // Start regen ticker every 60s to keep timer fresh
+  setInterval(() => {
+    regenHearts();
+    renderStats();
+    // Refresh heart modal timer if open
+    if (document.getElementById('overlay').classList.contains('visible')) {
+      const timerEl = document.getElementById('heart-timer-label');
+      if (timerEl) updateHeartTimerLabel(timerEl);
+    }
+  }, 60000);
 }
 
 function key(name) {
@@ -911,41 +947,172 @@ const user = {
   get streak() { return Number(localStorage.getItem(key('streak'))       || 0) },
 };
 
-/* ─── HEART LOCK ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   HEART SYSTEM
+═══════════════════════════════════════════════════════ */
+const REGEN_MS   = 30 * 60 * 1000; // 30 minutes
+const MAX_HEARTS = 5;
+
+function regenHearts() {
+  if (!_userId) return;
+  const now      = Date.now();
+  const lastTime = Number(localStorage.getItem(key('lastHeartTime'))) || now;
+  const diff     = now - lastTime;
+  const toAdd    = Math.floor(diff / REGEN_MS);
+
+  let current = Number(localStorage.getItem(key('hearts')) ?? MAX_HEARTS);
+  if (isNaN(current) || current < 0) current = 0;
+
+  if (toAdd > 0 && current < MAX_HEARTS) {
+    current = Math.min(MAX_HEARTS, current + toAdd);
+    localStorage.setItem(key('hearts'),       current);
+    // Advance lastHeartTime by the consumed regen intervals
+    localStorage.setItem(key('lastHeartTime'), lastTime + toAdd * REGEN_MS);
+  } else if (!localStorage.getItem(key('lastHeartTime'))) {
+    localStorage.setItem(key('lastHeartTime'), now);
+  }
+}
+
+function getTimeUntilNextHeart() {
+  const now      = Date.now();
+  const lastTime = Number(localStorage.getItem(key('lastHeartTime'))) || now;
+  const elapsed  = now - lastTime;
+  const remaining = REGEN_MS - (elapsed % REGEN_MS);
+  const mins = Math.ceil(remaining / 60000);
+  return mins;
+}
+
+function getHeartAdCount() {
+  const today   = new Date().toDateString();
+  const lastDay = localStorage.getItem(key('ads_day'));
+  if (lastDay !== today) {
+    localStorage.setItem(key('ads_day'),  today);
+    localStorage.setItem(key('ads_count'), '0');
+    return 0;
+  }
+  return Number(localStorage.getItem(key('ads_count'))) || 0;
+}
+
+function updateHeartTimerLabel(el) {
+  const h = user.hearts;
+  if (h >= MAX_HEARTS) {
+    el.textContent = 'Hearts full ✨';
+  } else {
+    const mins = getTimeUntilNextHeart();
+    el.textContent = `Next heart in ${mins} min`;
+  }
+}
+
+/* ─── HEART MODAL ─────────────────────────────────────── */
+function showHeartModal() {
+  const h      = user.hearts;
+  const full   = h >= MAX_HEARTS;
+  const adsUsed = getHeartAdCount();
+  const adLeft  = Math.max(0, 5 - adsUsed);
+
+  // Build hearts icon row
+  let heartIcons = '';
+  for (let i = 0; i < MAX_HEARTS; i++) {
+    heartIcons += `<span class="hi${i >= h ? ' empty' : ''}">❤️</span>`;
+  }
+
+  // Regen bar — progress within current 30-min window
+  let regenPct = 0;
+  if (!full) {
+    const now      = Date.now();
+    const lastTime = Number(localStorage.getItem(key('lastHeartTime'))) || now;
+    const elapsed  = now - lastTime;
+    regenPct = Math.min(100, Math.round((elapsed % REGEN_MS) / REGEN_MS * 100));
+  }
+
+  const modal   = document.getElementById('modal');
+  const overlay = document.getElementById('overlay');
+  modal.classList.remove('heart-modal');
+  modal.classList.add('heart-modal');
+
+  document.getElementById('modal-icon').textContent  = h === 0 ? '💔' : '❤️';
+  document.getElementById('modal-title').textContent = 'Hearts';
+  document.getElementById('modal-desc').innerHTML    = `
+    <div class="heart-modal-body">
+      <div style="display:flex;justify-content:center;gap:4px;margin-bottom:2px">
+        <div class="heart-icons-row">${heartIcons}</div>
+      </div>
+      <div class="heart-row">
+        <span class="heart-row-label">Current hearts</span>
+        <span class="heart-row-val">${h} / ${MAX_HEARTS}</span>
+      </div>
+      ${!full ? `
+      <div>
+        <div class="regen-bar-wrap"><div class="regen-bar-fill" style="width:${regenPct}%"></div></div>
+        <div class="regen-label" id="heart-timer-label">Next heart in … min</div>
+      </div>` : ''}
+      <div class="heart-tip">You earn 1 heart every 30 minutes,<br>up to a maximum of ${MAX_HEARTS}.</div>
+    </div>
+  `;
+  document.getElementById('ad-bar-wrap').style.display = 'none';
+  document.getElementById('ad-label').textContent = '';
+  document.getElementById('modal-actions').innerHTML = '';
+
+  // Update timer label immediately
+  const timerEl = document.getElementById('heart-timer-label');
+  if (timerEl) updateHeartTimerLabel(timerEl);
+
+  // Buttons
+  const actionsEl = document.getElementById('modal-actions');
+
+  if (h < MAX_HEARTS) {
+    const adBtn = document.createElement('button');
+    if (adLeft > 0) {
+      adBtn.className   = 'btn btn-rose';
+      adBtn.style.width = '100%';
+      adBtn.textContent = `📺 Watch Ad +1 Heart (${adLeft} left today)`;
+      adBtn.onclick     = () => runHeartAd('modal');
+    } else {
+      adBtn.className   = 'btn btn-outline disabled';
+      adBtn.disabled    = true;
+      adBtn.style.width = '100%';
+      adBtn.textContent = '⏰ Daily ad limit reached (5/5)';
+    }
+    actionsEl.appendChild(adBtn);
+  }
+
+  const closeBtn        = document.createElement('button');
+  closeBtn.className    = 'btn btn-outline';
+  closeBtn.style.width  = '100%';
+  closeBtn.textContent  = 'Close';
+  closeBtn.onclick      = () => closeModal();
+  actionsEl.appendChild(closeBtn);
+
+  overlay.classList.add('visible');
+}
+
+/* ─── HEART LOCK (no hearts when starting lesson) ─────── */
 function checkHearts() {
+  regenHearts();
   return user.hearts > 0;
 }
 
 function showHeartLockModal() {
-  document.getElementById('modal').classList.add('heart-modal');
-  showModal('💔', 'No hearts left', 'You need hearts to start a lesson. Watch an ad to get +1 heart.');
-  document.getElementById('ad-bar-wrap').style.display = 'none';
-  document.getElementById('modal-actions').innerHTML = '';
-
-  const actionsEl = document.getElementById('modal-actions');
-
-  // Watch ad button
-  const adBtn = document.createElement('button');
-  adBtn.className = 'btn btn-rose';
-  adBtn.style.width = '100%';
-  adBtn.textContent = '📺 Watch Ad (+1 heart)';
-  adBtn.onclick = () => runHeartAd();
-  actionsEl.appendChild(adBtn);
-
-  // Close button
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'btn btn-outline';
-  closeBtn.style.width = '100%';
-  closeBtn.textContent = 'Close';
-  closeBtn.onclick = () => closeModal();
-  actionsEl.appendChild(closeBtn);
+  // Reuse full heart modal — it already shows ad option
+  showHeartModal();
+  // Override title/icon for lock context
+  document.getElementById('modal-icon').textContent  = '💔';
+  document.getElementById('modal-title').textContent = 'No Hearts Left';
 }
 
-function runHeartAd() {
+/* ─── AD SYSTEM ──────────────────────────────────────── */
+function runHeartAd(context) {
+  const adsUsed = getHeartAdCount();
+  if (adsUsed >= 5) {
+    document.getElementById('modal-desc').innerHTML =
+      '<p style="color:var(--rose);font-size:13px">You\'ve reached today\'s ad limit (5/5).<br>Come back tomorrow!</p>';
+    return;
+  }
+
   document.getElementById('ad-bar-wrap').style.display = 'block';
-  document.getElementById('ad-bar').style.width = '0%';
-  document.getElementById('ad-label').textContent = 'Ad loading…';
-  document.getElementById('modal-actions').innerHTML =
+  document.getElementById('ad-bar').style.width        = '0%';
+  document.getElementById('ad-label').textContent      = 'Ad loading…';
+  document.getElementById('modal-actions').innerHTML   =
     `<button class="btn btn-outline disabled" id="heart-ad-skip" disabled>Watching… (5s)</button>`;
 
   let elapsed = 0;
@@ -953,22 +1120,31 @@ function runHeartAd() {
   clearInterval(adTimer);
   adTimer = setInterval(() => {
     elapsed += interval;
-    const pct = Math.min(100, Math.round((elapsed / duration) * 100));
-    document.getElementById('ad-bar').style.width = pct + '%';
+    const pct       = Math.min(100, Math.round((elapsed / duration) * 100));
     const remaining = Math.ceil((duration - elapsed) / 1000);
+    document.getElementById('ad-bar').style.width = pct + '%';
     const skipBtn = document.getElementById('heart-ad-skip');
+
     if (elapsed >= duration) {
       clearInterval(adTimer);
       document.getElementById('ad-label').textContent = 'Ad finished!';
       if (skipBtn) {
-        skipBtn.textContent = 'Collect +1 Heart';
+        skipBtn.textContent = 'Collect +1 Heart ❤️';
         skipBtn.classList.remove('disabled');
-        skipBtn.disabled = false;
+        skipBtn.disabled  = false;
         skipBtn.className = 'btn btn-rose';
         skipBtn.style.width = '100%';
-        skipBtn.onclick = () => {
-          const newHearts = Math.min(5, user.hearts + 1);
-          localStorage.setItem(key('hearts'), newHearts);
+        skipBtn.onclick   = () => {
+          // Grant heart
+          const newH = Math.min(MAX_HEARTS, user.hearts + 1);
+          localStorage.setItem(key('hearts'), newH);
+          // Increment ad count
+          const newAds = getHeartAdCount() + 1;
+          localStorage.setItem(key('ads_count'), newAds);
+          // Reset regen timer if going from 0→1
+          if (user.hearts === 0) {
+            localStorage.setItem(key('lastHeartTime'), Date.now());
+          }
           renderStats();
           closeModal();
         };
@@ -1024,17 +1200,37 @@ function renderStats() {
 }
 
 /* ─── DAILY PROGRESS ─────────────────────────────────── */
+function getDailyCount() {
+  const today    = new Date().toDateString();
+  const lastDate = localStorage.getItem(key('daily_date'));
+
+  // Reset if it's a new day
+  if (lastDate !== today) {
+    localStorage.setItem(key('daily_date'), today);
+    localStorage.setItem(key('daily_done'), '0');
+    return 0;
+  }
+  return Number(localStorage.getItem(key('daily_done')) || 0);
+}
+
 function syncDailyProgress() {
-  const done   = Number(localStorage.getItem(key('daily_done')) || 0);
-  const target = 3;
-  const pct    = Math.min(100, Math.round((done / target) * 100));
-  const label  = `${Math.min(done,target)} / ${target} lessons done`;
-  ['','t'].forEach(sfx => {
-    const fill = document.getElementById('daily-fill' + (sfx ? '-'+sfx : ''));
-    const cnt  = document.getElementById('daily-count' + (sfx ? '-'+sfx : ''));
+  const done      = getDailyCount();
+  const target    = 3;
+  const completed = done >= target;
+  const pct       = Math.min(100, Math.round((done / target) * 100));
+  const label     = completed ? '✅ Daily goal complete!' : `${Math.min(done, target)} / ${target} lessons done`;
+
+  ['', 't'].forEach(sfx => {
+    const id   = sfx ? '-' + sfx : '';
+    const fill = document.getElementById('daily-fill' + id);
+    const cnt  = document.getElementById('daily-count' + id);
     if (fill) fill.style.width = pct + '%';
     if (cnt)  cnt.textContent  = label;
   });
+
+  // Update XP label and start button on home card
+  const xpEl  = document.getElementById('daily-xp');
+  if (xpEl)  xpEl.textContent = completed ? '🎉 Done!' : '+30 XP';
 }
 
 /* ─── REVIEW LOGIC ───────────────────────────────────── */
@@ -1184,7 +1380,12 @@ function getProgress(hsk) {
 }
 
 function goToCurrentLesson() {
-  navigateToLesson(user.lesson);
+  if (!checkHearts()) {
+    showHeartLockModal();
+    return;
+  }
+  const lesson = Number(localStorage.getItem(key('user_lesson'))) || 1;
+  window.location.href = `/app/lesson.html?lesson=${lesson}`;
 }
 
 /* ─── BUILD HSK SECTION ──────────────────────────────── */
