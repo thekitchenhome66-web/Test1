@@ -428,47 +428,38 @@ function buildUI(top20, allUsers, userId) {
 
 // ── LOAD DATA — fetches all users from profiles, ordered by XP
 async function loadLeaderboard(userId) {
-  // Fix 2 — fallback timeout to prevent infinite loading spinner
-  const timeoutId = setTimeout(() => {
-    if (main.innerHTML.includes("Loading")) {
-      main.innerHTML = `
-        <div class="error-wrap">
-          ⚠️ Loading took too long.<br>
-          Possible database or permission issue.
-        </div>
-      `;
-    }
-  }, 5000);
-
-  console.log("Loading leaderboard...");
+  main.innerHTML = "<div style='color:white;padding:20px'>DEBUG: loading started...</div>";
 
   const { data, error } = await supabase
     .from('profiles')
     .select('id, xp')
     .order('xp', { ascending: false });
 
-  clearTimeout(timeoutId);
-
-  // Fix 1 — show error message instead of silent return
   if (error) {
-    console.error(error);
     main.innerHTML = `
-      <div class="error-wrap">
-        ❌ Failed to load leaderboard<br><br>
-        ${error.message}
+      <div style="color:red;padding:20px">
+        ERROR:<br>
+        ${JSON.stringify(error)}
       </div>
     `;
     return;
   }
 
-  console.log("Leaderboard data:", data);
-
-  if (!data || data.length === 0) {
-    showEmptyState();
+  if (!data) {
+    main.innerHTML = `
+      <div style="color:orange;padding:20px">
+        NO DATA RETURNED
+      </div>
+    `;
     return;
   }
 
-  renderLeaderboard(data, userId);
+  main.innerHTML = `
+    <div style="color:lime;padding:20px">
+      SUCCESS:<br>
+      ${JSON.stringify(data)}
+    </div>
+  `;
 }
 
 function showEmptyState() {
@@ -499,6 +490,7 @@ async function init() {
 
     const user = data.session.user;
     currentUserId = user.id;
+    console.log("USER:", user);
     await loadLeaderboard(currentUserId);
   } catch(err) {
     console.error("Auth error:", err);
