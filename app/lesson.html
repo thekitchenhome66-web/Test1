@@ -1552,6 +1552,19 @@ function showComplete() {
     localStorage.setItem(key("user_lesson"), String(lessonId + 1));
   }
 
+  // ── Daily challenge count (only once per unique lesson)
+  if (!alreadyCompleted) {
+    const today    = new Date().toDateString();
+    const lastDate = localStorage.getItem(key("daily_date"));
+    let   dailyCount = Number(localStorage.getItem(key("daily_done"))) || 0;
+    if (lastDate !== today) {
+      dailyCount = 0;
+      localStorage.setItem(key("daily_date"), today);
+    }
+    dailyCount += 1;
+    localStorage.setItem(key("daily_done"), dailyCount);
+  }
+
   const accuracy     = calculateAccuracy();
   const mistakeCount = sessionMistakes.length;
   const wordsLearned = lesson.words.length;
