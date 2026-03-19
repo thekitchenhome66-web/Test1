@@ -992,690 +992,87 @@ function renderMCQ(step, mode) {
 }
 
 // ── TRUE/FALSE
+// _tfCorrect/_tfHint as module vars — no onclick string escaping needed
+let _tfCorrect = "";
+let _tfHint    = "";
+
 function renderTrueFalse(step, isListen) {
-  const w = step.word;
+  const w    = step.word;
   const pool = (step.pool || HSK[lesson.plan.levelNum]?.words || []).filter(x => x.zh !== w.zh);
+  const isTrue     = Math.random() > 0.5;
+  const spokenWord = (isTrue || pool.length === 0) ? w : rand(pool);
 
-  // Decide if this is a TRUE or FALSE question
-  const isTrue = Math.random() > 0.5;
+  _tfCorrect = isTrue ? "对" : "错";
+  _tfHint    = isTrue
+    ? (w.zh + " = " + w.en)
+    : (spokenWord.zh + ' means "' + spokenWord.en + '", not "' + w.en + '"');
 
-  // The "spoken / shown" word — either the correct one or a distractor
-  const spokenWord  = isTrue ? w : rand(pool);
-  const correct     = isTrue ? '对' : '错';
-
-  // Hint shown after answering
-  const hintText = isTrue
-    ? `${w.zh} = ${w.en} ✓`
-    : `${spokenWord.zh} = ${spokenWord.en} (not "${w.en}")`;
-
-  let html;
+  let questionHtml;
   if (isListen) {
-    // Question: "I will say a word. Does it match the meaning shown?"
-    html = `
-      <div class="q-label listen">🎧 Listening — True or False</div>
-      <div class="q-text">Does the spoken word mean: <span class="zh">${w.en}</span></div>`;
+    questionHtml =
+      '<div class="q-label listen">🎧 Listening — True or False</div>' +
+      '<div class="q-text">Does the spoken word mean: <span class="zh">' + w.en + '</span></div>';
   } else {
-    // Question: "Does this character match the meaning shown?"
-    html = `
-      <div class="q-label read">📖 Reading — True or False</div>
-      <div class="q-text">Does <span class="zh">${spokenWord.zh}</span> mean "${w.en}"?</div>`;
+    questionHtml =
+      '<div class="q-label read">📖 Reading — True or False</div>' +
+      '<div class="q-text">Does <span class="zh">' + spokenWord.zh + '</span> mean "' + w.en + '"?</div>';
   }
 
-  stepArea.innerHTML = `${html}
-    <div class="tf-grid">
-      <button class="tf-btn" onclick="handleTF('对','${correct}','${hintText.replace(/'/g,"\\'")}',this)">
-        ✓ <span class="tf-label">对 (True)</span>
-      </button>
-      <button class="tf-btn" onclick="handleTF('错','${correct}','${hintText.replace(/'/g,"\\'")}',this)">
-        ✗ <span class="tf-label">错 (False)</span>
-      </button>
-    </div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.innerHTML = questionHtml +
+    '<div class="tf-grid">' +
+      '<button class="tf-btn" id="btn-tf-true">✓ <span class="tf-label">对 (True)</span></button>' +
+      '<button class="tf-btn" id="btn-tf-false">✗ <span class="tf-label">错 (False)</span></button>' +
+    '</div>' +
+    '<div class="feedback" id="feedback">' +
+      '<div class="fb-icon"></div>' +
+      '<div><div class="fb-main"></div><div class="fb-hint"></div></div>' +
+    '</div>';
+
+  document.getElementById("btn-tf-true").addEventListener("click",  function() { handleTF("对", this); });
+  document.getElementById("btn-tf-false").addEventListener("click", function() { handleTF("错", this); });
 
   if (isListen) {
-    // Play the spoken word (could be correct or distractor)
     speak(spokenWord.zh);
-    const listenBtn = document.createElement('button');
-    listenBtn.className = 'btn-play-big';
-    listenBtn.id = 'listen-btn';
-    listenBtn.innerHTML = `<span class="play-icon">🔊</span> Tap to hear again`;
-    listenBtn.onclick = () => speak(spokenWord.zh);
-    stepArea.insertBefore(listenBtn, stepArea.children[2]);
+    const listenBtn = document.createElement("button");
+    listenBtn.className = "btn-play-big";
+    listenBtn.innerHTML = '<span class="play-icon">🔊</span> Tap to hear again';
+    listenBtn.addEventListener("click", function() { speak(spokenWord.zh); });
+    const tfGrid = stepArea.querySelector(".tf-grid");
+    if (tfGrid) stepArea.insertBefore(listenBtn, tfGrid);
   }
 }
 
 function renderListenTF(step) { renderTrueFalse(step, true); }
 
-function handleTF(chosen, correct, hint, btn) {
+function handleTF(chosen, btn) {
   if (answeredStep) return;
   answeredStep = true;
   clearInterval(speedTimer);
-  const isCorrect = chosen === correct;
-  document.querySelectorAll('.tf-btn').forEach(b => b.disabled = true);
-  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  const isCorrect = (chosen === _tfCorrect);
+  const step      = steps[currentStep];
+  const truBtn = document.getElementById("btn-tf-true");
+  const flsBtn = document.getElementById("btn-tf-false");
+  if (truBtn) truBtn.disabled = true;
+  if (flsBtn) flsBtn.disabled = true;
+  btn.classList.add(isCorrect ? "correct" : "wrong");
   if (!isCorrect) {
-    document.querySelectorAll('.tf-btn').forEach(b => {
-      if (b.getAttribute('onclick')?.includes(`'${correct}'`)) b.classList.add('correct');
-    });
+    const correctBtn = (_tfCorrect === "对") ? truBtn : flsBtn;
+    if (correctBtn) correctBtn.classList.add("correct");
     loseHeart();
-    sessionMistakes.push({ word: steps[currentStep].word, type:'tf' });
+    sessionMistakes.push({ word: step.word, type: "tf" });
   } else {
     sessionXP += 1;
-    updateSRS(steps[currentStep].word?.id, true);
+    updateSRS(step.word && step.word.id, true);
   }
-  const fb = document.getElementById('feedback');
+  const fb = document.getElementById("feedback");
   if (fb) {
-    fb.className = 'feedback show ' + (isCorrect ? 'ok' : 'err');
-    fb.querySelector('.fb-icon').textContent = isCorrect ? '✓' : '✕';
-    fb.querySelector('.fb-main').textContent = isCorrect ? 'Correct!' : 'Not quite';
-    fb.querySelector('.fb-hint').textContent = hint || '';
+    fb.className = "feedback show " + (isCorrect ? "ok" : "err");
+    fb.querySelector(".fb-icon").textContent = isCorrect ? "✓" : "✕";
+    fb.querySelector(".fb-main").textContent = isCorrect ? "Correct!" : "Not quite";
+    fb.querySelector(".fb-hint").textContent = _tfHint;
   }
-  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
-  bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
+  if (step.section) updateCheckpointScore(step.section, isCorrect);
+  bottomArea.innerHTML = '<button class="btn-primary" onclick="nextStep()">'
+    + (isCorrect ? "Continue →" : "I understand →") + "</button>";
 }
 
-// ── FILL IN THE BLANK
-function renderFillBlank(step) {
-  const w = step.word;
-  const ex = w.ex;
-  if (!ex) { nextStep(); return; }
-
-  const sentence = ex.zh.replace(w.zh, '___');
-  const pool = HSK[lesson.plan.levelNum]?.words || [];
-  const wrong = getDistractors(w, pool, 'zh', 3).map(d => d.zh);
-  const options = shuffle([w.zh, ...wrong]);
-
-  stepArea.innerHTML = `
-    <div class="q-label read">📖 Fill in the Blank</div>
-    <div class="fill-sentence">${sentence.replace('___', `<span class="fill-blank">___</span>`)}</div>
-    <div style="font-size:12px;color:var(--ink3);text-align:center;margin-top:4px">${ex.en}</div>
-    <div class="options-grid" id="fill-opts"></div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
-
-  speak(ex.zh);
-
-  const grid = document.getElementById('fill-opts');
-  options.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.className = 'opt-btn';
-    btn.innerHTML = `<span style="font-family:'Noto Sans SC',sans-serif;font-size:20px">${opt}</span>`;
-    btn.onclick = () => {
-      if (answeredStep) return;
-      answeredStep = true;
-      const isCorrect = opt === w.zh;
-      grid.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
-      btn.classList.add(isCorrect ? 'correct' : 'wrong');
-      if (!isCorrect) {
-        grid.querySelectorAll('.opt-btn').forEach(b => { if (b.textContent.trim() === w.zh) b.classList.add('correct'); });
-        loseHeart();
-        sessionMistakes.push({ word: w, type:'fill_blank' });
-      } else {
-        sessionXP += 2;
-        document.querySelector('.fill-blank').textContent = w.zh;
-        document.querySelector('.fill-blank').style.color = 'var(--green)';
-        updateSRS(w.id, true);
-      }
-      showFeedback(isCorrect, w);
-      if (step.section) updateCheckpointScore(step.section, isCorrect);
-      bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
-    };
-    grid.appendChild(btn);
-  });
-}
-
-// ── SENTENCE ORDER (drag chips into order)
-function renderSentenceOrder(step) {
-  const w = step.word;
-  const ex = w.ex;
-  if (!ex) { nextStep(); return; }
-
-  const parts = ex.zh.split('');
-  // Group into 2-3 char chunks
-  const chunks = [];
-  for (let i = 0; i < ex.zh.length; i += Math.ceil(ex.zh.length / 4)) {
-    chunks.push(ex.zh.slice(i, i + Math.ceil(ex.zh.length / 4)));
-  }
-  const shuffled = shuffle([...chunks]);
-  wordBankState = { chunks, shuffled, placed: [], answer: ex.zh };
-
-  stepArea.innerHTML = `
-    <div class="q-label write">✍️ Build the Sentence</div>
-    <div style="font-size:12px;color:var(--ink2);margin-bottom:4px">${ex.en}</div>
-    <div class="sentence-display" id="sentence-display">
-      <span style="color:var(--ink3);font-size:14px">Tap words to build the sentence</span>
-    </div>
-    <div class="word-chips" id="word-chips"></div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
-
-  renderChips();
-}
-
-function renderChips() {
-  const chipsEl = document.getElementById('word-chips');
-  const dispEl  = document.getElementById('sentence-display');
-  chipsEl.innerHTML = '';
-  dispEl.innerHTML = wordBankState.placed.length ? wordBankState.placed.join('') : '<span style="color:var(--ink3);font-size:14px">Tap words to build the sentence</span>';
-
-  if (wordBankState.placed.length > 0) {
-    const clearBtn = document.createElement('button');
-    clearBtn.style.cssText = 'background:none;border:none;color:var(--rose);font-size:11px;font-weight:700;cursor:pointer;margin-left:6px';
-    clearBtn.textContent = '✕ Clear';
-    clearBtn.onclick = () => { wordBankState.placed = []; renderChips(); };
-    dispEl.appendChild(clearBtn);
-  }
-
-  wordBankState.shuffled.forEach((chunk, i) => {
-    const chip = document.createElement('div');
-    chip.className = 'chip' + (wordBankState.placed.includes(chunk) ? ' used' : '');
-    chip.textContent = chunk;
-    chip.onclick = () => {
-      if (answeredStep || wordBankState.placed.includes(chunk)) return;
-      wordBankState.placed.push(chunk);
-      renderChips();
-
-      if (wordBankState.placed.length === wordBankState.shuffled.length) {
-        const built = wordBankState.placed.join('');
-        const isCorrect = built === wordBankState.answer;
-        answeredStep = true;
-        const step = steps[currentStep];
-        if (!isCorrect) {
-          loseHeart();
-          sessionMistakes.push({ word: step.word, type:'sentence_order' });
-          dispEl.style.borderColor = 'var(--rose)';
-          setTimeout(() => { wordBankState.placed = []; answeredStep = false; renderChips(); dispEl.style.borderColor = ''; }, 1200);
-        } else {
-          sessionXP += 3;
-          dispEl.style.borderColor = 'var(--green)';
-          updateSRS(step.word?.id, true);
-          showFeedback(true, step.word);
-          if (step.section) updateCheckpointScore(step.section, true);
-          bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Continue →</button>`;
-        }
-      }
-    };
-    chipsEl.appendChild(chip);
-  });
-}
-
-// ── MATCHING
-function renderMatch(step) {
-  const words = step.words.filter(Boolean).slice(0, 4);
-  if (words.length < 2) { nextStep(); return; }
-
-  const zhItems = shuffle(words.map(w => ({ text: w.zh, id: w.id, side:'zh' })));
-  const enItems = shuffle(words.map(w => ({ text: w.en, id: w.id, side:'en' })));
-  let selected = null;
-  let matched  = new Set();
-
-  stepArea.innerHTML = `
-    <div class="q-label read">📖 Match the Words</div>
-    <div class="match-grid" id="match-grid"></div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
-
-  const grid = document.getElementById('match-grid');
-  const col1 = document.createElement('div');
-  const col2 = document.createElement('div');
-  col1.style.cssText = col2.style.cssText = 'display:flex;flex-direction:column;gap:8px';
-
-  function makeItem(item) {
-    const el = document.createElement('div');
-    el.className = 'match-item' + (item.side === 'zh' ? ' zh' : '');
-    el.dataset.id   = item.id;
-    el.dataset.side = item.side;
-    el.textContent  = item.text;
-    el.onclick = () => {
-      if (matched.has(item.id + item.side)) return;
-      if (selected === null) {
-        selected = { el, item };
-        el.classList.add('selected');
-      } else {
-        if (selected.item.side === item.side) {
-          selected.el.classList.remove('selected');
-          selected = { el, item };
-          el.classList.add('selected');
-          return;
-        }
-        const isCorrect = selected.item.id === item.id;
-        if (isCorrect) {
-          selected.el.classList.remove('selected');
-          selected.el.classList.add('matched');
-          el.classList.add('matched');
-          matched.add(item.id + 'zh');
-          matched.add(item.id + 'en');
-          sessionXP += 1;
-          speak(words.find(w => w.id === item.id)?.zh || '');
-          if (matched.size === words.length * 2) {
-            answeredStep = true;
-            showFeedback(true, null, 'All matched!', 'Great job!');
-            bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Continue →</button>`;
-          }
-        } else {
-          selected.el.classList.add('wrong-shake');
-          el.classList.add('wrong-shake');
-          loseHeart();
-          setTimeout(() => {
-            selected.el.classList.remove('selected','wrong-shake');
-            el.classList.remove('wrong-shake');
-          }, 400);
-        }
-        selected = null;
-      }
-    };
-    return el;
-  }
-
-  zhItems.forEach(item => col1.appendChild(makeItem(item)));
-  enItems.forEach(item => col2.appendChild(makeItem(item)));
-  grid.appendChild(col1);
-  grid.appendChild(col2);
-}
-
-// ── ERROR CORRECTION
-function renderErrorCorrection(step) {
-  const w = step.word;
-  const pool = HSK[lesson.plan.levelNum]?.words || [];
-  const wrongWord = rand(pool.filter(x => x.zh !== w.zh));
-  const useWrong  = Math.random() > 0.5;
-
-  const sentence = w.ex?.zh || w.zh + '很好。';
-  const displayed = useWrong ? sentence.replace(w.zh, wrongWord.zh) : sentence;
-  const correct   = !useWrong ? '对' : '错';
-
-  stepArea.innerHTML = `
-    <div class="q-label read">📖 Error Correction</div>
-    <div class="q-text">Is this sentence correct?</div>
-    <div class="passage-card">
-      <div class="passage-text" style="font-size:18px;text-align:center">${displayed}</div>
-      ${w.ex ? `<div class="passage-en" style="text-align:center">${w.ex.en}</div>` : ''}
-    </div>
-    <div class="tf-grid">
-      <button class="tf-btn" onclick="handleTF('对','${correct}',this)">✓ <span class="tf-label">Correct</span></button>
-      <button class="tf-btn" onclick="handleTF('错','${correct}',this)">✗ <span class="tf-label">Has an error</span></button>
-    </div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
-  speak(displayed);
-}
-
-// ── READING PASSAGE
-function renderReadingPassage(step) {
-  const w = step.word;
-  const ex = w.ex;
-  if (!ex) { nextStep(); return; }
-
-  const pool = HSK[lesson.plan.levelNum]?.words || [];
-  const wrong = getDistractors(w, pool, 'en', 3).map(d => d.en);
-  const options = shuffle([w.en, ...wrong]);
-  const correct = w.en;
-
-  stepArea.innerHTML = `
-    <div class="q-label read">📖 Reading Comprehension</div>
-    <div class="passage-card">
-      <div class="passage-title">Read and answer</div>
-      <div class="passage-text">${ex.zh}</div>
-      <div class="passage-py">${ex.py}</div>
-    </div>
-    <div class="q-text" style="margin-top:4px">What does <strong style="color:var(--green)">${w.zh}</strong> mean in this context?</div>
-    <div class="options-grid single" id="pass-opts"></div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
-
-  speak(ex.zh);
-
-  const grid = document.getElementById('pass-opts');
-  options.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.className = 'opt-btn';
-    btn.textContent = opt;
-    btn.style.fontFamily = "'DM Sans', sans-serif";
-    btn.onclick = () => {
-      if (answeredStep) return;
-      answeredStep = true;
-      const isCorrect = opt === correct;
-      grid.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
-      btn.classList.add(isCorrect ? 'correct' : 'wrong');
-      if (!isCorrect) {
-        grid.querySelectorAll('.opt-btn').forEach(b => { if (b.textContent === correct) b.classList.add('correct'); });
-        loseHeart();
-        sessionMistakes.push({ word: w, type:'reading' });
-      } else {
-        sessionXP += 2;
-        updateSRS(w.id, true);
-      }
-      showFeedback(isCorrect, w);
-      if (step.section) updateCheckpointScore(step.section, isCorrect);
-      bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
-    };
-    grid.appendChild(btn);
-  });
-}
-
-// ── PINYIN TYPING
-function renderPinyinType(step) {
-  const w = step.word;
-  stepArea.innerHTML = `
-    <div class="q-label write">✍️ Type the Pinyin</div>
-    <div class="q-text">Type the pinyin for: <span class="zh">${w.zh}</span></div>
-    <div style="font-size:13px;color:var(--ink3);text-align:center;margin-bottom:4px">"${w.en}"</div>
-    <div class="typing-wrap">
-      <input class="typing-input" id="py-input" type="text" placeholder="Type pinyin (without tones)…" autocomplete="off" autocapitalize="none" spellcheck="false"/>
-    </div>
-    <div class="typing-hint">Tip: type without tone marks, e.g. "ni hao"</div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
-
-  const input = document.getElementById('py-input');
-  input.focus();
-
-  bottomArea.innerHTML = `<button class="btn-primary" onclick="checkPinyin()">Check →</button>`;
-}
-
-function stripTones(s) {
-  return s.toLowerCase()
-    .replace(/[āáǎà]/g,'a').replace(/[ēéěè]/g,'e').replace(/[īíǐì]/g,'i')
-    .replace(/[ōóǒò]/g,'o').replace(/[ūúǔùǖǘǚǜ]/g,'u').replace(/ǚ/g,'u')
-    .replace(/\s+/g,' ').trim();
-}
-
-function checkPinyin() {
-  if (answeredStep) return;
-  const input = document.getElementById('py-input');
-  const w = steps[currentStep].word;
-  const userInput  = stripTones(input.value.trim());
-  const correctPy  = stripTones(w.py);
-  const isCorrect  = userInput === correctPy;
-  answeredStep = true;
-  input.classList.add(isCorrect ? 'ok' : 'err');
-  input.disabled = true;
-  if (!isCorrect) {
-    loseHeart();
-    sessionMistakes.push({ word: w, type:'pinyin' });
-  } else {
-    sessionXP += 2;
-    updateSRS(w.id, true);
-  }
-  showFeedback(isCorrect, w, isCorrect ? null : `Correct: ${w.py}`);
-  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
-  bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
-}
-
-// ── SPEED TIMER
-function startSpeedTimer() {
-  speedTimeLeft = 8;
-  const timerWrap = document.createElement('div');
-  timerWrap.innerHTML = `
-    <div class="speed-bar-wrap"><div class="speed-bar" id="speed-bar" style="width:100%"></div></div>
-    <div class="speed-counter" id="speed-counter">8s</div>`;
-  stepArea.insertBefore(timerWrap, stepArea.firstChild);
-
-  speedTimer = setInterval(() => {
-    speedTimeLeft -= 0.1;
-    const bar = document.getElementById('speed-bar');
-    const cnt = document.getElementById('speed-counter');
-    if (!bar || !cnt) { clearInterval(speedTimer); return; }
-    const pct = (speedTimeLeft / 8) * 100;
-    bar.style.width = pct + '%';
-    bar.className = 'speed-bar' + (pct < 40 ? ' warning' : '') + (pct < 15 ? ' danger' : '');
-    cnt.textContent = Math.ceil(speedTimeLeft) + 's';
-    if (speedTimeLeft <= 0) {
-      clearInterval(speedTimer);
-      if (!answeredStep) {
-        answeredStep = true;
-        loseHeart();
-        showFeedback(false, steps[currentStep].word, 'Too slow!');
-        bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Next →</button>`;
-      }
-    }
-  }, 100);
-}
-
-// ── FEEDBACK
-function showFeedback(isOk, word, overrideMsg, hint) {
-  const fb = document.getElementById('feedback');
-  if (!fb) return;
-  fb.className = 'feedback show ' + (isOk ? 'ok' : 'err');
-  fb.querySelector('.fb-icon').textContent = isOk ? '✓' : '✕';
-  fb.querySelector('.fb-main').textContent = isOk
-    ? rand(['Great!','Perfect!','Excellent!','Correct!','Well done!'])
-    : (overrideMsg || 'Not quite');
-  fb.querySelector('.fb-hint').textContent = hint || (word ? `${word.zh} = ${word.en}` : '');
-}
-
-// ══════════════════════════════════════════════════════════
-// CHECKPOINT SCORING
-// ══════════════════════════════════════════════════════════
-function updateCheckpointScore(section, isCorrect) {
-  checkpointScores[section + 'Total']++;
-  if (isCorrect) checkpointScores[section]++;
-}
-
-// ══════════════════════════════════════════════════════════
-// SRS (Spaced Repetition)
-// ══════════════════════════════════════════════════════════
-function updateSRS(wordId, correct) {
-  if (!wordId || !_uid) return;
-  const srs = JSON.parse(localStorage.getItem(key('srs')) || '{}');
-  const entry = srs[wordId] || { score: 0, nextReview: Date.now() };
-  const intervals = [0, 86400000, 259200000, 604800000, 1209600000, 2592000000];
-
-  if (correct) {
-    entry.score = Math.min(5, entry.score + 1);
-  } else {
-    entry.score = Math.max(0, entry.score - 1);
-  }
-  entry.nextReview = Date.now() + (intervals[entry.score] || 0);
-  srs[wordId] = entry;
-  localStorage.setItem(key('srs'), JSON.stringify(srs));
-}
-
-// ══════════════════════════════════════════════════════════
-// NAVIGATION
-// ══════════════════════════════════════════════════════════
-function nextStep() {
-  clearInterval(speedTimer);
-  currentStep++;
-  if (currentStep >= steps.length) { showComplete(); return; }
-  stepArea.className = 'step-area step-out';
-  setTimeout(() => renderStep(currentStep), 240);
-}
-
-// ══════════════════════════════════════════════════════════
-// COMPLETE SCREEN
-// ══════════════════════════════════════════════════════════
-function showComplete() {
-  clearInterval(speedTimer);
-  progressEl.style.width = '100%';
-  bottomArea.innerHTML = '';
-
-  const plan        = lesson.plan;
-  const isCP        = plan.isCheckpoint;
-  const isSpeed     = plan.isSpeed;
-
-  // XP calculation
-  let earnedXP = sessionXP + (plan.isSpeed ? 20 : 10);
-  if (isCP) earnedXP += 15;
-
-  // Save progress
-  const completedLessons = JSON.parse(localStorage.getItem(key('completed_lessons')) || '[]');
-  const alreadyDone = completedLessons.includes(plan.lessonNum);
-  if (!alreadyDone) {
-    const newXP = xp + earnedXP;
-    localStorage.setItem(key('xp'), newXP);
-    localStorage.setItem(key('completed_lessons'), JSON.stringify([...completedLessons, plan.lessonNum]));
-    localStorage.setItem(key('user_lesson'), String(plan.lessonNum + 1));
-
-    // Daily count
-    const today = new Date().toDateString();
-    const lastDay = localStorage.getItem(key('lesson_day'));
-    if (lastDay !== today) {
-      localStorage.setItem(key('lesson_day'), today);
-      localStorage.setItem(key('lessons_today'), '0');
-    }
-    const done = Number(localStorage.getItem(key('lessons_today')) || 0) + 1;
-    localStorage.setItem(key('lessons_today'), done);
-
-    // Streak
-    const streakToday = new Date().toDateString();
-    const yesterday   = new Date(Date.now() - 86400000).toDateString();
-    const lastStreakDay = localStorage.getItem(key('streak_day'));
-    let streak = Number(localStorage.getItem(key('streak')) || 0);
-    if (lastStreakDay !== streakToday) {
-      streak = lastStreakDay === yesterday ? streak + 1 : 1;
-      localStorage.setItem(key('streak'), streak);
-      localStorage.setItem(key('streak_day'), streakToday);
-    }
-
-    saveXP(earnedXP);
-  }
-
-  // Checkpoint score ring
-  let ringHtml = '';
-  if (isCP) {
-    const total   = checkpointScores.listenTotal + checkpointScores.readTotal + checkpointScores.writeTotal;
-    const correct = checkpointScores.listen + checkpointScores.read + checkpointScores.write;
-    const pct     = total > 0 ? Math.round((correct / total) * 100) : 0;
-    const circ    = 2 * Math.PI * 52;
-    const offset  = circ * (1 - pct / 100);
-    ringHtml = `
-      <div class="score-ring-wrap">
-        <svg viewBox="0 0 120 120"><circle class="score-ring-track" cx="60" cy="60" r="52"/><circle class="score-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/></svg>
-        <div class="score-ring-text"><div class="score-pct">${pct}%</div><div class="score-label">Score</div></div>
-      </div>
-      <div class="checkpoint-section-scores">
-        <div class="section-score"><div class="ss-label">Listening</div><div class="ss-val listen">${checkpointScores.listen}/${checkpointScores.listenTotal}</div></div>
-        <div class="section-score"><div class="ss-label">Reading</div><div class="ss-val read">${checkpointScores.read}/${checkpointScores.readTotal}</div></div>
-        <div class="section-score"><div class="ss-label">Writing</div><div class="ss-val write">${checkpointScores.write}/${checkpointScores.writeTotal}</div></div>
-      </div>`;
-  }
-
-  const accuracy = steps.length > 0 ? Math.round(((steps.length - sessionMistakes.length) / steps.length) * 100) : 100;
-
-  stepArea.innerHTML = `
-    <div class="complete-screen">
-      <div class="complete-emoji">${isCP ? '🏆' : isSpeed ? '⚡' : '🎉'}</div>
-      <div class="complete-title">${isCP ? 'Checkpoint Passed!' : isSpeed ? 'Speed Challenge Complete!' : 'Lesson Complete!'}</div>
-      <div class="complete-sub">${plan.name} · HSK ${plan.levelNum}</div>
-      ${ringHtml}
-      <div class="xp-pill" id="xp-pill">+${earnedXP} XP</div>
-      <div class="complete-stats">
-        <div class="stat-box"><div class="sv">${steps.length}</div><div class="sl">Steps</div></div>
-        <div class="stat-box"><div class="sv">${sessionMistakes.length}</div><div class="sl">Errors</div></div>
-        <div class="stat-box"><div class="sv">${accuracy}%</div><div class="sl">Accuracy</div></div>
-        <div class="stat-box"><div class="sv">${hearts}❤️</div><div class="sl">Hearts</div></div>
-      </div>
-      <div class="complete-actions">
-        <button class="btn-primary" onclick="window.location.href='/app/dashboard.html'">Back to Home</button>
-        <button class="btn-ad" id="btn-double-xp" onclick="doubleXP()">🎥 Watch Ad for +${Math.round(earnedXP/2)} Bonus XP</button>
-      </div>
-    </div>`;
-}
-
-let doubleUsed = false;
-function doubleXP() {
-  if (doubleUsed) return;
-  const btn = document.getElementById('btn-double-xp');
-  btn.disabled = true; btn.textContent = '🎥 Loading ad…';
-  setTimeout(() => {
-    doubleUsed = true;
-    const bonus = Math.round(sessionXP / 2) + 5;
-    const newXP = Number(localStorage.getItem(key('xp')) || 0) + bonus;
-    localStorage.setItem(key('xp'), newXP);
-    saveXP(bonus);
-    const pill = document.getElementById('xp-pill');
-    if (pill) { const cur = parseInt(pill.textContent.replace(/\D/g,'')) || 0; pill.textContent = `+${cur + bonus} XP 🔥`; }
-    btn.textContent = '✅ Bonus XP Claimed!';
-    showToast('+' + bonus + ' Bonus XP! 🔥');
-  }, 1500);
-}
-
-// ══════════════════════════════════════════════════════════
-// SAVE XP TO SUPABASE
-// ══════════════════════════════════════════════════════════
-async function saveXP(earned) {
-  try {
-    const sb = window._sb;
-    if (!sb || !_uid) return;
-    const stored = localStorage.getItem('username_' + _uid);
-    const metaName = (await sb.auth.getSession())?.data?.session?.user?.user_metadata?.full_name;
-    const username = stored || metaName || ('Learner ' + _uid.slice(0,6).toUpperCase());
-
-    const { data: row } = await sb.from('leaderboard').select('xp').eq('user_id', _uid).maybeSingle();
-    if (row) {
-      await sb.from('leaderboard').update({ xp: (row.xp || 0) + earned, username }).eq('user_id', _uid);
-    } else {
-      await sb.from('leaderboard').insert({ user_id: _uid, xp: earned, username });
-    }
-  } catch(e) { console.error('saveXP error:', e); }
-}
-
-// ══════════════════════════════════════════════════════════
-// NO HEARTS — AD
-// ══════════════════════════════════════════════════════════
-let nhAdTimer = null;
-function watchAdForHeart() {
-  const btn = document.getElementById('nh-watch-btn');
-  btn.disabled = true; btn.textContent = 'Loading…';
-  document.getElementById('nh-ad-bar').style.display = 'block';
-  document.getElementById('nh-ad-label').textContent = 'Please wait 5s…';
-  let elapsed = 0;
-  nhAdTimer = setInterval(() => {
-    elapsed += 80;
-    document.getElementById('nh-ad-fill').style.width = Math.min(100, (elapsed/5000)*100) + '%';
-    const rem = Math.ceil((5000-elapsed)/1000);
-    document.getElementById('nh-ad-label').textContent = elapsed < 5000 ? `Please wait ${rem}s…` : 'Ad finished!';
-    if (elapsed >= 5000) {
-      clearInterval(nhAdTimer);
-      hearts = Math.min(5, hearts + 1);
-      localStorage.setItem(key('hearts'), hearts);
-      renderHearts();
-      document.getElementById('nh-overlay').classList.remove('show');
-      showToast('❤️ +1 Heart! Keep going!');
-    }
-  }, 80);
-}
-
-// ══════════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════════
-async function init() {
-  try {
-    const { data } = await sb.auth.getSession();
-    const user = data?.session?.user;
-    if (!user) { window.location.replace('/app/login.html'); return; }
-    _uid = user.id;
-
-    hearts = Number(localStorage.getItem(key('hearts')) ?? 5);
-    xp     = Number(localStorage.getItem(key('xp')) || 0);
-    renderHearts();
-
-    const levelNum  = Number(params.get('level')  || localStorage.getItem(key('user_level'))  || 1);
-    const lessonNum = Number(params.get('lesson') || localStorage.getItem(key('user_lesson')) || 1);
-
-    const plan = getLessonPlan(levelNum, lessonNum);
-    lesson     = { plan };
-    steps      = buildSteps(plan);
-
-    if (steps.length === 0) { window.location.replace('/app/dashboard.html'); return; }
-
-    // Update info bar
-    document.getElementById('info-tag').textContent  = `HSK ${levelNum} · Lesson ${lessonNum}`;
-    document.getElementById('info-type').textContent = plan.name;
-
-    // Close button
-    document.getElementById('btn-close').onclick = () => {
-      if (confirm('Leave this lesson? Your progress will be lost.')) window.location.href = '/app/dashboard.html';
-    };
-
-    if (hearts <= 0) {
-      document.getElementById('nh-overlay').classList.add('show');
-    } else {
-      renderStep(0);
-    }
-
-  } catch(e) {
-    console.error('Lesson init error:', e);
-    stepArea.innerHTML = `<div class="loading-screen"><div style="color:var(--rose);font-size:14px">Error loading lesson. <a href="/app/dashboard.html" style="color:var(--green)">← Back</a></div></div>`;
-  }
-}
-
-init();
-</script>
-</body>
-</html>
