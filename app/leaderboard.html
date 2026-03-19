@@ -211,6 +211,73 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text)
 .nav-item.active .nav-icon{filter:drop-shadow(0 0 5px var(--green))}
 .nav-item.active::after{content:'';position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--green)}
 
+
+/* ── FRIENDS TAB ── */
+.friends-header-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.friends-counts{display:flex;gap:20px}
+.fc-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:6px 10px;border-radius:var(--radius-sm);transition:background var(--t)}
+.fc-item:hover{background:var(--card2)}
+.fc-num{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text)}
+.fc-lbl{font-size:10px;font-weight:700;color:var(--text-muted)}
+.btn-find-friends{display:flex;align-items:center;gap:6px;background:var(--green);border:none;border-radius:999px;padding:9px 16px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:#0f1923;cursor:pointer;transition:all var(--t);white-space:nowrap;box-shadow:0 3px 12px rgba(74,222,128,.25)}
+.btn-find-friends:hover{box-shadow:0 5px 20px rgba(74,222,128,.35);transform:translateY(-1px)}
+.gps-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px}
+.gps-icon{font-size:22px;flex-shrink:0}
+.gps-info{flex:1;min-width:0}
+.gps-title{font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text)}
+.gps-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+.btn-gps{background:var(--blue);border:none;border-radius:999px;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#06101e;cursor:pointer;transition:all var(--t);flex-shrink:0}
+.btn-gps:hover{opacity:.85;transform:translateY(-1px)}
+.btn-gps:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.friend-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;transition:border-color var(--t)}
+.friend-row:hover{border-color:var(--border2);background:var(--card2)}
+.friend-row.is-me{border-color:rgba(74,222,128,.28);background:rgba(74,222,128,.04)}
+.friend-row.rank-1{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.03)}
+.friend-row.rank-1::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);border-radius:3px 0 0 3px}
+.friend-row.rank-2::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--silver);border-radius:3px 0 0 3px}
+.friend-row.rank-3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bronze);border-radius:3px 0 0 3px}
+.fr-rank{width:28px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;text-align:center;flex-shrink:0;color:var(--text-muted)}
+.fr-rank.g1{color:var(--gold)}.fr-rank.g2{color:var(--silver)}.fr-rank.g3{color:var(--bronze)}
+.friend-row.is-me .fr-rank{color:var(--green)}
+.fr-avatar{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.friend-row.is-me .fr-avatar{background:var(--green-muted);border-color:rgba(74,222,128,.3);color:var(--green)}
+.fr-info{flex:1;min-width:0}
+.fr-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.friend-row.is-me .fr-name{color:var(--green)}
+.fr-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+.fr-xp{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.friend-row.is-me .fr-xp{color:var(--green)}
+.friend-row.rank-1 .fr-xp{color:var(--gold)}
+.friend-row.rank-2 .fr-xp{color:var(--silver)}
+.friend-row.rank-3 .fr-xp{color:var(--bronze)}
+.nearby-badge{display:inline-flex;align-items:center;gap:3px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.2);border-radius:999px;padding:1px 7px;font-size:9px;font-weight:800;color:var(--blue);font-family:'Nunito',sans-serif;margin-left:4px}
+
+/* ── FIND FRIENDS MODAL ── */
+.ff-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
+.ff-overlay.show{opacity:1;pointer-events:all}
+.ff-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:20px 0 0;flex:1;display:flex;flex-direction:column;margin-top:auto;max-height:90vh;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.ff-overlay.show .ff-sheet{transform:translateY(0)}
+.ff-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:0 auto 16px}
+.ff-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 16px;border-bottom:1px solid var(--border)}
+.ff-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--text)}
+.ff-close{background:var(--card);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted)}
+.ff-search{padding:14px 20px;border-bottom:1px solid var(--border)}
+.ff-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:14px;padding:12px 16px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;color:var(--text);outline:none;caret-color:var(--green);transition:border-color .2s}
+.ff-input:focus{border-color:rgba(74,222,128,.5)}
+.ff-input::placeholder{color:var(--text-muted)}
+.ff-list{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+.ff-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color var(--t)}
+.ff-row:hover{border-color:var(--border2)}
+.ff-avatar{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.ff-info{flex:1;min-width:0}
+.ff-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
+.ff-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.btn-follow{border-radius:999px;padding:7px 16px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;cursor:pointer;transition:all var(--t);border:none;flex-shrink:0}
+.btn-follow.follow{background:var(--green);color:#0f1923;box-shadow:0 2px 10px rgba(74,222,128,.25)}
+.btn-follow.follow:hover{box-shadow:0 4px 16px rgba(74,222,128,.35);transform:translateY(-1px)}
+.btn-follow.following{background:var(--card2);border:1.5px solid var(--border2);color:var(--text-muted)}
+.btn-follow.following:hover{border-color:var(--rose);color:var(--rose)}
+.ff-section-lbl{font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;padding:4px 0}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -227,11 +294,15 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text)
 <!-- TAB SWITCHER -->
 <div class="tab-switcher">
   <button class="tab-btn active" id="tab-weekly" onclick="switchTab('weekly')">
-    <span class="tab-icon">⚔️</span> Weekly League
+    <span class="tab-icon">⚔️</span> Weekly
     <span class="tab-indicator"></span>
   </button>
   <button class="tab-btn" id="tab-global" onclick="switchTab('global')">
-    <span class="tab-icon">🌍</span> Global Rank
+    <span class="tab-icon">🌍</span> Global
+    <span class="tab-indicator"></span>
+  </button>
+  <button class="tab-btn" id="tab-friends" onclick="switchTab('friends')">
+    <span class="tab-icon">👥</span> Friends
     <span class="tab-indicator"></span>
   </button>
 </div>
@@ -252,6 +323,16 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text)
     <div class="loading-wrap">
       <div class="spinner"></div>
       <div class="loading-text">Loading global rankings…</div>
+    </div>
+  </div>
+</div>
+
+<!-- FRIENDS VIEW -->
+<div class="view" id="view-friends">
+  <div class="main" id="main-friends">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading friends…</div>
     </div>
   </div>
 </div>
@@ -288,16 +369,21 @@ let currentUsername = null;
 let allUsers       = [];
 let weeklyLoaded   = false;
 let globalLoaded   = false;
+let friendsLoaded  = false;
 let activeTab      = 'weekly';
+let followingIds   = new Set();
+let userLat        = null;
+let userLng        = null;
 
 // ── TAB SWITCH
 function switchTab(tab) {
   activeTab = tab;
-  document.getElementById('view-weekly').classList.toggle('active', tab === 'weekly');
-  document.getElementById('view-global').classList.toggle('active', tab === 'global');
-  document.getElementById('tab-weekly').classList.toggle('active', tab === 'weekly');
-  document.getElementById('tab-global').classList.toggle('active', tab === 'global');
-  if (tab === 'global' && !globalLoaded) renderGlobal();
+  ['weekly','global','friends'].forEach(t => {
+    document.getElementById('view-' + t).classList.toggle('active', t === tab);
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'global'  && !globalLoaded)  renderGlobal();
+  if (tab === 'friends' && !friendsLoaded) loadFriends();
 }
 
 // ── HELPERS
@@ -656,6 +742,290 @@ function startTimer() {
   setInterval(tick, 1000);
 }
 
+
+// ══════════════════════════════════════════
+// FRIENDS LEADERBOARD VIEW
+// ══════════════════════════════════════════
+async function loadFriends() {
+  friendsLoaded = true;
+  const main = document.getElementById('main-friends');
+  main.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Loading friends…</div></div>';
+
+  if (!currentUserId) {
+    main.innerHTML = '<div class="empty-wrap"><div class="empty-emoji">🔒</div><div class="empty-title">Not logged in</div><div class="empty-sub">Sign in to see your friends leaderboard.</div></div>';
+    return;
+  }
+
+  try {
+    // Fetch who current user follows
+    const { data: followingData } = await supabaseClient
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId);
+    followingIds = new Set((followingData || []).map(f => f.following_id));
+
+    // Fetch follower count and following count for display
+    const { count: followerCount } = await supabaseClient
+      .from('follows').select('*', { count:'exact', head:true })
+      .eq('following_id', currentUserId);
+    const { count: followingCount } = await supabaseClient
+      .from('follows').select('*', { count:'exact', head:true })
+      .eq('follower_id', currentUserId);
+
+    // Get leaderboard data for friends + self
+    const friendIds = [...followingIds, currentUserId];
+    const { data: friendsData } = await supabaseClient
+      .from('leaderboard')
+      .select('user_id, xp, username, lat, lng')
+      .in('user_id', friendIds)
+      .order('xp', { ascending: false });
+
+    main.innerHTML = '';
+
+    // ── SOCIAL HEADER
+    const header = document.createElement('div');
+    header.className = 'friends-header-card';
+    header.innerHTML = `
+      <div class="friends-counts">
+        <div class="fc-item" onclick="openFindFriends()">
+          <div class="fc-num">${followingCount || 0}</div>
+          <div class="fc-lbl">Following</div>
+        </div>
+        <div style="width:1px;background:var(--border);align-self:stretch"></div>
+        <div class="fc-item" onclick="openFindFriends()">
+          <div class="fc-num">${followerCount || 0}</div>
+          <div class="fc-lbl">Followers</div>
+        </div>
+      </div>
+      <button class="btn-find-friends" onclick="openFindFriends()">
+        👥 Find Friends
+      </button>`;
+    main.appendChild(header);
+
+    // ── GPS CARD
+    const gpsCard = document.createElement('div');
+    gpsCard.className = 'gps-card';
+    gpsCard.innerHTML = `
+      <div class="gps-icon">📍</div>
+      <div class="gps-info">
+        <div class="gps-title">Find nearby learners</div>
+        <div class="gps-sub" id="gps-status">${userLat ? 'Location active — showing nearby users' : 'Enable location to find people near you'}</div>
+      </div>
+      <button class="btn-gps" id="btn-gps" onclick="requestGPS()" ${userLat ? 'disabled' : ''}>
+        ${userLat ? '✅ On' : 'Enable'}
+      </button>`;
+    main.appendChild(gpsCard);
+
+    // ── FRIENDS LEADERBOARD
+    if (!friendsData || friendsData.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-wrap';
+      empty.innerHTML = `<div class="empty-emoji">👥</div><div class="empty-title">No friends yet</div><div class="empty-sub">Tap "Find Friends" to follow other learners and see how you compare!</div>`;
+      main.appendChild(empty);
+      return;
+    }
+
+    const lbl = document.createElement('div');
+    lbl.className = 'section-heading';
+    lbl.textContent = 'Friends Leaderboard · ' + friendsData.length + ' players';
+    main.appendChild(lbl);
+
+    const list = document.createElement('div');
+    list.className = 'lb-list';
+
+    friendsData.forEach((u, i) => {
+      const rank  = i + 1;
+      const isMe  = u.user_id === currentUserId;
+      const xp    = u.xp || 0;
+      const name  = displayName(u);
+      const isNearby = userLat && u.lat && u.lng && getDistKm(userLat, userLng, u.lat, u.lng) < 10;
+
+      const row = document.createElement('div');
+      let rc = 'friend-row';
+      if (rank===1) rc += ' rank-1';
+      else if (rank===2) rc += ' rank-2';
+      else if (rank===3) rc += ' rank-3';
+      if (isMe) rc += ' is-me';
+      row.className = rc;
+
+      const rankCls = rank===1?'g1':rank===2?'g2':rank===3?'g3':'';
+      const rankTxt = rank<=3 ? ['🥇','🥈','🥉'][rank-1] : '#'+rank;
+
+      row.innerHTML = `
+        <div class="fr-rank ${rankCls}">${rankTxt}</div>
+        <div class="fr-avatar">${name.slice(0,2).toUpperCase()}</div>
+        <div class="fr-info">
+          <div class="fr-name">
+            ${name}${isMe?' 👤':''}
+            ${isNearby?'<span class="nearby-badge">📍 Nearby</span>':''}
+          </div>
+          <div class="fr-sub">${rank===1?'👑 Champion':rank<=3?'🔥 Top 3':'📚 Studying'}${isMe?' · You':''}</div>
+        </div>
+        <div class="fr-xp">⚡ ${xp}</div>`;
+      list.appendChild(row);
+    });
+    main.appendChild(list);
+
+  } catch(e) {
+    console.error('Friends load error:', e);
+    main.innerHTML = '<div class="error-wrap">Could not load friends. Try again.</div>';
+  }
+}
+
+// ── DISTANCE HELPER (haversine)
+function getDistKm(lat1, lng1, lat2, lng2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── GPS REQUEST
+async function requestGPS() {
+  const btn = document.getElementById('btn-gps');
+  const status = document.getElementById('gps-status');
+  if (btn) { btn.textContent = 'Locating…'; btn.disabled = true; }
+
+  if (!navigator.geolocation) {
+    if (status) status.textContent = 'GPS not supported on this device';
+    if (btn) { btn.textContent = 'Not supported'; btn.disabled = true; }
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      if (status) status.textContent = 'Location active — showing nearby users';
+      if (btn) { btn.textContent = '✅ On'; btn.disabled = true; }
+      // Save lat/lng to leaderboard so others can find us
+      if (currentUserId) {
+        try {
+          await supabaseClient.from('leaderboard')
+            .update({ lat: userLat, lng: userLng })
+            .eq('user_id', currentUserId);
+        } catch(e) {}
+      }
+      // Reload friends view with location data
+      friendsLoaded = false;
+      loadFriends();
+    },
+    (err) => {
+      if (status) status.textContent = 'Location denied — check browser settings';
+      if (btn) { btn.textContent = 'Denied'; btn.disabled = false; }
+    },
+    { timeout: 8000, maximumAge: 60000 }
+  );
+}
+
+// ══════════════════════════════════════════
+// FIND FRIENDS MODAL
+// ══════════════════════════════════════════
+let ffSearchTimer = null;
+let allUsersForSearch = [];
+
+function openFindFriends() {
+  const overlay = document.getElementById('ff-overlay');
+  if (overlay) {
+    overlay.classList.add('show');
+    setTimeout(() => document.getElementById('ff-search-input')?.focus(), 350);
+    renderFFList('');
+  }
+}
+
+function closeFindFriends() {
+  document.getElementById('ff-overlay')?.classList.remove('show');
+}
+
+function renderFFList(query) {
+  const list = document.getElementById('ff-results');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const q = query.toLowerCase().trim();
+
+  // Nearby section (if GPS enabled)
+  let nearby = [];
+  if (userLat) {
+    nearby = allUsersForSearch
+      .filter(u => u.user_id !== currentUserId && u.lat && u.lng && getDistKm(userLat, userLng, u.lat, u.lng) < 10)
+      .sort((a,b) => getDistKm(userLat, userLng, a.lat, a.lng) - getDistKm(userLat, userLng, b.lat, b.lng))
+      .slice(0, 5);
+  }
+
+  // Search results
+  let results = q
+    ? allUsersForSearch.filter(u => u.user_id !== currentUserId && displayName(u).toLowerCase().includes(q))
+    : allUsersForSearch.filter(u => u.user_id !== currentUserId).slice(0, 15);
+
+  if (!q && nearby.length > 0) {
+    const lbl = document.createElement('div');
+    lbl.className = 'ff-section-lbl';
+    lbl.textContent = '📍 Near You';
+    list.appendChild(lbl);
+    nearby.forEach(u => list.appendChild(makeFFRow(u)));
+
+    const lbl2 = document.createElement('div');
+    lbl2.className = 'ff-section-lbl';
+    lbl2.style.marginTop = '8px';
+    lbl2.textContent = '🌍 All Learners';
+    list.appendChild(lbl2);
+  }
+
+  if (results.length === 0 && q) {
+    list.innerHTML += '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;font-weight:700">No users found for "' + query + '"</div>';
+    return;
+  }
+
+  results.forEach(u => list.appendChild(makeFFRow(u)));
+}
+
+function makeFFRow(u) {
+  const isFollowing = followingIds.has(u.user_id);
+  const name = displayName(u);
+  const dist = userLat && u.lat && u.lng ? getDistKm(userLat, userLng, u.lat, u.lng) : null;
+
+  const row = document.createElement('div');
+  row.className = 'ff-row';
+  row.innerHTML = `
+    <div class="ff-avatar">${name.slice(0,2).toUpperCase()}</div>
+    <div class="ff-info">
+      <div class="ff-name">${name}</div>
+      <div class="ff-meta">⚡ ${u.xp||0} XP${dist !== null ? ' · 📍 ' + (dist < 1 ? '<1' : Math.round(dist)) + ' km away' : ''}</div>
+    </div>
+    <button class="btn-follow ${isFollowing?'following':'follow'}"
+      onclick="toggleFollow('${u.user_id}', this)">${isFollowing ? 'Following' : 'Follow'}</button>`;
+  return row;
+}
+
+async function toggleFollow(targetId, btn) {
+  if (!currentUserId) return;
+  const isFollowing = followingIds.has(targetId);
+  btn.disabled = true;
+
+  try {
+    if (isFollowing) {
+      await supabaseClient.from('follows')
+        .delete()
+        .eq('follower_id', currentUserId)
+        .eq('following_id', targetId);
+      followingIds.delete(targetId);
+      btn.textContent = 'Follow';
+      btn.className = 'btn-follow follow';
+    } else {
+      await supabaseClient.from('follows')
+        .insert({ follower_id: currentUserId, following_id: targetId });
+      followingIds.add(targetId);
+      btn.textContent = 'Following';
+      btn.className = 'btn-follow following';
+    }
+  } catch(e) {
+    console.error('Follow error:', e);
+  }
+  btn.disabled = false;
+  // Refresh friends tab next time
+  friendsLoaded = false;
+}
+
 // ── LOAD
 async function loadAll() {
   try {
@@ -691,6 +1061,7 @@ async function loadAll() {
     }
 
     allUsers = data;
+    allUsersForSearch = data;
     weeklyLoaded = true;
 
     // If current user has a stored username but leaderboard row has 'Learner' or null,
@@ -711,5 +1082,22 @@ async function loadAll() {
 
 loadAll();
 </script>
+
+<!-- FIND FRIENDS MODAL -->
+<div class="ff-overlay" id="ff-overlay" onclick="if(event.target===this)closeFindFriends()">
+  <div class="ff-sheet">
+    <div class="ff-handle"></div>
+    <div class="ff-header">
+      <div class="ff-title">👥 Find Friends</div>
+      <div class="ff-close" onclick="closeFindFriends()">✕</div>
+    </div>
+    <div class="ff-search">
+      <input class="ff-input" id="ff-search-input" type="text" placeholder="Search by username…" autocomplete="off" spellcheck="false"
+        oninput="clearTimeout(ffSearchTimer);ffSearchTimer=setTimeout(()=>renderFFList(this.value),250)"/>
+    </div>
+    <div class="ff-list" id="ff-results"></div>
+  </div>
+</div>
+
 </body>
 </html>
