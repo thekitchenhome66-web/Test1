@@ -174,6 +174,61 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text)
 .spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .8s linear infinite}
 .loading-text{font-size:13px;color:var(--text-muted);font-family:'Nunito',sans-serif;font-weight:700}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SOCIAL / FOLLOWERS ── */
+.social-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px}
+.social-counts{display:flex;gap:0}
+.sc-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:8px 18px;border-radius:var(--radius-sm);transition:background var(--t);text-decoration:none}
+.sc-item:hover{background:var(--card2)}
+.sc-num{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:var(--text)}
+.sc-lbl{font-size:11px;font-weight:700;color:var(--text-muted)}
+.sc-divider{width:1px;background:var(--border);align-self:stretch}
+.btn-find-friends-p{display:flex;align-items:center;gap:6px;background:var(--green);border:none;border-radius:999px;padding:9px 16px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:#0f1923;cursor:pointer;transition:all var(--t);box-shadow:0 3px 12px rgba(74,222,128,.25)}
+.btn-find-friends-p:hover{box-shadow:0 5px 20px rgba(74,222,128,.35);transform:translateY(-1px)}
+
+/* ── SOCIAL LIST MODAL ── */
+.sl-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
+.sl-overlay.show{opacity:1;pointer-events:all}
+.sl-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:20px 0 0;flex:1;display:flex;flex-direction:column;margin-top:auto;max-height:85vh;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.sl-overlay.show .sl-sheet{transform:translateY(0)}
+.sl-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:0 auto 16px}
+.sl-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 16px;border-bottom:1px solid var(--border)}
+.sl-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--text)}
+.sl-close{background:var(--card);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted)}
+.sl-list{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+.sl-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color var(--t)}
+.sl-row:hover{border-color:var(--border2)}
+.sl-avatar{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.sl-info{flex:1;min-width:0}
+.sl-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
+.sl-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.sl-empty{text-align:center;padding:40px 24px;color:var(--text-muted);font-size:13px;font-weight:700}
+
+/* ── FIND FRIENDS MODAL (profile) ── */
+.ff-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
+.ff-overlay.show{opacity:1;pointer-events:all}
+.ff-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:20px 0 0;flex:1;display:flex;flex-direction:column;margin-top:auto;max-height:90vh;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.ff-overlay.show .ff-sheet{transform:translateY(0)}
+.ff-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:0 auto 16px}
+.ff-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 16px;border-bottom:1px solid var(--border)}
+.ff-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--text)}
+.ff-close-btn{background:var(--card);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted)}
+.ff-search{padding:14px 20px;border-bottom:1px solid var(--border)}
+.ff-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:14px;padding:12px 16px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;color:var(--text);outline:none;caret-color:var(--green);transition:border-color .2s}
+.ff-input:focus{border-color:rgba(74,222,128,.5)}
+.ff-input::placeholder{color:var(--text-muted)}
+.ff-list{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+.ff-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.ff-row:hover{border-color:var(--border2)}
+.ff-avatar{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.ff-info{flex:1;min-width:0}
+.ff-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
+.ff-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.btn-follow{border-radius:999px;padding:7px 16px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;cursor:pointer;transition:all var(--t);border:none;flex-shrink:0}
+.btn-follow.follow{background:var(--green);color:#0f1923;box-shadow:0 2px 10px rgba(74,222,128,.25)}
+.btn-follow.follow:hover{box-shadow:0 4px 16px rgba(74,222,128,.35);transform:translateY(-1px)}
+.btn-follow.following{background:var(--card2);border:1.5px solid var(--border2);color:var(--text-muted)}
+.btn-follow.following:hover{border-color:var(--rose);color:var(--rose)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
   /* ── BOTTOM NAV ── */
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:68px;background:rgba(13,23,32,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
@@ -397,6 +452,25 @@ function renderProfile(stats) {
     </button>`;
   page.appendChild(avatarCard);
 
+  // ── SOCIAL ROW (followers/following + find friends)
+  const socialRow = document.createElement('div');
+  socialRow.className = 'social-row';
+  socialRow.innerHTML = `
+    <div class="social-counts">
+      <div class="sc-item" onclick="openSocialList('following')">
+        <div class="sc-num" id="sc-following">—</div>
+        <div class="sc-lbl">Following</div>
+      </div>
+      <div class="sc-divider"></div>
+      <div class="sc-item" onclick="openSocialList('followers')">
+        <div class="sc-num" id="sc-followers">—</div>
+        <div class="sc-lbl">Followers</div>
+      </div>
+    </div>
+    <button class="btn-find-friends-p" onclick="openFindFriends()">👥 Find Friends</button>`;
+  page.appendChild(socialRow);
+  loadSocialCounts();
+
   // ── STATS
   const slabel = document.createElement('div');
   slabel.className = 'section-label';
@@ -545,6 +619,146 @@ async function sendPasswordReset() {
   }
 }
 
+
+// ══ SOCIAL / FOLLOWERS ══════════════════════════════════
+let followingIds = new Set();
+let allUsersCache = [];
+let ffSearchTimer = null;
+
+async function loadSocialCounts() {
+  if (!userId) return;
+  try {
+    const [{ count: fc }, { count: ing }] = await Promise.all([
+      sb.from('follows').select('*',{count:'exact',head:true}).eq('following_id', userId),
+      sb.from('follows').select('*',{count:'exact',head:true}).eq('follower_id', userId),
+    ]);
+    const elF = document.getElementById('sc-followers');
+    const elI = document.getElementById('sc-following');
+    if (elF) elF.textContent = fc || 0;
+    if (elI) elI.textContent = ing || 0;
+  } catch(e) {}
+}
+
+async function openSocialList(type) {
+  const overlay = document.getElementById('sl-overlay');
+  const title   = document.getElementById('sl-title');
+  const list    = document.getElementById('sl-list');
+  if (!overlay) return;
+
+  title.textContent = type === 'followers' ? '👥 Followers' : '👣 Following';
+  list.innerHTML = '<div class="sl-empty">Loading…</div>';
+  overlay.classList.add('show');
+
+  try {
+    let ids = [];
+    if (type === 'followers') {
+      const { data } = await sb.from('follows').select('follower_id').eq('following_id', userId);
+      ids = (data||[]).map(r => r.follower_id);
+    } else {
+      const { data } = await sb.from('follows').select('following_id').eq('follower_id', userId);
+      ids = (data||[]).map(r => r.following_id);
+    }
+
+    if (ids.length === 0) {
+      list.innerHTML = `<div class="sl-empty">${type === 'followers' ? 'No followers yet' : 'Not following anyone yet'}<br/><span style="font-size:12px;opacity:.7">Find friends to follow!</span></div>`;
+      return;
+    }
+
+    const { data: users } = await sb.from('leaderboard').select('user_id, username, xp').in('user_id', ids).order('xp', {ascending:false});
+    list.innerHTML = '';
+    (users||[]).forEach(u => {
+      const n = u.username || ('Learner ' + u.user_id.slice(0,6).toUpperCase());
+      const row = document.createElement('div');
+      row.className = 'sl-row';
+      row.innerHTML = `
+        <div class="sl-avatar">${n.slice(0,2).toUpperCase()}</div>
+        <div class="sl-info">
+          <div class="sl-name">${n}</div>
+          <div class="sl-meta">⚡ ${u.xp||0} XP</div>
+        </div>`;
+      list.appendChild(row);
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="sl-empty">Could not load list.</div>';
+  }
+}
+
+function closeSocialList() {
+  document.getElementById('sl-overlay')?.classList.remove('show');
+}
+
+// ── FIND FRIENDS MODAL
+async function openFindFriends() {
+  const overlay = document.getElementById('ff-overlay');
+  if (!overlay) return;
+  overlay.classList.add('show');
+  setTimeout(() => document.getElementById('ff-search-input')?.focus(), 350);
+
+  if (allUsersCache.length === 0) {
+    try {
+      const { data } = await sb.from('leaderboard').select('user_id, username, xp').order('xp', {ascending:false});
+      allUsersCache = (data||[]).filter(u => u.user_id !== userId);
+      const { data: foll } = await sb.from('follows').select('following_id').eq('follower_id', userId);
+      followingIds = new Set((foll||[]).map(f => f.following_id));
+    } catch(e) {}
+  }
+  renderFFResults('');
+}
+
+function closeFindFriends() {
+  document.getElementById('ff-overlay')?.classList.remove('show');
+}
+
+function renderFFResults(query) {
+  const list = document.getElementById('ff-results');
+  if (!list) return;
+  list.innerHTML = '';
+  const q = query.toLowerCase().trim();
+  const results = q
+    ? allUsersCache.filter(u => (u.username||'').toLowerCase().includes(q) || ('learner '+u.user_id.slice(0,6)).includes(q))
+    : allUsersCache.slice(0, 20);
+
+  if (results.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;font-weight:700">No users found</div>';
+    return;
+  }
+
+  results.forEach(u => {
+    const isFollowing = followingIds.has(u.user_id);
+    const name = u.username || ('Learner ' + u.user_id.slice(0,6).toUpperCase());
+    const row = document.createElement('div');
+    row.className = 'ff-row';
+    row.innerHTML = `
+      <div class="ff-avatar">${name.slice(0,2).toUpperCase()}</div>
+      <div class="ff-info">
+        <div class="ff-name">${name}</div>
+        <div class="ff-meta">⚡ ${u.xp||0} XP</div>
+      </div>
+      <button class="btn-follow ${isFollowing?'following':'follow'}"
+        onclick="toggleFollow('${u.user_id}', this)">${isFollowing?'Following':'Follow'}</button>`;
+    list.appendChild(row);
+  });
+}
+
+async function toggleFollow(targetId, btn) {
+  if (!userId) return;
+  const isFollowing = followingIds.has(targetId);
+  btn.disabled = true;
+  try {
+    if (isFollowing) {
+      await sb.from('follows').delete().eq('follower_id', userId).eq('following_id', targetId);
+      followingIds.delete(targetId);
+      btn.textContent = 'Follow'; btn.className = 'btn-follow follow';
+    } else {
+      await sb.from('follows').insert({ follower_id: userId, following_id: targetId });
+      followingIds.add(targetId);
+      btn.textContent = 'Following'; btn.className = 'btn-follow following';
+    }
+    loadSocialCounts();
+  } catch(e) { console.error('Follow error:', e); }
+  btn.disabled = false;
+}
+
 // ── INIT
 async function init() {
   try {
@@ -616,6 +830,36 @@ init();
     <span class="nav-label">Profile</span>
   </a>
 </nav>
+
+
+<!-- SOCIAL LIST MODAL (followers/following) -->
+<div class="sl-overlay" id="sl-overlay" onclick="if(event.target===this)closeSocialList()">
+  <div class="sl-sheet">
+    <div class="sl-handle"></div>
+    <div class="sl-header">
+      <div class="sl-title" id="sl-title">Followers</div>
+      <div class="sl-close" onclick="closeSocialList()">✕</div>
+    </div>
+    <div class="sl-list" id="sl-list"></div>
+  </div>
+</div>
+
+<!-- FIND FRIENDS MODAL -->
+<div class="ff-overlay" id="ff-overlay" onclick="if(event.target===this)closeFindFriends()">
+  <div class="ff-sheet">
+    <div class="ff-handle"></div>
+    <div class="ff-header">
+      <div class="ff-title">👥 Find Friends</div>
+      <div class="ff-close-btn" onclick="closeFindFriends()">✕</div>
+    </div>
+    <div class="ff-search">
+      <input class="ff-input" id="ff-search-input" type="text" placeholder="Search by username…"
+        autocomplete="off" spellcheck="false"
+        oninput="clearTimeout(ffSearchTimer);ffSearchTimer=setTimeout(()=>renderFFResults(this.value),250)"/>
+    </div>
+    <div class="ff-list" id="ff-results"></div>
+  </div>
+</div>
 
 </body>
 </html>
