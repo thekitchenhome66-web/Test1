@@ -1540,10 +1540,12 @@ function logMistake(step, userAnswer) {
 // ═══════════════════════════════════════════════════════════
 async function saveXP(xpEarned) {
   try {
-    // 1. Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error("saveXP: no authenticated user", authError);
+    // 1. Get current user via session (more reliable than getUser())
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData?.session?.user;
+    console.log("USER:", user);
+    if (!user) {
+      console.error("NO AUTH USER — XP NOT SAVED");
       return;
     }
     console.log("saveXP: user =", user.id, "| xpEarned =", xpEarned);
