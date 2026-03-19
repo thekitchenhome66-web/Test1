@@ -1044,10 +1044,10 @@ function loseHeart() {
 }
 function watchAd() {
   overlay.classList.remove("show");
-  hearts = 5;
+  hearts = Math.min(hearts + 1, 5);
   localStorage.setItem(key("hearts"), hearts);
   renderHearts();
-  showToast("❤️ Hearts restored!");
+  showToast("❤️ +1 Heart!");
   if (currentStep === 0 && !stepArea.querySelector(".step-visible")) renderStep(0);
 }
 
@@ -1548,25 +1548,25 @@ async function saveXP(xpEarned) {
     const user = sessionData?.session?.user;
     if (!user) return;
 
-    // Try INSERT first (new user row)
-    const { error: insertError } = await sb
+    // Fetch existing row first
+    const { data: existing } = await sb
       .from("leaderboard")
-      .insert({ user_id: user.id, xp: xpEarned });
+      .select("xp")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (insertError) {
-      // Row already exists — add to current XP
-      const { data: existing } = await sb
-        .from("leaderboard")
-        .select("xp")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const newXP = (existing?.xp || 0) + xpEarned;
-
+    if (existing) {
+      // Row exists — update XP by adding to it
+      const newXP = (existing.xp || 0) + xpEarned;
       await sb
         .from("leaderboard")
         .update({ xp: newXP })
         .eq("user_id", user.id);
+    } else {
+      // No row yet — insert new one
+      await sb
+        .from("leaderboard")
+        .insert({ user_id: user.id, xp: xpEarned });
     }
   } catch(e) {
     console.error("saveXP error:", e);
