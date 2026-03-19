@@ -1594,33 +1594,36 @@ async function addXP(amount) {
   }
 }
 
-async function updateLeaderboard() {
+async function updateLeaderboard(xpEarned = 10) {
   try {
-    const supabaseClient = window._supabaseClient;
-    const user = (await supabaseClient.auth.getUser()).data.user;
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const userId  = user.id;
-    const username = user.email || "Learner";
+    const meta     = user.user_metadata || {};
+    const username = meta.full_name || meta.name || meta.display_name
+                     || user.email?.split("@")[0]
+                     || "Learner";
 
-    const { data: existing } = await supabaseClient
+    // Fetch current XP so we can add to it (not replace)
+    const { data: existing } = await supabase
       .from("leaderboard")
       .select("xp")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .single();
 
-    if (existing) {
-      await supabaseClient
-        .from("leaderboard")
-        .update({ xp: existing.xp + 10 })
-        .eq("user_id", userId);
-    } else {
-      await supabaseClient
-        .from("leaderboard")
-        .insert([{ user_id: userId, xp: 10, username }]);
-    }
+    const currentXP = existing?.xp || 0;
+    const newXP     = currentXP + xpEarned;
 
-    console.log("Leaderboard updated for:", username);
+    const { error } = await supabase
+      .from("leaderboard")
+      .upsert({
+        user_id:  user.id,
+        xp:       newXP,
+        username,
+      }, { onConflict: "user_id" });
+
+    if (error) console.error("updateLeaderboard error:", error);
+    else       console.log("Leaderboard updated:", username, "→", newXP, "XP");
   } catch(e) {
     console.error("updateLeaderboard error:", e);
   }
@@ -1666,7 +1669,7 @@ function showComplete() {
   syncXPToLeaderboard(xp);
   saveXP(20); // Award 20 XP per lesson completion
   addXP(10);   // Sync +10 XP to profiles table
-  updateLeaderboard(); // Upsert XP into leaderboard table
+  updateLeaderboard(earnedXP); // Upsert XP into leaderboard table
 
   // ── Advance lesson counter
   const savedLesson = parseInt(localStorage.getItem(key("user_lesson")) || "1", 10);
