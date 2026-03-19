@@ -257,7 +257,7 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -286,7 +286,9 @@
 <script>
   console.log("SCRIPT STARTED");
 
-  const supabase = window.supabase.createClient(
+  console.log("Supabase loaded:", supabase);
+  const { createClient } = supabase;
+  const supabaseClient = createClient(
     "https://cuiznbvvlqtwcoocehnd.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w"
   );
@@ -360,7 +362,7 @@
     console.log("Loading leaderboard...");
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("leaderboard")
         .select("user_id, xp, username")
         .order("xp", { ascending: false });
