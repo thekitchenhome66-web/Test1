@@ -356,23 +356,40 @@
 
   // ── LOAD — no auth required, public leaderboard
   async function loadLeaderboard() {
+    const loadingElement = document.getElementById("initial-loader");
     console.log("Loading leaderboard...");
 
-    const { data, error } = await supabase
-      .from("leaderboard")
-      .select("user_id, xp, username")
-      .order("xp", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("leaderboard")
+        .select("user_id, xp, username")
+        .order("xp", { ascending: false });
 
-    console.log("data:", data);
-    console.log("error:", error);
+      // Always hide spinner — no matter what happens
+      if (loadingElement) loadingElement.style.display = "none";
 
-    if (error) {
-      console.error("Leaderboard error:", error);
-      main.innerHTML = `<div class="error-wrap">Error loading leaderboard: ${error.message}</div>`;
-      return;
+      console.log("data:", data);
+      console.log("error:", error);
+
+      if (error) {
+        console.error("Leaderboard error:", error);
+        main.innerHTML = `<div class="error-wrap">Error loading leaderboard: ${error.message}</div>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        main.innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🚀</div><div class="empty-title">No players yet</div><div class="empty-sub">Be the first to complete a lesson and claim the top spot!</div></div>`;
+        return;
+      }
+
+      renderLeaderboard(data);
+
+    } catch (e) {
+      // Catch-all — spinner always hidden even on unexpected JS errors
+      if (loadingElement) loadingElement.style.display = "none";
+      console.error("Unexpected error:", e);
+      main.innerHTML = `<div class="error-wrap">Error loading leaderboard: ${e.message}</div>`;
     }
-
-    renderLeaderboard(data);
   }
 
   // Run on page load — no authentication needed
