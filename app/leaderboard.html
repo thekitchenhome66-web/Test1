@@ -304,18 +304,22 @@
   }
   function displayName(user) {
     if (user.username) return user.username;
-    if (user.user_id) return "Learner " + user.user_id.slice(0, 6).toUpperCase();
+    if (user.email)    return user.email.split("@")[0];
+    if (user.user_id)  return "Learner " + user.user_id.slice(0, 6).toUpperCase();
     return "Anonymous";
   }
 
   // ── RENDER
-  function renderLeaderboard(users) {
+  function renderLeaderboard(users, currentUserId) {
     main.innerHTML = "";
 
     if (!users || users.length === 0) {
       main.innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🚀</div><div class="empty-title">No players yet</div><div class="empty-sub">Be the first to complete a lesson and claim the top spot!</div></div>`;
       return;
     }
+
+    const userRank   = users.findIndex(u => u.user_id === currentUserId) + 1; // 0 if not found
+    const inList     = userRank > 0;
 
     // Section heading
     const heading = document.createElement("div");
@@ -327,7 +331,8 @@
     list.className = "lb-list";
 
     users.forEach((user, i) => {
-      const rank = i + 1;
+      const rank  = i + 1;
+      const isMe  = user.user_id === currentUserId;
 
       if (rank === 4) {
         const div = document.createElement("div");
@@ -340,8 +345,9 @@
       let xp = typeof user.xp === "number" ? user.xp : 0;
 
       const row = document.createElement("div");
-      row.className = "lb-row " + rankClass;
+      row.className = "lb-row " + rankClass + (isMe ? " is-me" : "");
       row.innerHTML = `
+        ${isMe ? '<div class="you-badge">YOU</div>' : ""}
         <div class="lb-rank ${rankColor}">${rank <= 3 ? "" : "#" + rank}</div>
         <div class="lb-medal">${medal(rank)}</div>
         <div class="lb-info">
@@ -354,12 +360,59 @@
     });
 
     main.appendChild(list);
+
+    // Show "You are ranked #X" if not visible in list
+    if (currentUserId && !inList) {
+      const banner = document.createElement("div");
+      banner.className = "not-ranked";
+      banner.innerHTML = `You are not ranked yet — complete a lesson to appear on the leaderboard! 💪`;
+      main.appendChild(banner);
+    } else if (currentUserId && inList && userRank > users.length) {
+      const banner = document.createElement("div");
+      banner.className = "not-ranked";
+      banner.innerHTML = `You are ranked <strong>#${userRank}</strong> globally — keep studying to reach the top! 💪`;
+      main.appendChild(banner);
+    }
   }
 
   // ── LOAD — no auth required, public leaderboard
   async function loadLeaderboard() {
     const loadingElement = document.getElementById("initial-loader");
     console.log("Loading leaderboard...");
+
+    // Try to get current user — non-blocking, leaderboard shows regardless
+    let currentUserId = null;
+    try {
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const authUser = authData?.user;
+      if (authUser?.id) {
+        currentUserId = authUser.id;
+        console.log("Current user ID:", currentUserId);
+
+        // Backfill username if row exists but username is missing
+        const meta = authUser.user_metadata || {};
+        const resolvedUsername = meta.full_name || meta.name || meta.display_name
+          || (authUser.email ? authUser.email.split("@")[0] : null);
+
+        if (resolvedUsername) {
+          const { data: existing } = await supabaseClient
+            .from("leaderboard")
+            .select("username")
+            .eq("user_id", currentUserId)
+            .single();
+
+          if (existing && !existing.username) {
+            await supabaseClient
+              .from("leaderboard")
+              .update({ username: resolvedUsername })
+              .eq("user_id", currentUserId);
+            console.log("Username backfilled:", resolvedUsername);
+          }
+        }
+      }
+    } catch(e) {
+      console.warn("Could not get user:", e);
+    }
 
     try {
       const { data, error } = await supabaseClient
@@ -384,7 +437,7 @@
         return;
       }
 
-      renderLeaderboard(data);
+      renderLeaderboard(data, currentUserId);
 
     } catch (e) {
       // Catch-all — spinner always hidden even on unexpected JS errors
