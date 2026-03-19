@@ -302,7 +302,7 @@
   }
   function displayName(user) {
     if (user.username) return user.username;
-    if (user.id) return "Learner " + user.id.slice(0, 6).toUpperCase();
+    if (user.user_id) return "Learner " + user.user_id.slice(0, 6).toUpperCase();
     return "Anonymous";
   }
 
@@ -360,7 +360,7 @@
 
     const { data, error } = await supabase
       .from("leaderboard")
-      .select("id, xp, username")
+      .select("user_id, xp, username")
       .order("xp", { ascending: false });
 
     console.log("data:", data);
