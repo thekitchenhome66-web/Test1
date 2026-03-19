@@ -1540,52 +1540,36 @@ function logMistake(step, userAnswer) {
 // ═══════════════════════════════════════════════════════════
 async function saveXP(xpEarned) {
   try {
-    // Use window._supabaseClient directly — avoids any scoping issues
     const sb = window._supabaseClient;
-    if (!sb) { alert("saveXP: CRASH — Supabase not initialized"); return; }
+    if (!sb) return;
 
-    // 1. Get current user via session
+    // Get current user via session
     const { data: sessionData } = await sb.auth.getSession();
     const user = sessionData?.session?.user;
-    if (!user) {
-      alert("saveXP: NO USER — not logged in");
-      return;
-    }
-    alert("saveXP: user=" + user.id + " xp=" + xpEarned);
+    if (!user) return;
 
-    // 2. Try INSERT first (new user)
+    // Try INSERT first (new user row)
     const { error: insertError } = await sb
       .from("leaderboard")
       .insert({ user_id: user.id, xp: xpEarned });
 
     if (insertError) {
-      // Row exists — fetch current XP and UPDATE
-      alert("saveXP: insert failed (" + insertError.message + "), trying update...");
-
+      // Row already exists — add to current XP
       const { data: existing } = await sb
         .from("leaderboard")
         .select("xp")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const currentXP = existing?.xp || 0;
-      const newXP = currentXP + xpEarned;
+      const newXP = (existing?.xp || 0) + xpEarned;
 
-      const { error: updateError } = await sb
+      await sb
         .from("leaderboard")
         .update({ xp: newXP })
         .eq("user_id", user.id);
-
-      if (updateError) {
-        alert("saveXP: UPDATE failed: " + updateError.message);
-      } else {
-        alert("saveXP: UPDATE SUCCESS — XP=" + newXP);
-      }
-    } else {
-      alert("saveXP: INSERT SUCCESS — XP=" + xpEarned);
     }
   } catch(e) {
-    alert("saveXP: CRASH — " + e.message);
+    console.error("saveXP error:", e);
   }
 }
 
