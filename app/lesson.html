@@ -1076,3 +1076,620 @@ function handleTF(chosen, btn) {
     + (isCorrect ? "Continue →" : "I understand →") + "</button>";
 }
 
+// ══════════════════════════════════════════════════════════
+// FILL IN THE BLANK
+// ══════════════════════════════════════════════════════════
+function renderFillBlank(step) {
+  const w = step.word;
+  const ex = w.ex;
+  if (!ex) { nextStep(); return; }
+  const sentence = ex.zh.replace(w.zh, '___');
+  const pool = HSK[lesson.plan.levelNum]?.words || [];
+  const wrong = getDistractors(w, pool, 'zh', 3).map(d => d.zh);
+  const options = shuffle([w.zh, ...wrong]);
+  stepArea.innerHTML = `
+    <div class="q-label read">📖 Fill in the Blank</div>
+    <div class="fill-sentence">${sentence.replace('___', '<span class="fill-blank">___</span>')}</div>
+    <div style="font-size:12px;color:var(--ink3);text-align:center;margin-top:4px">${ex.en}</div>
+    <div class="options-grid" id="fill-opts"></div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  speak(ex.zh);
+  const grid = document.getElementById('fill-opts');
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span style="font-family:'Noto Sans SC',sans-serif;font-size:20px">${opt}</span>`;
+    btn.onclick = () => {
+      if (answeredStep) return;
+      answeredStep = true;
+      const isCorrect = opt === w.zh;
+      grid.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+      btn.classList.add(isCorrect ? 'correct' : 'wrong');
+      if (!isCorrect) {
+        grid.querySelectorAll('.opt-btn').forEach(b => { if (b.textContent.trim() === w.zh) b.classList.add('correct'); });
+        loseHeart();
+        sessionMistakes.push({ word: w, type:'fill_blank' });
+      } else {
+        sessionXP += 2;
+        const blank = document.querySelector('.fill-blank');
+        if (blank) { blank.textContent = w.zh; blank.style.color = 'var(--green)'; }
+        updateSRS(w.id, true);
+      }
+      showFeedback(isCorrect, w);
+      if (step.section) updateCheckpointScore(step.section, isCorrect);
+      bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// SENTENCE ORDER
+// ══════════════════════════════════════════════════════════
+function renderSentenceOrder(step) {
+  const w = step.word;
+  const ex = w.ex;
+  if (!ex) { nextStep(); return; }
+  const fullSentence = ex.zh;
+  // Split into ~4 chunks
+  const chunkSize = Math.ceil(fullSentence.length / 4);
+  const chunks = [];
+  for (let i = 0; i < fullSentence.length; i += chunkSize) {
+    chunks.push(fullSentence.slice(i, i + chunkSize));
+  }
+  const shuffled = shuffle([...chunks]);
+  wordBankState = { chunks, shuffled, placed: [], answer: fullSentence };
+
+  stepArea.innerHTML = `
+    <div class="q-label write">✍️ Build the Sentence</div>
+    <div style="font-size:12px;color:var(--ink2);margin-bottom:4px">${ex.en}</div>
+    <div class="sentence-display" id="sentence-display">
+      <span style="color:var(--ink3);font-size:14px">Tap words in order</span>
+    </div>
+    <div class="word-chips" id="word-chips"></div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  renderChips();
+}
+
+function renderChips() {
+  const chipsEl = document.getElementById('word-chips');
+  const dispEl  = document.getElementById('sentence-display');
+  if (!chipsEl || !dispEl) return;
+  chipsEl.innerHTML = '';
+  dispEl.innerHTML = wordBankState.placed.length
+    ? wordBankState.placed.join('')
+    : '<span style="color:var(--ink3);font-size:14px">Tap words in order</span>';
+
+  if (wordBankState.placed.length > 0) {
+    const clearBtn = document.createElement('button');
+    clearBtn.style.cssText = 'background:none;border:none;color:var(--rose);font-size:11px;font-weight:700;cursor:pointer;margin-left:6px';
+    clearBtn.textContent = '✕ Clear';
+    clearBtn.onclick = () => { wordBankState.placed = []; renderChips(); };
+    dispEl.appendChild(clearBtn);
+  }
+
+  wordBankState.shuffled.forEach(chunk => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (wordBankState.placed.includes(chunk) ? ' used' : '');
+    chip.textContent = chunk;
+    chip.onclick = () => {
+      if (answeredStep || wordBankState.placed.includes(chunk)) return;
+      wordBankState.placed.push(chunk);
+      renderChips();
+      if (wordBankState.placed.length === wordBankState.shuffled.length) {
+        const built = wordBankState.placed.join('');
+        const isCorrect = built === wordBankState.answer;
+        answeredStep = true;
+        const step = steps[currentStep];
+        if (!isCorrect) {
+          loseHeart();
+          sessionMistakes.push({ word: step.word, type:'sentence_order' });
+          if (dispEl) dispEl.style.borderColor = 'var(--rose)';
+          setTimeout(() => { wordBankState.placed = []; answeredStep = false; renderChips(); if (dispEl) dispEl.style.borderColor = ''; }, 1200);
+          answeredStep = false;
+        } else {
+          sessionXP += 3;
+          if (dispEl) dispEl.style.borderColor = 'var(--green)';
+          updateSRS(step.word?.id, true);
+          showFeedback(true, step.word);
+          if (step.section) updateCheckpointScore(step.section, true);
+          bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Continue →</button>`;
+        }
+      }
+    };
+    chipsEl.appendChild(chip);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// MATCHING
+// ══════════════════════════════════════════════════════════
+function renderMatch(step) {
+  const words = (step.words || []).filter(Boolean).slice(0, 4);
+  if (words.length < 2) { nextStep(); return; }
+  const zhItems = shuffle(words.map(w => ({ text: w.zh, id: w.id, side:'zh' })));
+  const enItems = shuffle(words.map(w => ({ text: w.en, id: w.id, side:'en' })));
+  let selected = null;
+  let matched  = new Set();
+
+  stepArea.innerHTML = `
+    <div class="q-label read">📖 Match the Words</div>
+    <div class="match-grid" id="match-grid"></div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+
+  const grid = document.getElementById('match-grid');
+  const col1 = document.createElement('div');
+  const col2 = document.createElement('div');
+  col1.style.cssText = col2.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+
+  function makeItem(item) {
+    const el = document.createElement('div');
+    el.className = 'match-item' + (item.side === 'zh' ? ' zh' : '');
+    el.dataset.id = item.id; el.dataset.side = item.side;
+    el.textContent = item.text;
+    el.onclick = () => {
+      if (matched.has(item.id + item.side)) return;
+      if (selected === null) {
+        selected = { el, item }; el.classList.add('selected');
+      } else {
+        if (selected.item.side === item.side) {
+          selected.el.classList.remove('selected');
+          selected = { el, item }; el.classList.add('selected'); return;
+        }
+        const isCorrect = selected.item.id === item.id;
+        if (isCorrect) {
+          selected.el.classList.remove('selected');
+          selected.el.classList.add('matched'); el.classList.add('matched');
+          matched.add(item.id + 'zh'); matched.add(item.id + 'en');
+          sessionXP += 1;
+          speak(words.find(w => w.id === item.id)?.zh || '');
+          if (matched.size === words.length * 2) {
+            answeredStep = true;
+            showFeedback(true, null);
+            bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Continue →</button>`;
+          }
+        } else {
+          selected.el.classList.add('wrong-shake'); el.classList.add('wrong-shake');
+          loseHeart();
+          setTimeout(() => { selected.el.classList.remove('selected','wrong-shake'); el.classList.remove('wrong-shake'); }, 400);
+        }
+        selected = null;
+      }
+    };
+    return el;
+  }
+  zhItems.forEach(item => col1.appendChild(makeItem(item)));
+  enItems.forEach(item => col2.appendChild(makeItem(item)));
+  grid.appendChild(col1); grid.appendChild(col2);
+}
+
+// ══════════════════════════════════════════════════════════
+// ERROR CORRECTION
+// ══════════════════════════════════════════════════════════
+function renderErrorCorrection(step) {
+  const w = step.word;
+  const pool = (HSK[lesson.plan.levelNum]?.words || []).filter(x => x.zh !== w.zh);
+  const wrongWord = pool.length > 0 ? rand(pool) : w;
+  const useWrong  = Math.random() > 0.5;
+  const sentence  = w.ex?.zh || (w.zh + '很好。');
+  const displayed = useWrong ? sentence.replace(w.zh, wrongWord.zh) : sentence;
+  const correct   = !useWrong ? '对' : '错';
+  _tfCorrect = correct;
+  _tfHint    = useWrong
+    ? ('Should be: ' + sentence)
+    : ('Correct! ' + w.zh + ' = ' + w.en);
+
+  stepArea.innerHTML = `
+    <div class="q-label read">📖 Error Correction</div>
+    <div class="q-text">Is this sentence correct?</div>
+    <div class="passage-card">
+      <div class="passage-text" style="font-size:18px;text-align:center">${displayed}</div>
+      ${w.ex ? `<div class="passage-en" style="text-align:center">${w.ex.en}</div>` : ''}
+    </div>
+    <div class="tf-grid">
+      <button class="tf-btn" id="btn-tf-true">✓ <span class="tf-label">Correct</span></button>
+      <button class="tf-btn" id="btn-tf-false">✗ <span class="tf-label">Has an error</span></button>
+    </div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+
+  document.getElementById('btn-tf-true').addEventListener('click',  function() { handleTF('对', this); });
+  document.getElementById('btn-tf-false').addEventListener('click', function() { handleTF('错', this); });
+  speak(displayed);
+}
+
+// ══════════════════════════════════════════════════════════
+// READING PASSAGE
+// ══════════════════════════════════════════════════════════
+function renderReadingPassage(step) {
+  const w = step.word;
+  const ex = w.ex;
+  if (!ex) { nextStep(); return; }
+  const pool = HSK[lesson.plan.levelNum]?.words || [];
+  const wrong = getDistractors(w, pool, 'en', 3).map(d => d.en);
+  const options = shuffle([w.en, ...wrong]);
+
+  stepArea.innerHTML = `
+    <div class="q-label read">📖 Reading Comprehension</div>
+    <div class="passage-card">
+      <div class="passage-title">Read and answer</div>
+      <div class="passage-text">${ex.zh}</div>
+      <div class="passage-py">${ex.py}</div>
+    </div>
+    <div class="q-text" style="margin-top:4px">What does <strong style="color:var(--green)">${w.zh}</strong> mean here?</div>
+    <div class="options-grid single" id="pass-opts"></div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+
+  speak(ex.zh);
+  const grid = document.getElementById('pass-opts');
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt;
+    btn.style.fontFamily = "'DM Sans', sans-serif";
+    btn.onclick = () => {
+      if (answeredStep) return;
+      answeredStep = true;
+      const isCorrect = opt === w.en;
+      grid.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+      btn.classList.add(isCorrect ? 'correct' : 'wrong');
+      if (!isCorrect) {
+        grid.querySelectorAll('.opt-btn').forEach(b => { if (b.textContent === w.en) b.classList.add('correct'); });
+        loseHeart();
+        sessionMistakes.push({ word: w, type:'reading' });
+      } else {
+        sessionXP += 2; updateSRS(w.id, true);
+      }
+      showFeedback(isCorrect, w);
+      if (step.section) updateCheckpointScore(step.section, isCorrect);
+      bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// PINYIN TYPING
+// ══════════════════════════════════════════════════════════
+function renderPinyinType(step) {
+  const w = step.word;
+  stepArea.innerHTML = `
+    <div class="q-label write">✍️ Type the Pinyin</div>
+    <div class="q-text">Type the pinyin for: <span class="zh">${w.zh}</span></div>
+    <div style="font-size:13px;color:var(--ink3);text-align:center;margin-bottom:4px">"${w.en}"</div>
+    <div class="typing-wrap">
+      <input class="typing-input" id="py-input" type="text" placeholder="e.g. ni hao" autocomplete="off" autocapitalize="none" spellcheck="false"/>
+    </div>
+    <div class="typing-hint">Tip: type without tone marks, e.g. "ni hao"</div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  const input = document.getElementById('py-input');
+  if (input) input.focus();
+  bottomArea.innerHTML = `<button class="btn-primary" onclick="checkPinyin()">Check →</button>`;
+}
+
+function stripTones(s) {
+  return s.toLowerCase()
+    .replace(/[āáǎà]/g,'a').replace(/[ēéěè]/g,'e').replace(/[īíǐì]/g,'i')
+    .replace(/[ōóǒò]/g,'o').replace(/[ūúǔùǖǘǚǜ]/g,'u')
+    .replace(/\s+/g,' ').trim();
+}
+
+function checkPinyin() {
+  if (answeredStep) return;
+  const input = document.getElementById('py-input');
+  if (!input) return;
+  const w = steps[currentStep].word;
+  const isCorrect = stripTones(input.value.trim()) === stripTones(w.py);
+  answeredStep = true;
+  input.classList.add(isCorrect ? 'ok' : 'err');
+  input.disabled = true;
+  if (!isCorrect) {
+    loseHeart();
+    sessionMistakes.push({ word: w, type:'pinyin' });
+  } else {
+    sessionXP += 2; updateSRS(w.id, true);
+  }
+  showFeedback(isCorrect, w, isCorrect ? null : ('Correct: ' + w.py));
+  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+  bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// SPEED TIMER
+// ══════════════════════════════════════════════════════════
+function startSpeedTimer() {
+  speedTimeLeft = 8;
+  const timerWrap = document.createElement('div');
+  timerWrap.innerHTML =
+    '<div class="speed-bar-wrap"><div class="speed-bar" id="speed-bar" style="width:100%"></div></div>' +
+    '<div class="speed-counter" id="speed-counter">8s</div>';
+  stepArea.insertBefore(timerWrap, stepArea.firstChild);
+
+  speedTimer = setInterval(() => {
+    speedTimeLeft = Math.max(0, speedTimeLeft - 0.1);
+    const bar = document.getElementById('speed-bar');
+    const cnt = document.getElementById('speed-counter');
+    if (!bar || !cnt) { clearInterval(speedTimer); return; }
+    const pct = (speedTimeLeft / 8) * 100;
+    bar.style.width = pct + '%';
+    bar.className = 'speed-bar' + (pct < 40 ? ' warning' : '') + (pct < 15 ? ' danger' : '');
+    cnt.textContent = Math.ceil(speedTimeLeft) + 's';
+    if (speedTimeLeft <= 0) {
+      clearInterval(speedTimer);
+      if (!answeredStep) {
+        answeredStep = true;
+        loseHeart();
+        showFeedback(false, steps[currentStep]?.word, 'Too slow!');
+        bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Next →</button>`;
+      }
+    }
+  }, 100);
+}
+
+// ══════════════════════════════════════════════════════════
+// FEEDBACK
+// ══════════════════════════════════════════════════════════
+function showFeedback(isOk, word, overrideMsg, hint) {
+  const fb = document.getElementById('feedback');
+  if (!fb) return;
+  const positives = ['Great!','Perfect!','Excellent!','Correct!','Well done!'];
+  fb.className = 'feedback show ' + (isOk ? 'ok' : 'err');
+  fb.querySelector('.fb-icon').textContent = isOk ? '✓' : '✕';
+  fb.querySelector('.fb-main').textContent = isOk
+    ? positives[Math.floor(Math.random() * positives.length)]
+    : (overrideMsg || 'Not quite');
+  fb.querySelector('.fb-hint').textContent = hint || (word ? word.zh + ' = ' + word.en : '');
+}
+
+// ══════════════════════════════════════════════════════════
+// CHECKPOINT SCORING
+// ══════════════════════════════════════════════════════════
+function updateCheckpointScore(section, isCorrect) {
+  if (!section) return;
+  checkpointScores[section + 'Total'] = (checkpointScores[section + 'Total'] || 0) + 1;
+  if (isCorrect) checkpointScores[section] = (checkpointScores[section] || 0) + 1;
+}
+
+// ══════════════════════════════════════════════════════════
+// SRS
+// ══════════════════════════════════════════════════════════
+function updateSRS(wordId, correct) {
+  if (!wordId || !_uid) return;
+  try {
+    const srs = JSON.parse(localStorage.getItem(key('srs')) || '{}');
+    const entry = srs[wordId] || { score: 0 };
+    const intervals = [0, 86400000, 259200000, 604800000, 1209600000, 2592000000];
+    entry.score = correct ? Math.min(5, entry.score + 1) : Math.max(0, entry.score - 1);
+    entry.nextReview = Date.now() + (intervals[entry.score] || 0);
+    srs[wordId] = entry;
+    localStorage.setItem(key('srs'), JSON.stringify(srs));
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════
+// NEXT STEP
+// ══════════════════════════════════════════════════════════
+function nextStep() {
+  clearInterval(speedTimer);
+  currentStep++;
+  if (currentStep >= steps.length) { showComplete(); return; }
+  stepArea.className = 'step-area';
+  setTimeout(() => {
+    stepArea.className = 'step-area step-in';
+    renderStep(currentStep);
+  }, 60);
+}
+
+// ══════════════════════════════════════════════════════════
+// COMPLETE SCREEN
+// ══════════════════════════════════════════════════════════
+function showComplete() {
+  clearInterval(speedTimer);
+  progressEl.style.width = '100%';
+  bottomArea.innerHTML = '';
+
+  const plan    = lesson.plan;
+  const isCP    = plan.isCheckpoint;
+  const isSpeed = plan.isSpeed;
+  let earnedXP  = sessionXP + (isSpeed ? 20 : 10);
+  if (isCP) earnedXP += 15;
+
+  // Save progress
+  const completedLessons = JSON.parse(localStorage.getItem(key('completed_lessons')) || '[]');
+  if (!completedLessons.includes(plan.lessonNum)) {
+    const newXP = Number(localStorage.getItem(key('xp')) || 0) + earnedXP;
+    localStorage.setItem(key('xp'), newXP);
+    localStorage.setItem(key('completed_lessons'), JSON.stringify([...completedLessons, plan.lessonNum]));
+    localStorage.setItem(key('user_lesson'), String(plan.lessonNum + 1));
+
+    // Daily count
+    const today = new Date().toDateString();
+    if (localStorage.getItem(key('lesson_day')) !== today) {
+      localStorage.setItem(key('lesson_day'), today);
+      localStorage.setItem(key('lessons_today'), '0');
+    }
+    const done = Number(localStorage.getItem(key('lessons_today')) || 0) + 1;
+    localStorage.setItem(key('lessons_today'), done);
+
+    // Streak
+    const streakToday   = new Date().toDateString();
+    const yesterday     = new Date(Date.now() - 86400000).toDateString();
+    const lastStreakDay = localStorage.getItem(key('streak_day'));
+    let streak = Number(localStorage.getItem(key('streak')) || 0);
+    if (lastStreakDay !== streakToday) {
+      streak = lastStreakDay === yesterday ? streak + 1 : 1;
+      localStorage.setItem(key('streak'), streak);
+      localStorage.setItem(key('streak_day'), streakToday);
+    }
+    saveXP(earnedXP);
+  }
+
+  // Checkpoint ring
+  let ringHtml = '';
+  if (isCP) {
+    const total   = (checkpointScores.listenTotal||0) + (checkpointScores.readTotal||0) + (checkpointScores.writeTotal||0);
+    const correct = (checkpointScores.listen||0) + (checkpointScores.read||0) + (checkpointScores.write||0);
+    const pct     = total > 0 ? Math.round((correct / total) * 100) : 0;
+    const circ    = 2 * Math.PI * 52;
+    const offset  = circ * (1 - pct / 100);
+    ringHtml = `
+      <div class="score-ring-wrap">
+        <svg viewBox="0 0 120 120"><circle class="score-ring-track" cx="60" cy="60" r="52"/><circle class="score-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/></svg>
+        <div class="score-ring-text"><div class="score-pct">${pct}%</div><div class="score-label">Score</div></div>
+      </div>
+      <div class="checkpoint-section-scores">
+        <div class="section-score"><div class="ss-label">Listening</div><div class="ss-val listen">${checkpointScores.listen||0}/${checkpointScores.listenTotal||0}</div></div>
+        <div class="section-score"><div class="ss-label">Reading</div><div class="ss-val read">${checkpointScores.read||0}/${checkpointScores.readTotal||0}</div></div>
+        <div class="section-score"><div class="ss-label">Writing</div><div class="ss-val write">${checkpointScores.write||0}/${checkpointScores.writeTotal||0}</div></div>
+      </div>`;
+  }
+
+  const accuracy = steps.length > 0
+    ? Math.round(((steps.length - sessionMistakes.length) / steps.length) * 100)
+    : 100;
+
+  stepArea.innerHTML = `
+    <div class="complete-screen">
+      <div class="complete-emoji">${isCP ? '🏆' : isSpeed ? '⚡' : '🎉'}</div>
+      <div class="complete-title">${isCP ? 'Checkpoint Complete!' : isSpeed ? 'Speed Challenge Done!' : 'Lesson Complete!'}</div>
+      <div class="complete-sub">${plan.name} · HSK ${plan.levelNum}</div>
+      ${ringHtml}
+      <div class="xp-pill" id="xp-pill">+${earnedXP} XP</div>
+      <div class="complete-stats">
+        <div class="stat-box"><div class="sv">${steps.length}</div><div class="sl">Steps</div></div>
+        <div class="stat-box"><div class="sv">${sessionMistakes.length}</div><div class="sl">Errors</div></div>
+        <div class="stat-box"><div class="sv">${accuracy}%</div><div class="sl">Accuracy</div></div>
+        <div class="stat-box"><div class="sv">${hearts}❤️</div><div class="sl">Hearts</div></div>
+      </div>
+      <div class="complete-actions">
+        <button class="btn-primary" onclick="window.location.href='/app/dashboard.html'">Back to Home</button>
+        <button class="btn-ad" id="btn-double-xp" onclick="doubleXP(${earnedXP})">🎥 Watch Ad for Bonus XP</button>
+      </div>
+    </div>`;
+}
+
+let doubleUsed = false;
+function doubleXP(base) {
+  if (doubleUsed) return;
+  const btn = document.getElementById('btn-double-xp');
+  if (btn) { btn.disabled = true; btn.textContent = '🎥 Loading ad…'; }
+  setTimeout(() => {
+    doubleUsed = true;
+    const bonus = Math.round(base / 2) + 5;
+    const newXP = Number(localStorage.getItem(key('xp')) || 0) + bonus;
+    localStorage.setItem(key('xp'), newXP);
+    saveXP(bonus);
+    const pill = document.getElementById('xp-pill');
+    if (pill) { const cur = parseInt(pill.textContent) || 0; pill.textContent = '+' + (cur + bonus) + ' XP 🔥'; }
+    if (btn) btn.textContent = '✅ Bonus XP Claimed!';
+    showToast('+' + bonus + ' Bonus XP! 🔥');
+  }, 1500);
+}
+
+// ══════════════════════════════════════════════════════════
+// SAVE XP TO SUPABASE
+// ══════════════════════════════════════════════════════════
+async function saveXP(earned) {
+  try {
+    const sb = window._sb;
+    if (!sb || !_uid) return;
+    const username = localStorage.getItem('username_' + _uid) || ('Learner ' + _uid.slice(0,6).toUpperCase());
+    const { data: row } = await sb.from('leaderboard').select('xp').eq('user_id', _uid).maybeSingle();
+    if (row) {
+      await sb.from('leaderboard').update({ xp: (row.xp || 0) + earned, username }).eq('user_id', _uid);
+    } else {
+      await sb.from('leaderboard').insert({ user_id: _uid, xp: earned, username });
+    }
+  } catch(e) { console.warn('saveXP:', e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// NO HEARTS AD
+// ══════════════════════════════════════════════════════════
+let nhAdTimer = null;
+function watchAdForHeart() {
+  const btn = document.getElementById('nh-watch-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  const barWrap = document.getElementById('nh-ad-bar');
+  const fill    = document.getElementById('nh-ad-fill');
+  const label   = document.getElementById('nh-ad-label');
+  if (barWrap) barWrap.style.display = 'block';
+  let elapsed = 0;
+  nhAdTimer = setInterval(() => {
+    elapsed += 80;
+    if (fill)  fill.style.width = Math.min(100, (elapsed / 5000) * 100) + '%';
+    if (label) label.textContent = elapsed < 5000 ? 'Please wait ' + Math.ceil((5000 - elapsed) / 1000) + 's…' : 'Done!';
+    if (elapsed >= 5000) {
+      clearInterval(nhAdTimer);
+      hearts = Math.min(5, hearts + 1);
+      localStorage.setItem(key('hearts'), hearts);
+      renderHearts();
+      document.getElementById('nh-overlay').classList.remove('show');
+      showToast('❤️ +1 Heart! Keep going!');
+    }
+  }, 80);
+}
+
+// ══════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+async function init() {
+  try {
+    const { data } = await sb.auth.getSession();
+    const user = data?.session?.user;
+    if (!user) { window.location.replace('/app/login.html'); return; }
+    _uid = user.id;
+
+    hearts = Number(localStorage.getItem(key('hearts')) ?? 5);
+    xp     = Number(localStorage.getItem(key('xp')) || 0);
+    if (isNaN(hearts) || hearts < 0) hearts = 5;
+    renderHearts();
+
+    const levelNum  = Number(params.get('level')  || localStorage.getItem(key('user_level'))  || 1);
+    const lessonNum = Number(params.get('lesson') || localStorage.getItem(key('user_lesson')) || 1);
+
+    const plan = getLessonPlan(levelNum, lessonNum);
+    lesson = { plan };
+    steps  = buildSteps(plan);
+
+    if (!steps || steps.length === 0) {
+      window.location.replace('/app/dashboard.html'); return;
+    }
+
+    document.getElementById('info-tag').textContent  = 'HSK ' + levelNum + ' · Lesson ' + lessonNum;
+    document.getElementById('info-type').textContent = plan.name;
+
+    document.getElementById('btn-close').onclick = () => {
+      if (confirm('Leave this lesson? Progress will be lost.')) {
+        window.location.href = '/app/dashboard.html';
+      }
+    };
+
+    if (hearts <= 0) {
+      document.getElementById('nh-overlay').classList.add('show');
+    } else {
+      renderStep(0);
+    }
+
+  } catch(e) {
+    console.error('Lesson init error:', e);
+    const sa = document.getElementById('step-area');
+    if (sa) sa.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--rose);font-size:14px">Error loading lesson.<br/><a href="/app/dashboard.html" style="color:var(--green)">← Back to Dashboard</a></div>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
