@@ -1044,10 +1044,10 @@ function loseHeart() {
 }
 function watchAd() {
   overlay.classList.remove("show");
-  hearts = Math.min(hearts + 1, 5);
+  hearts = 5;
   localStorage.setItem(key("hearts"), hearts);
   renderHearts();
-  showToast("❤️ +1 Heart!");
+  showToast("❤️ Hearts restored!");
   if (currentStep === 0 && !stepArea.querySelector(".step-visible")) renderStep(0);
 }
 
@@ -1548,7 +1548,7 @@ async function saveXP(xpEarned) {
     const user = sessionData?.session?.user;
     if (!user) return;
 
-    // Fetch existing row first
+    // Check if row already exists
     const { data: existing } = await sb
       .from("leaderboard")
       .select("xp")
@@ -1556,14 +1556,14 @@ async function saveXP(xpEarned) {
       .maybeSingle();
 
     if (existing) {
-      // Row exists — update XP by adding to it
+      // Row exists — add XP to current total
       const newXP = (existing.xp || 0) + xpEarned;
       await sb
         .from("leaderboard")
         .update({ xp: newXP })
         .eq("user_id", user.id);
     } else {
-      // No row yet — insert new one
+      // No row yet — create new entry
       await sb
         .from("leaderboard")
         .insert({ user_id: user.id, xp: xpEarned });
