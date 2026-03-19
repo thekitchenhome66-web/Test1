@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maobai – Lesson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window._supabaseClient = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
+</script>
+<script>
+// Convenience alias used by saveXP and other async helpers
+const supabase = window._supabaseClient;
+</script>
+<style>
+  :root {
+    --bg:        #0f1923;
+    --card:      #162235;
+    --card2:     #1c2d44;
+    --border:    #1f3550;
+    --border2:   #243d57;
+    --green:     #4ade80;
+    --green-dim: #22c55e;
+    --red:       #f87171;
+    --yellow:    #fbbf24;
+    --blue:      #60a5fa;
+    --purple:    #a78bfa;
+    --text:      #e8f0f8;
+    --muted:     #6b8aaa;
+    --soft:      #4a6580;
+    --radius:    16px;
+    --t:         0.28s cubic-bezier(.4,0,.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  #app {
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    max-width: 520px; margin: 0 auto;
+    padding: 0 0 48px;
+  }
+
+  /* ── Header ── */
+  .lesson-header {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg);
+    padding: 16px 20px 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .btn-close {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: none; background: var(--card); color: var(--muted);
+    cursor: pointer; display: grid; place-items: center; flex-shrink: 0;
+    transition: background var(--t), color var(--t);
+  }
+  .btn-close:hover { background: var(--card2); color: var(--text); }
+  .btn-close svg { width: 16px; height: 16px; }
+  .progress-bar-wrap {
+    flex: 1; height: 10px; background: var(--card);
+    border-radius: 999px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-dim), var(--green));
+    border-radius: 999px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 8px rgba(74,222,128,.45);
+  }
+  .hearts-display { display: flex; gap: 3px; flex-shrink: 0; }
+  .heart-icon { font-size: 18px; transition: transform 0.2s, opacity 0.3s; filter: drop-shadow(0 0 4px rgba(248,113,113,.5)); }
+  .heart-icon.lost { opacity: 0.18; filter: none; transform: scale(0.85); }
+
+  /* ── Lesson Info Bar ── */
+  .lesson-info-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px 10px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .lesson-tag {
+    background: rgba(96,165,250,.1); border: 1px solid rgba(96,165,250,.2);
+    border-radius: 999px; padding: 4px 10px; color: var(--blue);
+  }
+  .lesson-phase-tag {
+    background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.2);
+    border-radius: 999px; padding: 4px 10px; color: var(--purple);
+  }
+
+  /* ── Step area ── */
+  .step-wrap { flex: 1; padding: 12px 20px 0; display: flex; flex-direction: column; gap: 20px; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-36px); } }
+  .step-visible { animation: slideIn 0.36s cubic-bezier(.4,0,.2,1) forwards; }
+  .step-exit    { animation: slideOut 0.28s cubic-bezier(.4,0,.2,1) forwards; }
+
+  /* ── Labels ── */
+  .step-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: -8px; }
+  .step-label.green  { color: var(--green); }
+  .step-label.yellow { color: var(--yellow); }
+  .step-label.purple { color: var(--purple); }
+  .mini-quiz-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(96,165,250,.1); border: 1px solid rgba(96,165,250,.25);
+    border-radius: 999px; padding: 4px 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--blue); text-transform: uppercase;
+    margin-bottom: -6px; width: fit-content;
+  }
+  .review-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25);
+    border-radius: 999px; padding: 4px 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--yellow); text-transform: uppercase;
+    margin-bottom: -6px; width: fit-content;
+  }
+
+  /* ── Word Card ── */
+  .word-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 36px 24px 28px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .word-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(74,222,128,.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .word-card.review-card::before {
+    background: radial-gradient(ellipse at 50% 0%, rgba(251,191,36,.07) 0%, transparent 70%);
+  }
+  .word-card-top { display: flex; align-items: flex-start; justify-content: center; gap: 8px; margin-bottom: 4px; }
+  .word-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: clamp(52px, 13vw, 76px); font-weight: 700; line-height: 1; color: var(--text); text-shadow: 0 0 32px rgba(74,222,128,.2); }
+  .word-card.review-card .word-chinese { text-shadow: 0 0 32px rgba(251,191,36,.2); }
+  .btn-audio {
+    background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25);
+    border-radius: 50%; width: 32px; height: 32px;
+    display: grid; place-items: center; cursor: pointer;
+    color: var(--green); flex-shrink: 0; margin-top: 6px;
+    transition: background var(--t), transform 0.15s;
+  }
+  .btn-audio:hover { background: rgba(74,222,128,.2); transform: scale(1.08); }
+  .btn-audio svg { width: 14px; height: 14px; }
+  .word-pinyin { font-size: 19px; color: var(--green); font-weight: 500; margin-bottom: 6px; letter-spacing: 0.04em; }
+  .word-card.review-card .word-pinyin { color: var(--yellow); }
+  .word-meaning { font-size: 15px; color: var(--muted); font-weight: 400; margin-bottom: 20px; }
+  .word-meaning strong { color: var(--text); font-weight: 600; }
+  .word-example { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: left; }
+  .example-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); margin-bottom: 7px; }
+  .example-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: 15px; color: var(--text); margin-bottom: 3px; line-height: 1.4; }
+  .example-pinyin  { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .example-translation { font-size: 12px; color: var(--soft); font-style: italic; }
+
+  /* ── Grammar ── */
+  .grammar-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 22px; }
+  .grammar-card.purple-card { border-color: rgba(167,139,250,.25); background: rgba(167,139,250,.04); }
+  .grammar-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 12px; line-height: 1.35; }
+  .grammar-body  { font-size: 14px; line-height: 1.8; color: var(--muted); }
+  .grammar-body .highlight { background: rgba(74,222,128,.12); color: var(--green); padding: 1px 5px; border-radius: 5px; font-weight: 500; }
+  .grammar-examples { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .grammar-ex-item { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .grammar-ex-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: 15px; color: var(--text); margin-bottom: 2px; }
+  .grammar-ex-translation { font-size: 12px; color: var(--soft); font-style: italic; }
+
+  /* ── Checkpoint ── */
+  .checkpoint-header { text-align: center; padding: 20px 0 10px; }
+  .checkpoint-icon { font-size: 40px; margin-bottom: 8px; }
+  .checkpoint-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .checkpoint-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .checkpoint-progress { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .checkpoint-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .checkpoint-dot.done   { background: var(--green); }
+  .checkpoint-dot.active { background: var(--yellow); box-shadow: 0 0 6px rgba(251,191,36,.6); }
+
+  /* ── Sentence card ── */
+  .sentence-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 22px; text-align: center; }
+  .sentence-chinese { font-family: 'Noto Sans SC', sans-serif; font-size: clamp(20px, 5vw, 28px); font-weight: 700; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+  .sentence-pinyin  { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+
+  /* ── Exercise ── */
+  .exercise-question { font-size: clamp(17px, 4.5vw, 21px); font-weight: 600; line-height: 1.6; color: var(--text); }
+  .exercise-question .q-word {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: clamp(30px, 8vw, 40px);
+    font-weight: 800; color: var(--green);
+    display: block; margin-top: 10px; letter-spacing: 0.04em;
+    text-shadow: 0 0 20px rgba(74,222,128,.25);
+  }
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .options-grid.single-col { grid-template-columns: 1fr; }
+  .option-btn {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 12px; padding: 16px 12px;
+    font-family: 'Sora', sans-serif; font-size: 14px;
+    font-weight: 500; color: var(--text); cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform 0.15s;
+    text-align: center; line-height: 1.3;
+  }
+  .option-btn:hover:not(:disabled) { border-color: rgba(74,222,128,.5); background: var(--card2); transform: translateY(-1px); }
+  .option-btn.correct { border-color: var(--green); background: rgba(74,222,128,.12); color: var(--green); }
+  .option-btn.wrong   { border-color: var(--red);   background: rgba(248,113,113,.10); color: var(--red); }
+  .option-btn:disabled { cursor: not-allowed; }
+
+  /* ── Typing ── */
+  .typing-input-wrap { position: relative; }
+  .typing-input {
+    width: 100%; padding: 16px 18px; border-radius: 12px;
+    border: 2px solid var(--border); background: var(--card);
+    color: var(--text); font-family: 'Sora', sans-serif; font-size: 16px;
+    outline: none; transition: border-color var(--t); caret-color: var(--green);
+  }
+  .typing-input:focus { border-color: rgba(74,222,128,.5); }
+  .typing-input.correct-input { border-color: var(--green); background: rgba(74,222,128,.06); }
+  .typing-input.wrong-input   { border-color: var(--red);   background: rgba(248,113,113,.06); }
+  .typing-hint { font-size: 11px; color: var(--soft); margin-top: 6px; text-align: right; }
+
+  /* ── Matching ── */
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .match-col-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 6px; }
+  .match-item {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 12px; padding: 16px 10px;
+    font-size: 15px; font-weight: 500; text-align: center; cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform 0.15s;
+    min-height: 58px; display: flex; align-items: center; justify-content: center;
+    word-break: break-word;
+  }
+  .match-item.chinese-item { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; }
+  .match-item:hover:not(.matched):not(.disabled-match) { border-color: rgba(74,222,128,.4); background: var(--card2); transform: translateY(-1px); }
+  .match-item.selected { border-color: var(--green); background: rgba(74,222,128,.1); color: var(--green); }
+  .match-item.matched  { border-color: var(--green); background: rgba(74,222,128,.08); color: var(--green); opacity: 0.55; cursor: default; }
+  .match-item.wrong-shake { border-color: var(--red); background: rgba(248,113,113,.1); animation: shake 0.4s ease; }
+  .match-item.disabled-match { opacity: 0.35; cursor: not-allowed; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 60% { transform: translateX(6px); } }
+
+  /* ── Fill-in ── */
+  .fill-sentence {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: clamp(32px, 9vw, 44px);
+    font-weight: 800; color: #ffffff;
+    line-height: 2.1; text-align: center;
+    background: var(--card2); border: 2px solid var(--border2);
+    border-radius: var(--radius); padding: 32px 20px;
+    letter-spacing: 0.06em;
+    text-shadow: 0 2px 16px rgba(232,240,248,.15);
+  }
+  .fill-blank {
+    display: inline-block;
+    font-size: clamp(32px, 9vw, 44px); font-weight: 900;
+    border-bottom: 4px solid var(--green);
+    min-width: 80px; text-align: center;
+    color: var(--green); padding: 0 8px;
+    text-shadow: 0 0 20px rgba(74,222,128,.5);
+    vertical-align: middle;
+  }
+  .word-bank-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .word-chip {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 10px; padding: 10px 18px;
+    font-family: 'Noto Sans SC', sans-serif; font-size: 16px; font-weight: 500;
+    color: var(--text); cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform 0.15s, opacity var(--t);
+  }
+  .word-chip:hover:not(:disabled) { border-color: rgba(74,222,128,.5); background: var(--card2); transform: translateY(-1px); }
+  .word-chip:disabled { opacity: 0.3; cursor: not-allowed; }
+  .word-chip.used { opacity: 0.25; pointer-events: none; }
+  .word-chip.correct-chip { border-color: var(--green); background: rgba(74,222,128,.12); color: var(--green); }
+  .word-chip.wrong-chip   { border-color: var(--red); background: rgba(248,113,113,.1); color: var(--red); animation: shake 0.4s ease; }
+
+  /* ── Feedback ── */
+  .feedback-banner {
+    border-radius: 12px; padding: 14px 18px; font-size: 14px; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 10px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s; min-height: 20px;
+  }
+  .feedback-banner.show { opacity: 1; transform: translateY(0); }
+  .feedback-banner.correct-fb { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: var(--green); }
+  .feedback-banner.wrong-fb   { background: rgba(248,113,113,.1);  border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+  .feedback-icon { font-size: 20px; flex-shrink: 0; margin-top: -1px; }
+  .feedback-text { line-height: 1.5; }
+  .fb-main { font-weight: 600; }
+  .fb-tip  { display: block; font-size: 12px; opacity: 0.8; margin-top: 4px; font-weight: 400; color: inherit; }
+
+  /* ── Bottom ── */
+  .bottom-area { padding: 20px 20px 0; display: flex; flex-direction: column; gap: 10px; }
+  .btn-primary {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: var(--green); color: #0a1a0f;
+    font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.02em;
+    transition: background var(--t), transform 0.15s, box-shadow var(--t);
+    box-shadow: 0 4px 16px rgba(74,222,128,.25);
+  }
+  .btn-primary:hover:not(:disabled) { background: #6bef9a; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(74,222,128,.35); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+  .btn-secondary {
+    width: 100%; padding: 14px; border-radius: 14px;
+    border: 2px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'Sora', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: border-color var(--t), color var(--t);
+  }
+  .btn-secondary:hover { border-color: var(--green-dim); color: var(--text); }
+
+  /* ── Overlay ── */
+  .overlay { position: fixed; inset: 0; background: rgba(10,18,28,.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: none; place-items: center; z-index: 100; padding: 24px; }
+  .overlay.show { display: grid; }
+  .overlay-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px 28px; max-width: 360px; width: 100%; text-align: center; animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+  .overlay-icon  { font-size: 52px; margin-bottom: 16px; }
+  .overlay-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .overlay-sub   { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+  .overlay-actions { display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── Complete ── */
+  .complete-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 24px; text-align: center; gap: 20px; animation: slideIn 0.4s ease; }
+  .complete-emoji { font-size: 64px; animation: bounce 0.6s ease 0.15s both; }
+  @keyframes bounce { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); } }
+  .complete-title { font-size: 26px; font-weight: 700; color: var(--text); }
+  .complete-sub   { font-size: 14px; color: var(--muted); margin-top: -10px; }
+  .xp-pill { background: rgba(74,222,128,.14); border: 1px solid rgba(74,222,128,.3); border-radius: 999px; padding: 10px 28px; font-size: 22px; font-weight: 700; color: var(--green); letter-spacing: 0.02em; }
+  .complete-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; text-align: center; }
+  .stat-val   { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .stat-label { font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .complete-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .btn-ad { width: 100%; padding: 14px; border-radius: 14px; border: 2px solid rgba(251,191,36,.4); background: rgba(251,191,36,.08); color: var(--yellow); font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all var(--t); display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-ad:hover { background: rgba(251,191,36,.14); border-color: var(--yellow); }
+  .btn-ad:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Checkpoint Complete ── */
+  .checkpoint-result { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px 0; }
+  .score-ring { position: relative; width: 120px; height: 120px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring-track { fill: none; stroke: var(--card2); stroke-width: 8; }
+  .score-ring-fill  { fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .score-ring-text  { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-pct  { font-size: 26px; font-weight: 700; color: var(--text); }
+  .score-sub  { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── Toast ── */
+  #xp-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-16px); background: var(--green); color: #0a1a0f; padding: 7px 18px; border-radius: 999px; font-weight: 700; font-size: 13px; opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 200; pointer-events: none; white-space: nowrap; }
+  #xp-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Loading ── */
+  .loading-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--border2); border-top-color: var(--green); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="lesson-header">
+    <button class="btn-close" id="btn-close" title="Back to dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="hearts-display" id="hearts-display"></div>
+  </header>
+  <div class="lesson-info-bar" id="lesson-info-bar">
+    <span class="lesson-tag" id="lesson-tag">HSK 1 · Lesson 1</span>
+    <span class="lesson-phase-tag" id="lesson-phase-tag">Loading…</span>
+  </div>
+  <div id="step-area" class="step-wrap"></div>
+  <div class="bottom-area" id="bottom-area"></div>
+</div>
+
+<!-- No hearts overlay -->
+<div class="overlay" id="no-hearts-overlay">
+  <div class="overlay-card">
+    <div class="overlay-icon">💔</div>
+    <div class="overlay-title">Out of Hearts</div>
+    <div class="overlay-sub">You've run out of hearts.<br>Watch a short ad to refill and keep going!</div>
+    <div class="overlay-actions">
+      <button class="btn-primary" id="btn-watch-ad">🎥 Watch Ad to Continue</button>
+      <button class="btn-secondary" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<div id="xp-toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// HSK DATA (inlined — no ES module import needed)
+// ═══════════════════════════════════════════════════════════
+const HSK = {
+  1: {
+    meta: { level:1, label:"HSK 1", description:"Beginner", emoji:"🌱", totalLessons:30, color:"#4ade80" },
+    words: [
+      { hanzi:"你好",   pinyin:"nǐ hǎo",      meaning:"Hello",              example:{ chinese:"你好！很高兴见到你。",       pinyin:"Nǐ hǎo! Hěn gāoxìng jiàn dào nǐ.",   translation:"Hello! Nice to meet you." } },
+      { hanzi:"再见",   pinyin:"zài jiàn",    meaning:"Goodbye",            example:{ chinese:"再见，明天见！",             pinyin:"Zài jiàn, míngtiān jiàn!",             translation:"Goodbye, see you tomorrow!" } },
+      { hanzi:"谢谢",   pinyin:"xiè xie",     meaning:"Thank you",          example:{ chinese:"谢谢你的帮助！",             pinyin:"Xiè xie nǐ de bāngzhù!",               translation:"Thank you for your help!" } },
+      { hanzi:"对不起", pinyin:"duì bu qǐ",   meaning:"Sorry",              example:{ chinese:"对不起，我来晚了。",         pinyin:"Duì bu qǐ, wǒ lái wǎn le.",           translation:"Sorry, I'm late." } },
+      { hanzi:"没关系", pinyin:"méi guān xi", meaning:"It's okay",          example:{ chinese:"没关系，不用担心。",         pinyin:"Méi guān xi, bú yòng dānxīn.",         translation:"It's okay, don't worry." } },
+      { hanzi:"我",     pinyin:"wǒ",          meaning:"I / Me",             example:{ chinese:"我是学生。",                 pinyin:"Wǒ shì xuésheng.",                     translation:"I am a student." } },
+      { hanzi:"你",     pinyin:"nǐ",          meaning:"You",                example:{ chinese:"你叫什么名字？",             pinyin:"Nǐ jiào shénme míngzi?",               translation:"What is your name?" } },
+      { hanzi:"他",     pinyin:"tā",          meaning:"He / Him",           example:{ chinese:"他是我的朋友。",             pinyin:"Tā shì wǒ de péngyǒu.",               translation:"He is my friend." } },
+      { hanzi:"她",     pinyin:"tā",          meaning:"She / Her",          example:{ chinese:"她很漂亮。",                 pinyin:"Tā hěn piàoliang.",                     translation:"She is very beautiful." } },
+      { hanzi:"我们",   pinyin:"wǒ men",      meaning:"We / Us",            example:{ chinese:"我们一起去吧！",             pinyin:"Wǒmen yìqǐ qù ba!",                   translation:"Let's go together!" } },
+      { hanzi:"是",     pinyin:"shì",         meaning:"To be / Is",         example:{ chinese:"我是老师。",                 pinyin:"Wǒ shì lǎoshī.",                       translation:"I am a teacher." } },
+      { hanzi:"不",     pinyin:"bù",          meaning:"No / Not",           example:{ chinese:"我不知道。",                 pinyin:"Wǒ bù zhīdào.",                         translation:"I don't know." } },
+      { hanzi:"有",     pinyin:"yǒu",         meaning:"To have",            example:{ chinese:"我有一只猫。",               pinyin:"Wǒ yǒu yī zhī māo.",                   translation:"I have a cat." } },
+      { hanzi:"没有",   pinyin:"méi yǒu",     meaning:"Don't have",         example:{ chinese:"我没有时间。",               pinyin:"Wǒ méi yǒu shíjiān.",                   translation:"I don't have time." } },
+      { hanzi:"好",     pinyin:"hǎo",         meaning:"Good",               example:{ chinese:"今天天气很好。",             pinyin:"Jīntiān tiānqì hěn hǎo.",             translation:"The weather is good today." } },
+      { hanzi:"吃",     pinyin:"chī",         meaning:"To eat",             example:{ chinese:"我想吃饺子。",               pinyin:"Wǒ xiǎng chī jiǎozi.",                 translation:"I want to eat dumplings." } },
+      { hanzi:"喝",     pinyin:"hē",          meaning:"To drink",           example:{ chinese:"我喜欢喝茶。",               pinyin:"Wǒ xǐhuān hē chá.",                   translation:"I like to drink tea." } },
+      { hanzi:"水",     pinyin:"shuǐ",        meaning:"Water",              example:{ chinese:"请给我一杯水。",             pinyin:"Qǐng gěi wǒ yī bēi shuǐ.",           translation:"Please give me a glass of water." } },
+      { hanzi:"饭",     pinyin:"fàn",         meaning:"Rice / Meal",        example:{ chinese:"我们去吃饭吧。",             pinyin:"Wǒmen qù chīfàn ba.",                   translation:"Let's go eat." } },
+      { hanzi:"好吃",   pinyin:"hǎo chī",     meaning:"Delicious",          example:{ chinese:"这个菜很好吃！",             pinyin:"Zhège cài hěn hǎochī!",               translation:"This dish is delicious!" } },
+      { hanzi:"去",     pinyin:"qù",          meaning:"To go",              example:{ chinese:"我想去北京。",               pinyin:"Wǒ xiǎng qù Běijīng.",                 translation:"I want to go to Beijing." } },
+      { hanzi:"来",     pinyin:"lái",         meaning:"To come",            example:{ chinese:"请进来！",                   pinyin:"Qǐng jìn lái!",                         translation:"Please come in!" } },
+      { hanzi:"在",     pinyin:"zài",         meaning:"At / In / Is at",    example:{ chinese:"我在家。",                   pinyin:"Wǒ zài jiā.",                           translation:"I am at home." } },
+      { hanzi:"家",     pinyin:"jiā",         meaning:"Home / Family",      example:{ chinese:"我的家在上海。",             pinyin:"Wǒ de jiā zài Shànghǎi.",             translation:"My home is in Shanghai." } },
+      { hanzi:"学校",   pinyin:"xuéxiào",     meaning:"School",             example:{ chinese:"我每天去学校。",             pinyin:"Wǒ měitiān qù xuéxiào.",               translation:"I go to school every day." } },
+      { hanzi:"一",     pinyin:"yī",          meaning:"One",                example:{ chinese:"我有一个苹果。",             pinyin:"Wǒ yǒu yīgè píngguǒ.",               translation:"I have one apple." } },
+      { hanzi:"两",     pinyin:"liǎng",       meaning:"Two",                example:{ chinese:"我买了两本书。",             pinyin:"Wǒ mǎile liǎng běn shū.",             translation:"I bought two books." } },
+      { hanzi:"三",     pinyin:"sān",         meaning:"Three",              example:{ chinese:"我有三个朋友。",             pinyin:"Wǒ yǒu sān gè péngyǒu.",               translation:"I have three friends." } },
+      { hanzi:"今天",   pinyin:"jīn tiān",    meaning:"Today",              example:{ chinese:"今天是星期一。",             pinyin:"Jīntiān shì xīngqīyī.",               translation:"Today is Monday." } },
+      { hanzi:"明天",   pinyin:"míng tiān",   meaning:"Tomorrow",           example:{ chinese:"明天见！",                   pinyin:"Míngtiān jiàn!",                         translation:"See you tomorrow!" } },
+    ],
+    grammar: [
+      { title:"Greeting with 你好", explanation:"你好 (nǐ hǎo) is the standard Mandarin greeting. Literally 'you good'. Reply the same way!", pattern:"你好！", translation:"Hello!", examples:[{ chinese:"你好！很高兴见到你。", translation:"Hello! Nice to meet you." },{ chinese:"老师，你好！", translation:"Hello, teacher!" }] },
+      { title:"The verb 是 (to be)", explanation:"是 (shì) connects a subject to its identity or role. It never changes form — no am/is/are variants.", pattern:"Subject + 是 + Noun", translation:"Subject is [noun]", examples:[{ chinese:"我是老师。", translation:"I am a teacher." },{ chinese:"她是学生。", translation:"She is a student." }] },
+      { title:"Negation with 不", explanation:"不 (bù) is placed directly before a verb or adjective to negate it. Consistent and simple!", pattern:"Subject + 不 + Verb/Adjective", translation:"Subject does not [verb]", examples:[{ chinese:"我不知道。", translation:"I don't know." },{ chinese:"他不去。", translation:"He's not going." }] },
+      { title:"Location with 在", explanation:"在 (zài) means 'to be at/in'. It shows where someone or something is located.", pattern:"Subject + 在 + Place", translation:"Subject is at [place]", examples:[{ chinese:"我在学校。", translation:"I am at school." },{ chinese:"他在家。", translation:"He is at home." }] },
+    ]
+  },
+  2: {
+    meta: { level:2, label:"HSK 2", description:"Elementary", emoji:"🌿", totalLessons:40, color:"#60a5fa" },
+    words: [
+      { hanzi:"打电话", pinyin:"dǎ diànhuà",  meaning:"To make a phone call", example:{ chinese:"我要给妈妈打电话。",       pinyin:"Wǒ yào gěi māma dǎ diànhuà.",         translation:"I need to call my mom." } },
+      { hanzi:"运动",   pinyin:"yùn dòng",    meaning:"Sports / Exercise",    example:{ chinese:"每天运动对身体很好。",     pinyin:"Měitiān yùndòng duì shēntǐ hěn hǎo.", translation:"Exercising every day is great for your health." } },
+      { hanzi:"天气",   pinyin:"tiān qì",     meaning:"Weather",              example:{ chinese:"今天天气怎么样？",         pinyin:"Jīntiān tiānqì zěnme yàng?",           translation:"What's the weather like today?" } },
+      { hanzi:"高兴",   pinyin:"gāo xìng",    meaning:"Happy / Glad",         example:{ chinese:"见到你我很高兴。",         pinyin:"Jiàn dào nǐ wǒ hěn gāoxìng.",         translation:"I'm very glad to see you." } },
+      { hanzi:"知道",   pinyin:"zhī dào",     meaning:"To know",              example:{ chinese:"你知道他在哪里吗？",       pinyin:"Nǐ zhīdào tā zài nǎlǐ ma?",           translation:"Do you know where he is?" } },
+      { hanzi:"帮助",   pinyin:"bāng zhù",    meaning:"To help",              example:{ chinese:"谢谢你帮助我。",           pinyin:"Xièxie nǐ bāngzhù wǒ.",               translation:"Thank you for helping me." } },
+      { hanzi:"一起",   pinyin:"yī qǐ",       meaning:"Together",             example:{ chinese:"我们一起去吧！",           pinyin:"Wǒmen yìqǐ qù ba!",                   translation:"Let's go together!" } },
+      { hanzi:"觉得",   pinyin:"jué de",      meaning:"To feel / think",      example:{ chinese:"我觉得这个电影很好看。",   pinyin:"Wǒ juéde zhège diànyǐng hěn hǎokàn.", translation:"I think this movie is great." } },
+      { hanzi:"颜色",   pinyin:"yán sè",      meaning:"Color",                example:{ chinese:"你喜欢什么颜色？",         pinyin:"Nǐ xǐhuān shénme yánsè?",             translation:"What color do you like?" } },
+      { hanzi:"每",     pinyin:"měi",         meaning:"Every / Each",         example:{ chinese:"我每天早上跑步。",         pinyin:"Wǒ měitiān zǎoshang pǎobù.",           translation:"I run every morning." } },
+      { hanzi:"从",     pinyin:"cóng",        meaning:"From",                 example:{ chinese:"我从北京来。",             pinyin:"Wǒ cóng Běijīng lái.",                 translation:"I'm from Beijing." } },
+      { hanzi:"旁边",   pinyin:"páng biān",   meaning:"Beside / Next to",     example:{ chinese:"银行在超市旁边。",         pinyin:"Yínháng zài chāoshì pángbiān.",       translation:"The bank is next to the supermarket." } },
+      { hanzi:"然后",   pinyin:"rán hòu",     meaning:"Then / After that",    example:{ chinese:"先吃饭，然后看电影。",     pinyin:"Xiān chīfàn, ránhòu kàn diànyǐng.",   translation:"First eat, then watch a movie." } },
+      { hanzi:"但是",   pinyin:"dàn shì",     meaning:"But / However",        example:{ chinese:"我喜欢跑步，但是今天累。", pinyin:"Wǒ xǐhuān pǎobù, dànshì jīntiān lèi.", translation:"I like running, but I'm tired today." } },
+      { hanzi:"因为",   pinyin:"yīn wèi",     meaning:"Because",              example:{ chinese:"我迟到了，因为堵车。",     pinyin:"Wǒ chídào le, yīnwèi dǔchē.",         translation:"I was late because of traffic." } },
+      { hanzi:"所以",   pinyin:"suǒ yǐ",      meaning:"So / Therefore",       example:{ chinese:"天气冷，所以穿了外套。",   pinyin:"Tiānqì lěng, suǒyǐ chuānle wàitào.",   translation:"It's cold, so I wore a coat." } },
+      { hanzi:"如果",   pinyin:"rú guǒ",      meaning:"If",                   example:{ chinese:"如果你来，请告诉我。",     pinyin:"Rúguǒ nǐ lái, qǐng gàosu wǒ.",       translation:"If you come, please let me know." } },
+      { hanzi:"已经",   pinyin:"yǐ jīng",     meaning:"Already",              example:{ chinese:"我已经吃饭了。",           pinyin:"Wǒ yǐjīng chīfàn le.",                 translation:"I've already eaten." } },
+      { hanzi:"还",     pinyin:"hái",         meaning:"Still / Also / Yet",   example:{ chinese:"你还在吗？",               pinyin:"Nǐ hái zài ma?",                       translation:"Are you still there?" } },
+      { hanzi:"非常",   pinyin:"fēi cháng",   meaning:"Extremely / Very",     example:{ chinese:"这道菜非常好吃！",         pinyin:"Zhè dào cài fēicháng hǎochī!",       translation:"This dish is extremely delicious!" } },
+      { hanzi:"身体",   pinyin:"shēn tǐ",     meaning:"Body / Health",        example:{ chinese:"你身体好吗？",             pinyin:"Nǐ shēntǐ hǎo ma?",                   translation:"Are you in good health?" } },
+      { hanzi:"第一",   pinyin:"dì yī",       meaning:"First",                example:{ chinese:"他是第一名。",             pinyin:"Tā shì dì yī míng.",                   translation:"He is first place." } },
+      { hanzi:"白",     pinyin:"bái",         meaning:"White",                example:{ chinese:"她穿着白色的衬衫。",       pinyin:"Tā chuānzhe báisè de chènshān.",       translation:"She is wearing a white shirt." } },
+      { hanzi:"红",     pinyin:"hóng",        meaning:"Red",                  example:{ chinese:"苹果是红色的。",           pinyin:"Píngguǒ shì hóngsè de.",               translation:"Apples are red." } },
+      { hanzi:"看书",   pinyin:"kàn shū",     meaning:"To read a book",       example:{ chinese:"我喜欢在图书馆看书。",     pinyin:"Wǒ xǐhuān zài túshūguǎn kàn shū.",   translation:"I like reading books in the library." } },
+    ],
+    grammar: [
+      { title:"Degree adverb 很 (very)", explanation:"很 (hěn) means 'very' and goes before adjectives. Adjective predicates usually need 很 even without strong emphasis.", pattern:"Subject + 很 + Adjective", translation:"Subject is very [adjective]", examples:[{ chinese:"她很漂亮。", translation:"She is very beautiful." },{ chinese:"天气很好。", translation:"The weather is good." }] },
+      { title:"Question particle 吗", explanation:"Add 吗 (ma) to the end of any statement to turn it into a yes/no question. No word order changes needed!", pattern:"Statement + 吗？", translation:"Is it that [statement]?", examples:[{ chinese:"你是老师吗？", translation:"Are you a teacher?" },{ chinese:"他来吗？", translation:"Is he coming?" }] },
+      { title:"因为…所以 (because…so)", explanation:"因为 introduces the reason, 所以 introduces the result. They link cause and effect.", pattern:"因为 + reason + 所以 + result", translation:"Because [reason], so [result]", examples:[{ chinese:"因为下雨，所以我没去。", translation:"Because it rained, I didn't go." },{ chinese:"因为生病了，所以请假。", translation:"Because she was sick, she took leave." }] },
+    ]
+  },
+  3: {
+    meta: { level:3, label:"HSK 3", description:"Intermediate", emoji:"🍃", totalLessons:60, color:"#fbbf24" },
+    words: [
+      { hanzi:"经济",   pinyin:"jīng jì",     meaning:"Economy",              example:{ chinese:"中国经济发展很快。",       pinyin:"Zhōngguó jīngjì fāzhǎn hěn kuài.",   translation:"China's economy is developing rapidly." } },
+      { hanzi:"文化",   pinyin:"wén huà",     meaning:"Culture",              example:{ chinese:"我对中国文化很感兴趣。",   pinyin:"Wǒ duì Zhōngguó wénhuà gǎn xìngqù.", translation:"I'm very interested in Chinese culture." } },
+      { hanzi:"环境",   pinyin:"huán jìng",   meaning:"Environment",          example:{ chinese:"保护环境是每个人的责任。", pinyin:"Bǎohù huánjìng shì zérèn.",           translation:"Protecting the environment is everyone's responsibility." } },
+      { hanzi:"科学",   pinyin:"kē xué",      meaning:"Science",              example:{ chinese:"科学技术改变了世界。",     pinyin:"Kēxué jìshù gǎibiànle shìjiè.",       translation:"Science and technology have changed the world." } },
+      { hanzi:"历史",   pinyin:"lì shǐ",      meaning:"History",              example:{ chinese:"我们要了解自己国家的历史。", pinyin:"Wǒmen yào liǎojiě guójiā de lìshǐ.",  translation:"We should understand our country's history." } },
+      { hanzi:"发展",   pinyin:"fā zhǎn",     meaning:"Development",          example:{ chinese:"这个城市发展得很快。",     pinyin:"Zhège chéngshì fāzhǎn de hěn kuài.",   translation:"This city is developing very fast." } },
+      { hanzi:"影响",   pinyin:"yǐng xiǎng",  meaning:"Influence / Impact",   example:{ chinese:"父母对孩子的影响很大。",   pinyin:"Fùmǔ duì háizi de yǐngxiǎng hěn dà.", translation:"Parents have a big influence on their children." } },
+      { hanzi:"解决",   pinyin:"jiě jué",     meaning:"To solve",             example:{ chinese:"我们必须解决这个问题。",   pinyin:"Wǒmen bìxū jiějué zhège wèntí.",       translation:"We must solve this problem." } },
+      { hanzi:"讨论",   pinyin:"tǎo lùn",     meaning:"To discuss",           example:{ chinese:"我们来讨论一下这个计划。", pinyin:"Wǒmen lái tǎolùn zhège jìhuà.",       translation:"Let's discuss this plan." } },
+      { hanzi:"建议",   pinyin:"jiàn yì",     meaning:"Suggestion",           example:{ chinese:"我有一个建议。",           pinyin:"Wǒ yǒu yīgè jiànyì.",                 translation:"I have a suggestion." } },
+      { hanzi:"选择",   pinyin:"xuǎn zé",     meaning:"To choose / Choice",   example:{ chinese:"这是你自己的选择。",       pinyin:"Zhè shì nǐ zìjǐ de xuǎnzé.",         translation:"This is your own choice." } },
+      { hanzi:"方法",   pinyin:"fāng fǎ",     meaning:"Method / Way",         example:{ chinese:"学汉语有很多方法。",       pinyin:"Xué Hànyǔ yǒu hěn duō fāngfǎ.",       translation:"There are many ways to learn Chinese." } },
+      { hanzi:"结果",   pinyin:"jié guǒ",     meaning:"Result / Outcome",     example:{ chinese:"考试结果出来了。",         pinyin:"Kǎoshì jiéguǒ chūlái le.",             translation:"The exam results are out." } },
+      { hanzi:"同意",   pinyin:"tóng yì",     meaning:"To agree",             example:{ chinese:"我同意你的看法。",         pinyin:"Wǒ tóngyì nǐ de kànfǎ.",               translation:"I agree with your view." } },
+      { hanzi:"支持",   pinyin:"zhī chí",     meaning:"To support",           example:{ chinese:"谢谢你的支持！",           pinyin:"Xièxie nǐ de zhīchí!",                 translation:"Thank you for your support!" } },
+      { hanzi:"反对",   pinyin:"fǎn duì",     meaning:"To oppose",            example:{ chinese:"他反对这个决定。",         pinyin:"Tā fǎnduì zhège juédìng.",             translation:"He opposes this decision." } },
+      { hanzi:"机会",   pinyin:"jī huì",      meaning:"Opportunity",          example:{ chinese:"这是一个很好的机会。",     pinyin:"Zhè shì yīgè hěn hǎo de jīhuì.",     translation:"This is a great opportunity." } },
+      { hanzi:"态度",   pinyin:"tài dù",      meaning:"Attitude",             example:{ chinese:"他的工作态度很认真。",     pinyin:"Tā de gōngzuò tàidu hěn rènzhēn.",   translation:"His work attitude is very serious." } },
+      { hanzi:"责任",   pinyin:"zé rèn",      meaning:"Responsibility",       example:{ chinese:"我们要承担自己的责任。",   pinyin:"Wǒmen yào chéngdān zìjǐ de zérèn.",   translation:"We need to take responsibility for ourselves." } },
+      { hanzi:"努力",   pinyin:"nǔ lì",       meaning:"To work hard",         example:{ chinese:"只要努力，一定能成功。",   pinyin:"Zhǐyào nǔlì, yīdìng néng chénggōng.", translation:"As long as you work hard, you will succeed." } },
+      { hanzi:"成功",   pinyin:"chéng gōng",  meaning:"Success",              example:{ chinese:"祝你成功！",               pinyin:"Zhù nǐ chénggōng!",                     translation:"Wishing you success!" } },
+      { hanzi:"失败",   pinyin:"shī bài",     meaning:"Failure",              example:{ chinese:"失败是成功之母。",         pinyin:"Shībài shì chénggōng zhī mǔ.",         translation:"Failure is the mother of success." } },
+      { hanzi:"观点",   pinyin:"guān diǎn",   meaning:"Viewpoint",            example:{ chinese:"每个人都有自己的观点。",   pinyin:"Měi gè rén dōu yǒu zìjǐ de guāndiǎn.", translation:"Everyone has their own point of view." } },
+      { hanzi:"目的",   pinyin:"mù dì",       meaning:"Purpose / Goal",       example:{ chinese:"你学汉语的目的是什么？",   pinyin:"Nǐ xué Hànyǔ de mùdì shì shénme?",   translation:"What is your purpose in learning Chinese?" } },
+      { hanzi:"表示",   pinyin:"biǎo shì",    meaning:"To express",           example:{ chinese:"他点头表示同意。",         pinyin:"Tā diǎntóu biǎoshì tóngyì.",           translation:"He nodded to indicate agreement." } },
+    ],
+    grammar: [
+      { title:"Time words come early", explanation:"Time expressions (今天, 明天, 现在) go at the beginning of the sentence or right after the subject — always before the verb.", pattern:"Time + Subject + Verb", translation:"", examples:[{ chinese:"今天我去学校。", translation:"Today I go to school." },{ chinese:"明天她要来。", translation:"Tomorrow she is coming." }] },
+      { title:"Possession with 的", explanation:"的 (de) marks possession, like 's in English. Place it between the owner and the object.", pattern:"Owner + 的 + Object", translation:"Owner's object", examples:[{ chinese:"我的老师很好。", translation:"My teacher is very good." },{ chinese:"他的朋友是学生。", translation:"His friend is a student." }] },
+      { title:"Comparison with 比", explanation:"比 (bǐ) is used to compare two things. The thing being compared to comes after 比.", pattern:"A + 比 + B + Adjective", translation:"A is more [adjective] than B", examples:[{ chinese:"他比我高。", translation:"He is taller than me." },{ chinese:"今天比昨天冷。", translation:"Today is colder than yesterday." }] },
+    ]
+  },
+  4: {
+    meta: { level:4, label:"HSK 4", description:"Upper-Intermediate", emoji:"🌲", totalLessons:80, color:"#f87171" },
+    words: [
+      { hanzi:"具体",   pinyin:"jù tǐ",       meaning:"Concrete / Specific",  example:{ chinese:"请给我一个具体的例子。",   pinyin:"Qǐng gěi wǒ yīgè jùtǐ de lìzi.",     translation:"Please give me a specific example." } },
+      { hanzi:"批评",   pinyin:"pī píng",     meaning:"To criticize",         example:{ chinese:"老师批评了他的作业。",     pinyin:"Lǎoshī pīpíngle tā de zuòyè.",         translation:"The teacher criticized his homework." } },
+      { hanzi:"坚持",   pinyin:"jiān chí",    meaning:"To persist",           example:{ chinese:"坚持就是胜利。",           pinyin:"Jiānchí jiù shì shènglì.",             translation:"Persistence is victory." } },
+      { hanzi:"矛盾",   pinyin:"máo dùn",     meaning:"Contradiction",        example:{ chinese:"他的话前后矛盾。",         pinyin:"Tā de huà qiánhòu máodùn.",           translation:"What he said is self-contradictory." } },
+      { hanzi:"逻辑",   pinyin:"luó jí",      meaning:"Logic",                example:{ chinese:"你的逻辑有问题。",         pinyin:"Nǐ de luójí yǒu wèntí.",               translation:"There is a problem with your logic." } },
+      { hanzi:"现象",   pinyin:"xiàn xiàng",  meaning:"Phenomenon",           example:{ chinese:"这是很有趣的社会现象。",   pinyin:"Zhè shì yǒuqù de shèhuì xiànxiàng.",   translation:"This is a very interesting social phenomenon." } },
+      { hanzi:"本质",   pinyin:"běn zhì",     meaning:"Essence / Nature",     example:{ chinese:"我们要看问题的本质。",     pinyin:"Wǒmen yào kàn wèntí de běnzhì.",       translation:"We need to look at the essence of the problem." } },
+      { hanzi:"趋势",   pinyin:"qū shì",      meaning:"Trend",                example:{ chinese:"这是未来的发展趋势。",     pinyin:"Zhè shì wèilái de fāzhǎn qūshì.",     translation:"This is the future development trend." } },
+      { hanzi:"复杂",   pinyin:"fù zá",       meaning:"Complex",              example:{ chinese:"这个问题非常复杂。",       pinyin:"Zhège wèntí fēicháng fùzá.",           translation:"This problem is very complex." } },
+      { hanzi:"严格",   pinyin:"yán gé",      meaning:"Strict / Rigorous",    example:{ chinese:"老师对学生要求很严格。",   pinyin:"Lǎoshī duì xuésheng yāoqiú yángé.",   translation:"This teacher has strict requirements for students." } },
+      { hanzi:"灵活",   pinyin:"líng huó",    meaning:"Flexible",             example:{ chinese:"我们需要灵活地处理问题。", pinyin:"Wǒmen xūyào línghuó de chǔlǐ wèntí.",   translation:"We need to handle this problem flexibly." } },
+      { hanzi:"积极",   pinyin:"jī jí",       meaning:"Positive / Proactive", example:{ chinese:"他对工作非常积极。",       pinyin:"Tā duì gōngzuò fēicháng jījí.",       translation:"He is very proactive about work." } },
+      { hanzi:"缺乏",   pinyin:"quē fá",      meaning:"To lack",              example:{ chinese:"这个地区缺乏干净水源。",   pinyin:"Zhège dìqū quēfá gānjìng shuǐyuán.",   translation:"This region lacks clean water sources." } },
+      { hanzi:"丰富",   pinyin:"fēng fù",     meaning:"Rich / Abundant",      example:{ chinese:"她的工作经验非常丰富。",   pinyin:"Tā de gōngzuò jīngyàn fēicháng fēngfù.", translation:"She has very rich work experience." } },
+      { hanzi:"判断",   pinyin:"pàn duàn",    meaning:"To judge",             example:{ chinese:"你的判断是正确的。",       pinyin:"Nǐ de pànduàn shì zhèngquè de.",       translation:"Your judgment is correct." } },
+      { hanzi:"证明",   pinyin:"zhèng míng",  meaning:"To prove",             example:{ chinese:"你能证明你说的是真的吗？", pinyin:"Nǐ néng zhèngmíng nǐ shuō de zhēn ma?", translation:"Can you prove what you said is true?" } },
+      { hanzi:"假设",   pinyin:"jiǎ shè",     meaning:"To assume",            example:{ chinese:"假设你是我，你会怎么做？", pinyin:"Jiǎshè nǐ shì wǒ, nǐ huì zěnme zuò?",   translation:"Assuming you were me, what would you do?" } },
+      { hanzi:"总结",   pinyin:"zǒng jié",    meaning:"Summary",              example:{ chinese:"请总结一下今天的内容。",   pinyin:"Qǐng zǒngjié yīxià jīntiān de nèiróng.", translation:"Please summarize today's content." } },
+      { hanzi:"分析",   pinyin:"fēn xī",      meaning:"To analyze",           example:{ chinese:"我们需要仔细分析问题。",   pinyin:"Wǒmen xūyào zǐxì fēnxī zhège wèntí.",   translation:"We need to carefully analyze this problem." } },
+      { hanzi:"评价",   pinyin:"píng jià",    meaning:"To evaluate",          example:{ chinese:"请对这部电影做个评价。",   pinyin:"Qǐng duì zhè bù diànyǐng zuò píngjià.", translation:"Please give an evaluation of this film." } },
+      { hanzi:"比较",   pinyin:"bǐ jiào",     meaning:"To compare",           example:{ chinese:"比较两种方案，哪个更好？", pinyin:"Bǐjiào liǎng zhǒng fāng'àn, nǎge gèng hǎo?", translation:"Comparing the two plans, which is better?" } },
+      { hanzi:"强调",   pinyin:"qiáng diào",  meaning:"To emphasize",         example:{ chinese:"他强调了安全的重要性。",   pinyin:"Tā qiángdiàole ānquán de zhòngyàoxìng.", translation:"He emphasized the importance of safety." } },
+      { hanzi:"概念",   pinyin:"gài niàn",    meaning:"Concept",              example:{ chinese:"你理解这个概念吗？",       pinyin:"Nǐ lǐjiě zhège gàiniàn ma?",           translation:"Do you understand this concept?" } },
+      { hanzi:"抽象",   pinyin:"chōu xiàng",  meaning:"Abstract",             example:{ chinese:"这幅画非常抽象。",         pinyin:"Zhè fú huà fēicháng chōuxiàng.",       translation:"This painting is very abstract." } },
+      { hanzi:"推测",   pinyin:"tuī cè",      meaning:"To speculate",         example:{ chinese:"我只是在推测。",           pinyin:"Wǒ zhǐshì zài tuīcè.",                 translation:"I'm just speculating." } },
+    ],
+    grammar: [
+      { title:"Using 把 to move the object", explanation:"把 (bǎ) moves the object before the verb to emphasize what is done to it. Common with action verbs that have a result.", pattern:"Subject + 把 + Object + Verb + Result", translation:"Subject [verb]s the object [result]", examples:[{ chinese:"我把作业做完了。", translation:"I finished the homework." },{ chinese:"请把门关上。", translation:"Please close the door." }] },
+      { title:"Passive voice with 被", explanation:"被 (bèi) marks a passive sentence. The subject receives the action rather than performing it.", pattern:"Subject + 被 + Agent + Verb", translation:"Subject was [verb]ed by agent", examples:[{ chinese:"他被老师批评了。", translation:"He was criticized by the teacher." },{ chinese:"钱包被偷了。", translation:"The wallet was stolen." }] },
+    ]
+  },
+  5: {
+    meta: { level:5, label:"HSK 5", description:"Advanced", emoji:"🎋", totalLessons:120, color:"#a78bfa" },
+    words: [
+      { hanzi:"辩证",   pinyin:"biàn zhèng",  meaning:"Dialectical",          example:{ chinese:"我们要用辩证的眼光看问题。", pinyin:"Wǒmen yào yòng biànzhèng de yǎnguāng.", translation:"We should look at problems dialectically." } },
+      { hanzi:"传承",   pinyin:"chuán chéng", meaning:"To pass down",         example:{ chinese:"文化的传承需要每一代人努力。", pinyin:"Wénhuà de chuánchéng xūyào nǔlì.",     translation:"Cultural inheritance requires every generation's effort." } },
+      { hanzi:"融合",   pinyin:"róng hé",     meaning:"Integration / Fusion", example:{ chinese:"东西方文化的融合产生了新艺术。", pinyin:"Dōng xīfāng wénhuà rónghé chǎnshēng.", translation:"The fusion of cultures produced new art forms." } },
+      { hanzi:"突破",   pinyin:"tū pò",       meaning:"Breakthrough",         example:{ chinese:"科学家们取得了重大突破。",   pinyin:"Kēxuéjiāmen qǔdéle zhòngdà tūpò.",   translation:"Scientists have made a major breakthrough." } },
+      { hanzi:"局限",   pinyin:"jú xiàn",     meaning:"Limitation",           example:{ chinese:"不要被传统观念所局限。",     pinyin:"Bùyào bèi chuántǒng guānniàn júxiàn.", translation:"Don't be constrained by traditional concepts." } },
+      { hanzi:"启示",   pinyin:"qǐ shì",      meaning:"Enlightenment",        example:{ chinese:"这件事给了我很大的启示。",   pinyin:"Zhè jiàn shì gěile wǒ qǐshì.",       translation:"This gave me great enlightenment." } },
+      { hanzi:"凝聚",   pinyin:"níng jù",     meaning:"To unite / Condense",  example:{ chinese:"这首歌凝聚了所有人的情感。", pinyin:"Zhè shǒu gē níngjùle suǒyǒu rén de qínggǎn.", translation:"This song unites everyone's emotions." } },
+      { hanzi:"颠覆",   pinyin:"diān fù",     meaning:"To subvert / Overturn",example:{ chinese:"这个发现颠覆了人们的认知。", pinyin:"Zhège fāxiàn diānfùle rénmen de rènzhī.", translation:"This discovery overturned people's understanding." } },
+      { hanzi:"蔓延",   pinyin:"màn yán",     meaning:"To spread",            example:{ chinese:"火势迅速蔓延。",             pinyin:"Huǒshì xùnsù mànyán.",                 translation:"The fire spread rapidly." } },
+      { hanzi:"孕育",   pinyin:"yùn yù",      meaning:"To nurture",           example:{ chinese:"这片土地孕育了灿烂文明。",   pinyin:"Zhè piàn tǔdì yùnyùle cànlàn wénmíng.", translation:"This land nurtured a brilliant civilization." } },
+      { hanzi:"彰显",   pinyin:"zhāng xiǎn",  meaning:"To highlight",         example:{ chinese:"这件作品彰显了艺术家的才华。", pinyin:"Zhè jiàn zuòpǐn zhāngxiǎnle cáihuá.",  translation:"This work highlights the artist's talent." } },
+      { hanzi:"阐述",   pinyin:"chǎn shù",    meaning:"To elaborate",         example:{ chinese:"请详细阐述你的观点。",       pinyin:"Qǐng xiángxì chǎnshù nǐ de guāndiǎn.", translation:"Please elaborate on your viewpoint in detail." } },
+      { hanzi:"诠释",   pinyin:"quán shì",    meaning:"To interpret",         example:{ chinese:"她用独特方式诠释了这首歌。", pinyin:"Tā yòng dútè de fāngshì quánshì gē.", translation:"She interpreted this song in a unique way." } },
+      { hanzi:"渗透",   pinyin:"shèn tòu",    meaning:"Permeation",           example:{ chinese:"西方文化渗透到了全球各地。", pinyin:"Xīfāng wénhuà shèntòu dàole quánqiú.", translation:"Western culture has permeated every corner of the globe." } },
+      { hanzi:"折射",   pinyin:"zhé shè",     meaning:"To reflect (fig.)",    example:{ chinese:"小说折射出社会的现实问题。", pinyin:"Xiǎoshuō zhéshè chū shèhuì de wèntí.",  translation:"This novel reflects the real problems of society." } },
+      { hanzi:"侵蚀",   pinyin:"qīn shí",     meaning:"To erode",             example:{ chinese:"腐败侵蚀了社会的根基。",     pinyin:"Fǔbài qīnshíle shèhuì de gēnjī.",     translation:"Corruption is eroding the foundation of society." } },
+      { hanzi:"演变",   pinyin:"yǎn biàn",    meaning:"To evolve",            example:{ chinese:"语言随时代变化而演变。",     pinyin:"Yǔyán suízhe shídài biànhuà yǎnbiàn.", translation:"Language evolves with the changes of the times." } },
+      { hanzi:"升华",   pinyin:"shēng huá",   meaning:"Sublimation",          example:{ chinese:"痛苦的经历可以升华为艺术。", pinyin:"Tòngkǔ de jīnglì kěyǐ shēnghuá yìshù.", translation:"Painful experiences can be sublimated into art." } },
+      { hanzi:"包容",   pinyin:"bāo róng",    meaning:"Tolerance",            example:{ chinese:"成熟的人懂得包容他人缺点。", pinyin:"Chéngshú de rén dǒngde bāoróng quēdiǎn.", translation:"A mature person knows how to embrace others' flaws." } },
+      { hanzi:"沉淀",   pinyin:"chén diàn",   meaning:"To accumulate",        example:{ chinese:"这些经历都是人生的沉淀。",   pinyin:"Zhèxiē jīnglì dōu shì rénshēng chéndiàn.", translation:"These experiences are the accumulation of life." } },
+      { hanzi:"迸发",   pinyin:"bèng fā",     meaning:"To burst out",         example:{ chinese:"创意在那一刻迸发出来。",     pinyin:"Chuàngyì zài nà yīkè bèngfā chūlái.", translation:"Creativity burst out at that moment." } },
+      { hanzi:"契合",   pinyin:"qì hé",       meaning:"To align",             example:{ chinese:"他的想法和我的完全契合。",   pinyin:"Tā de xiǎngfǎ hé wǒ de wánquán qìhé.", translation:"His ideas perfectly align with mine." } },
+      { hanzi:"淬炼",   pinyin:"cuì liàn",    meaning:"To temper / Refine",   example:{ chinese:"经过多年淬炼，他成为名厨。", pinyin:"Jīngguò duō nián cuìliàn, tā chéng míngchú.", translation:"After years of tempering, he became an excellent chef." } },
+      { hanzi:"萦绕",   pinyin:"yíng rào",    meaning:"To linger",            example:{ chinese:"那首旋律一直萦绕在我脑海。", pinyin:"Nà shǒu xuánlǜ yīzhí yíngrào nǎohǎi.",  translation:"That melody keeps lingering in my mind." } },
+      { hanzi:"制约",   pinyin:"zhì yuē",     meaning:"To restrict",          example:{ chinese:"法律制约着人们的行为。",     pinyin:"Fǎlǜ zhìyuēzhe rénmen de xíngwéi.",   translation:"Laws constrain people's behavior." } },
+    ],
+    grammar: [
+      { title:"Concessive clauses 虽然…但是", explanation:"虽然 (suīrán) introduces a concession, and 但是/却 introduces the contrasting main point.", pattern:"虽然 + concession + 但是 + main point", translation:"Although [concession], [main point]", examples:[{ chinese:"虽然很难，但是我要坚持。", translation:"Although it's hard, I will persist." },{ chinese:"虽然他很忙，但是还是来了。", translation:"Although he was busy, he still came." }] },
+      { title:"Advanced 把 structure", explanation:"In advanced contexts, 把 can combine with directional complements to create nuanced action descriptions.", pattern:"把 + Object + Verb + 到/在/给/成 + Result", translation:"Verb the object to/into/at [result]", examples:[{ chinese:"他把书翻译成了英文。", translation:"He translated the book into English." },{ chinese:"请把文件发给我。", translation:"Please send the file to me." }] },
+    ]
+  },
+  6: {
+    meta: { level:6, label:"HSK 6", description:"Mastery", emoji:"🏯", totalLessons:150, color:"#fb923c" },
+    words: [
+      { hanzi:"斡旋",   pinyin:"wò xuán",     meaning:"Mediation",            example:{ chinese:"外交官在两国之间进行斡旋。", pinyin:"Wàijiāoguān zài liǎng guó wòxuán.",   translation:"The diplomat mediated between the two countries." } },
+      { hanzi:"跌宕",   pinyin:"diē dàng",    meaning:"Ups and downs",        example:{ chinese:"他的人生充满了跌宕起伏。",   pinyin:"Tā de rénshēng chōngmǎnle diēdàng.",   translation:"His life was full of ups and downs." } },
+      { hanzi:"藩篱",   pinyin:"fān lí",      meaning:"Barrier (fig.)",       example:{ chinese:"打破传统的藩篱才能创新。",   pinyin:"Dǎpò chuántǒng de fānlí cái chuàngxīn.", translation:"Only by breaking traditional barriers can one innovate." } },
+      { hanzi:"斑驳",   pinyin:"bān bó",      meaning:"Mottled / Dappled",    example:{ chinese:"阳光在地上留下斑驳光影。",   pinyin:"Yángguāng zài dì shàng liú xià bānbó.",  translation:"Sunlight through the leaves left dappled shadows." } },
+      { hanzi:"氤氲",   pinyin:"yīn yūn",     meaning:"Misty atmosphere",     example:{ chinese:"山间氤氲着薄薄的雾气。",     pinyin:"Shān jiān yīnyūnzhe báobáo de wùqì.",   translation:"The mountains were enveloped in a thin, misty haze." } },
+      { hanzi:"踟蹰",   pinyin:"chí chú",     meaning:"To hesitate",          example:{ chinese:"他在门口踟蹰，终于敲了门。", pinyin:"Tā zài ménkǒu chíchú, zhōngyú qiāo mén.", translation:"He hesitated at the door, then finally knocked." } },
+      { hanzi:"隽永",   pinyin:"juàn yǒng",   meaning:"Profound and lasting", example:{ chinese:"这首诗意境隽永，令人回味。", pinyin:"Zhè shǒu shī yìjìng juànyǒng, lìng huíwèi.", translation:"This poem has a profound artistic conception." } },
+      { hanzi:"磅礴",   pinyin:"páng bó",     meaning:"Grand / Magnificent",  example:{ chinese:"黄河气势磅礴，令人震撼。",   pinyin:"Huánghé qìshì pángbó, lìng rén zhènhàn.", translation:"The Yellow River is grand and magnificent." } },
+      { hanzi:"旖旎",   pinyin:"yǐ nǐ",       meaning:"Enchanting",           example:{ chinese:"江南水乡风光旖旎。",         pinyin:"Jiāngnán shuǐxiāng fēngguāng yǐnǐ.",   translation:"The water towns of Jiangnan have enchanting scenery." } },
+      { hanzi:"蹉跎",   pinyin:"cuō tuó",     meaning:"To waste time",        example:{ chinese:"不要蹉跎岁月，要珍惜时间。", pinyin:"Bùyào cuōtuó suìyuè, yào zhēnxī shíjiān.", translation:"Don't waste your years — cherish your time." } },
+      { hanzi:"澄澈",   pinyin:"chéng chè",   meaning:"Clear and transparent",example:{ chinese:"湖水澄澈，可见水底的石头。", pinyin:"Húshuǐ chéngchè, kějiàn shuǐdǐ shítou.",  translation:"The lake water is so clear you can see the stones at the bottom." } },
+      { hanzi:"玲珑",   pinyin:"líng lóng",   meaning:"Delicate and exquisite",example:{ chinese:"这件玉器玲珑剔透，工艺精湛。", pinyin:"Zhè jiàn yùqì línglóng, gōngyì jīngzhàn.", translation:"This jade piece is delicate and translucent." } },
+      { hanzi:"煊赫",   pinyin:"xuān hè",     meaning:"Illustrious",          example:{ chinese:"这个家族曾经煊赫一时。",     pinyin:"Zhège jiāzú céngjīng xuānhè yīshí.",   translation:"This family was once illustrious and prominent." } },
+      { hanzi:"迷惘",   pinyin:"mí wǎng",     meaning:"Confused / Lost",      example:{ chinese:"毕业后，他感到迷惘不知方向。", pinyin:"Bìyè hòu, tā gǎndào míwǎng.",         translation:"After graduation, he felt lost, not knowing his direction." } },
+      { hanzi:"肆意",   pinyin:"sì yì",       meaning:"Wantonly",             example:{ chinese:"他肆意挥霍父母的血汗钱。",   pinyin:"Tā sìyì huīhuò fùmǔ de xuèhànqián.",   translation:"He wantonly squandered his parents' hard-earned money." } },
+      { hanzi:"婆娑",   pinyin:"pó suō",      meaning:"Swaying / Dancing",    example:{ chinese:"风中，树影婆娑，美不胜收。", pinyin:"Fēng zhōng, shù yǐng pó suō, měi.",     translation:"In the wind, the swaying tree shadows were breathtakingly beautiful." } },
+      { hanzi:"栩栩如生",pinyin:"xǔ xǔ rú shēng",meaning:"Lifelike / Vivid",  example:{ chinese:"雕刻家的作品栩栩如生。",     pinyin:"Diāokè jiā de zuòpǐn xǔxǔ rú shēng.",  translation:"The sculptor's works are so lifelike." } },
+      { hanzi:"浑然天成",pinyin:"hún rán tiān chéng",meaning:"Perfectly natural",example:{ chinese:"这幅画浑然天成，没有刻意。", pinyin:"Zhè fú huà hún rán tiān chéng.",         translation:"This painting is perfectly natural." } },
+      { hanzi:"怆然",   pinyin:"chuàng rán",  meaning:"Grieved / Sorrowful",  example:{ chinese:"看到故乡废墟，他怆然泪下。", pinyin:"Kàn dào gùxiāng fèixū, tā chuàngrán.",   translation:"Seeing the ruins of his hometown, he wept with grief." } },
+      { hanzi:"悱恻",   pinyin:"fěi cè",      meaning:"Deeply moved",         example:{ chinese:"这段音乐令人感到悱恻动人。", pinyin:"Zhè duàn yīnyuè lìng rén fěicè.",        translation:"This piece of music is deeply moving." } },
+      { hanzi:"缱绻",   pinyin:"qiǎn quǎn",   meaning:"Lingering affection",  example:{ chinese:"他们之间有着深深的缱绻情意。", pinyin:"Tāmen zhī jiān yǒu qiǎnquǎn qíngyì.",   translation:"Between them there is a deep and lingering affection." } },
+      { hanzi:"韬略",   pinyin:"tāo lüè",     meaning:"Military strategy",    example:{ chinese:"他深谙韬略，是出色的将领。", pinyin:"Tā shēn ān tāolüè, shì chūsè jiànglǐng.", translation:"He is well-versed in strategy, a brilliant general." } },
+      { hanzi:"邈远",   pinyin:"miǎo yuǎn",   meaning:"Far and remote",       example:{ chinese:"那段历史对我们已经邈远了。", pinyin:"Nà duàn lìshǐ duì wǒmen yǐjīng miǎoyuǎn.", translation:"That period of history feels very remote to us now." } },
+      { hanzi:"淬炼",   pinyin:"cuì liàn",    meaning:"To refine / Temper",   example:{ chinese:"经过淬炼，他成为了一流厨师。", pinyin:"Jīngguò cuìliàn, tā chéngwéile chúshī.", translation:"After being tempered, he became a top chef." } },
+      { hanzi:"皈依",   pinyin:"guī yī",      meaning:"To convert (faith)",   example:{ chinese:"她在旅行后皈依了佛教。",     pinyin:"Tā zài lǚxíng hòu guīyīle Fójiào.",   translation:"She converted to Buddhism after her travels." } },
+    ],
+    grammar: [
+      { title:"Four-character idioms (成语)", explanation:"成语 (chéngyǔ) are four-character fixed expressions with historical or literary origins. Mastering them marks native-level fluency.", pattern:"Four characters = one fixed meaning", translation:"Idiomatic expression", examples:[{ chinese:"半途而废 — to give up halfway", translation:"半途 = halfway, 而废 = abandon" },{ chinese:"一石二鸟 — kill two birds with one stone", translation:"一石 = one stone, 二鸟 = two birds" }] },
+      { title:"Literary 之 as classical possessive", explanation:"In formal and literary Chinese, 之 (zhī) functions like 的 but carries a classical, elevated tone. Common in idioms and formal writing.", pattern:"Owner + 之 + Object", translation:"Owner's [object] (literary)", examples:[{ chinese:"失败是成功之母。", translation:"Failure is the mother of success." },{ chinese:"君子之交淡如水。", translation:"The friendship of gentlemen is as plain as water." }] },
+    ]
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function pick(arr, n) { return shuffle(arr).slice(0, n); }
+function rand(arr)    { return arr[Math.floor(Math.random() * arr.length)]; }
+function stripTones(s) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[āáǎà]/g,"a").replace(/[ēéěè]/g,"e").replace(/[īíǐì]/g,"i")
+    .replace(/[ōóǒò]/g,"o").replace(/[ūúǔùǖǘǚǜ]/g,"u")
+    .replace(/\s+/g," ").trim().toLowerCase();
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const params    = new URLSearchParams(location.search);
+const sessionId = Date.now();
+
+let _userId      = null;
+let _level       = 1;
+let _lessonNum   = 1;
+let _hskWords    = [];
+let _hskGrammar  = [];
+
+let lesson       = null;
+let steps        = [];
+let lessonId     = 1;
+
+let currentStep      = 0;
+let hearts           = 5;
+let xp               = 0;
+let sessionXP        = 0;
+let answeredStep     = false;
+let matchState       = null;
+let typingAnswered   = false;
+let wordBankAnswered = false;
+let checkpointCorrect = 0;
+let checkpointTotal   = 0;
+
+let allMistakes      = [];
+let sessionMistakes  = [];
+let completedLessons = [];
+let alreadyCompleted = false;
+
+// ── DOM
+const stepArea    = document.getElementById("step-area");
+const bottomArea  = document.getElementById("bottom-area");
+const progressBar = document.getElementById("progress-bar");
+const heartsEl    = document.getElementById("hearts-display");
+const overlay     = document.getElementById("no-hearts-overlay");
+
+function key(name) { return `${name}_${_userId}`; }
+
+document.getElementById("btn-close").onclick = () => {
+  if (confirm("Leave this lesson? Your progress will be lost.")) window.location.href = "dashboard.html";
+};
+document.getElementById("btn-watch-ad").onclick = watchAd;
+
+// ── Show loading immediately
+stepArea.innerHTML = `<div class="loading-screen"><div class="spinner"></div><div class="loading-text">Preparing your lesson…</div></div>`;
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+async function initLesson() {
+  try {
+    // 1. Get userId safely — getUser() returns null user when not logged in
+    try {
+      const { data } = await window._supabaseClient.auth.getUser();
+      _userId = (data && data.user && data.user.id) ? data.user.id : "anonymous";
+    } catch(e) {
+      _userId = "anonymous";
+    }
+
+    // 2. Remove old unscoped keys
+    localStorage.removeItem("hearts");
+    localStorage.removeItem("xp");
+    localStorage.removeItem("user_level");
+    localStorage.removeItem("user_lesson");
+
+    // 3. Read user level & lesson from URL or localStorage
+    _level     = parseInt(params.get("level")  || localStorage.getItem(key("user_level"))  || "1", 10);
+    _lessonNum = parseInt(params.get("lesson") || localStorage.getItem(key("user_lesson")) || "1", 10);
+    lessonId   = _lessonNum;
+
+    // 4. Clamp level to available HSK data (1–6)
+    _level = Math.min(Math.max(_level, 1), 6);
+
+    // 5. Load HSK data for this level — with safety checks
+    if (!HSK || !HSK[_level]) {
+      stepArea.innerHTML = `<div class="loading-screen"><div class="loading-text">Error: HSK level ${_level} data not found.</div></div>`;
+      return;
+    }
+    const hskLevel = HSK[_level];
+    _hskWords   = hskLevel.words   || [];
+    _hskGrammar = hskLevel.grammar || [];
+
+    if (_hskWords.length === 0) {
+      stepArea.innerHTML = `<div class="loading-screen"><div class="loading-text">Error: No words found for HSK ${_level}.</div></div>`;
+      return;
+    }
+
+    // 6. Load user-scoped state
+    hearts           = parseInt(localStorage.getItem(key("hearts")) ?? "5", 10);
+    xp               = parseInt(localStorage.getItem(key("xp"))     || "0", 10);
+    allMistakes      = JSON.parse(localStorage.getItem(key("mistakes"))          || "[]");
+    completedLessons = JSON.parse(localStorage.getItem(key("completed_lessons")) || "[]");
+    alreadyCompleted = completedLessons.includes(lessonId);
+
+    // 7. Generate lesson from HSK data
+    lesson = generateLesson(_lessonNum);
+    steps  = lesson.steps;
+
+    // Safety: ensure steps is a non-empty array
+    if (!steps || steps.length === 0) {
+      stepArea.innerHTML = `<div class="loading-screen"><div class="loading-text">Error: Could not generate lesson steps.</div></div>`;
+      return;
+    }
+
+    // 8. Update UI labels
+    const isCP = lesson.config && lesson.config.isCheckpoint;
+    document.getElementById("lesson-tag").textContent       = isCP ? `HSK ${_level} · Checkpoint` : `HSK ${_level} · Lesson ${_lessonNum}`;
+    document.getElementById("lesson-phase-tag").textContent = (lesson.config && lesson.config.phase) || "Lesson";
+
+    if (hearts <= 0) overlay.classList.add("show");
+
+    renderHearts();
+    if (hearts > 0) renderStep(0);
+
+  } catch(err) {
+    // Catch-all: log error and show fallback so it never hangs
+    console.error("initLesson failed:", err);
+    stepArea.innerHTML = `<div class="loading-screen"><div class="loading-text">Something went wrong loading the lesson. <br><br><a href="dashboard.html" style="color:var(--green)">← Back to Dashboard</a></div></div>`;
+  }
+}
+
+initLesson();
+
+// ═══════════════════════════════════════════════════════════
+// DISTRACTOR HELPERS (use full level word bank)
+// ═══════════════════════════════════════════════════════════
+function getDistractorMeanings(correct, count=3) {
+  const pool = shuffle(_hskWords.filter(w => w.meaning !== correct)).map(w => w.meaning);
+  return shuffle([correct, ...pool.slice(0, count)]);
+}
+function getDistractorHanzi(correct, count=3) {
+  const pool = shuffle(_hskWords.filter(w => w.hanzi !== correct)).map(w => w.hanzi);
+  return shuffle([correct, ...pool.slice(0, count)]);
+}
+function getDistractorPinyin(correct, count=3) {
+  const pool = shuffle(_hskWords.filter(w => stripTones(w.pinyin) !== stripTones(correct))).map(w => w.pinyin);
+  return shuffle([correct, ...pool.slice(0, count)]);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LESSON PLAN CONFIG
+// ═══════════════════════════════════════════════════════════
+function getLessonConfig(lessonNum) {
+  const cycle = ((lessonNum - 1) % 6) + 1;
+  if (cycle === 6) return { newWordCount:0, reviewWordCount:5, grammarCount:0, isCheckpoint:true, phase:"Checkpoint" };
+  return {
+    1: { newWordCount:5, reviewWordCount:0, grammarCount:1, isCheckpoint:false, phase:"New Words"   },
+    2: { newWordCount:1, reviewWordCount:4, grammarCount:0, isCheckpoint:false, phase:"Review + New" },
+    3: { newWordCount:2, reviewWordCount:3, grammarCount:1, isCheckpoint:false, phase:"Expand"       },
+    4: { newWordCount:3, reviewWordCount:3, grammarCount:0, isCheckpoint:false, phase:"Build Up"     },
+    5: { newWordCount:2, reviewWordCount:4, grammarCount:1, isCheckpoint:false, phase:"Consolidate"  },
+  }[cycle];
+}
+
+// ─── Get new words for this lesson (5 per lesson, cycling through level words)
+function getNewWordsForLesson(lessonNum) {
+  const total = _hskWords.length;
+  if (total === 0) return [];
+  const start = ((lessonNum - 1) * 5) % total;
+  return _hskWords.slice(start, start + 5);
+}
+
+// ─── Get review words (previously introduced words before this lesson)
+function getReviewWords(lessonNum, count) {
+  const total = _hskWords.length;
+  if (total === 0) return [];
+  const start = ((lessonNum - 1) * 5) % total;
+  const pool  = start > 0 ? _hskWords.slice(0, start) : _hskWords.slice(5);
+  return pick(pool, count);
+}
+
+// ─── Get grammar note for lesson
+function getGrammarForLesson(lessonNum) {
+  if (!_hskGrammar.length) return null;
+  const idx = Math.floor((lessonNum - 1) / 3) % _hskGrammar.length;
+  return _hskGrammar[idx];
+}
+
+// ─── Build lesson title from level meta or lesson number
+function buildLessonTitle(lessonNum) {
+  const meta = HSK[_level]?.meta;
+  return meta ? `${meta.label} · Lesson ${lessonNum}` : `Lesson ${lessonNum}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXERCISE GENERATORS
+// ═══════════════════════════════════════════════════════════
+function makeWordStep(word, isReview=false) {
+  return { type:"word", ...word, isReview };
+}
+
+function makeMCQ_MeaningFromHanzi(word, isMini=false, isReview=false) {
+  return {
+    type:"multiple_choice", isMini, isReview,
+    question:`What does <span class='q-word'>${word.hanzi}</span> mean?`,
+    options: getDistractorMeanings(word.meaning),
+    correct: word.meaning,
+    tip:`${word.hanzi} (${word.pinyin}) = "${word.meaning}".`
+  };
+}
+
+function makeMCQ_HanziFromMeaning(word, isMini=false, isReview=false) {
+  return {
+    type:"multiple_choice", isMini, chineseOptions:true, isReview,
+    question:`How do you say <em style="color:var(--green);font-style:normal">"${word.meaning}"</em> in Chinese?`,
+    options: getDistractorHanzi(word.hanzi),
+    correct: word.hanzi,
+    tip:`"${word.meaning}" in Chinese is ${word.hanzi} (${word.pinyin}).`
+  };
+}
+
+function makeMCQ_PinyinFromHanzi(word, isMini=false, isReview=false) {
+  return {
+    type:"multiple_choice", isMini, isReview,
+    question:`What is the pinyin for <span class='q-word'>${word.hanzi}</span>?`,
+    options: getDistractorPinyin(word.pinyin),
+    correct: word.pinyin,
+    tip:`The pinyin for ${word.hanzi} is ${word.pinyin}.`
+  };
+}
+
+function makeTypingPinyin(word, isMini=false, isReview=false) {
+  return {
+    type:"typing", isMini, isReview, subtype:"pinyin",
+    prompt:`Type the <strong>pinyin</strong> for <span class='q-word'>${word.hanzi}</span> <span style="color:var(--muted);font-size:0.85em">(${word.meaning})</span>`,
+    correct: stripTones(word.pinyin),
+    correctDisplay: word.pinyin,
+    tip:`Pinyin: ${word.pinyin}`
+  };
+}
+
+function makeTypingMeaning(word, isMini=false, isReview=false) {
+  return {
+    type:"typing", isMini, isReview, subtype:"meaning",
+    prompt:`Type the <strong>English meaning</strong> of <span class='q-word'>${word.hanzi}</span>`,
+    correct: word.meaning.toLowerCase().split(" / ")[0],
+    correctDisplay: word.meaning,
+    tip:`Meaning: ${word.meaning}`
+  };
+}
+
+function makeMatchStep(words) {
+  return {
+    type:"matching",
+    pairs: words.map(w => ({ chinese:w.hanzi, english:w.meaning, pinyin:w.pinyin }))
+  };
+}
+
+function makeSentenceMCQ(word, isReview=false) {
+  const ex = word.example;
+  if (!ex) return makeMCQ_MeaningFromHanzi(word, false, isReview);
+  const distractors = pick(_hskWords.filter(w => w.hanzi !== word.hanzi), 3)
+    .map(w => w.example?.translation || w.meaning);
+  return {
+    type:"sentence_mcq", isReview,
+    sentence: ex.chinese,
+    pinyin:   ex.pinyin,
+    question: `What does this sentence mean?`,
+    options:  shuffle([ex.translation, ...distractors].filter(Boolean)).slice(0, 4),
+    correct:  ex.translation,
+    tip:`The sentence means: "${ex.translation}"`
+  };
+}
+
+function makeWordBankFill(word, isReview=false) {
+  const ex = word.example;
+  if (!ex) return makeMCQ_MeaningFromHanzi(word, false, isReview);
+  const idx = ex.chinese.indexOf(word.hanzi);
+  if (idx === -1) return makeMCQ_HanziFromMeaning(word, false, isReview);
+  const before      = ex.chinese.slice(0, idx);
+  const after       = ex.chinese.slice(idx + word.hanzi.length);
+  const distractors = pick(_hskWords.filter(w => w.hanzi !== word.hanzi), 3).map(w => w.hanzi);
+  return {
+    type:"word_bank", isReview, before, after,
+    hint: ex.translation,
+    correct: word.hanzi,
+    options: shuffle([word.hanzi, ...distractors]),
+    tip:`The missing word is ${word.hanzi} (${word.pinyin}) — ${word.meaning}.`
+  };
+}
+
+function randomExercise(word, isMini=false, isReview=false) {
+  const types = ["mcq_meaning","mcq_hanzi","mcq_pinyin","typing_pinyin","sentence_mcq","word_bank"];
+  switch(rand(types)) {
+    case "mcq_meaning":   return makeMCQ_MeaningFromHanzi(word, isMini, isReview);
+    case "mcq_hanzi":     return makeMCQ_HanziFromMeaning(word, isMini, isReview);
+    case "mcq_pinyin":    return makeMCQ_PinyinFromHanzi(word, isMini, isReview);
+    case "typing_pinyin": return makeTypingPinyin(word, isMini, isReview);
+    case "sentence_mcq":  return makeSentenceMCQ(word, isReview);
+    case "word_bank":     return makeWordBankFill(word, isReview);
+    default:              return makeMCQ_MeaningFromHanzi(word, isMini, isReview);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// LESSON GENERATOR — driven entirely by HSK data
+// ═══════════════════════════════════════════════════════════
+function generateLesson(lessonNum) {
+  const config      = getLessonConfig(lessonNum);
+  const steps       = [];
+  const lessonWords = getNewWordsForLesson(lessonNum);
+
+  // ── CHECKPOINT LESSON
+  if (config.isCheckpoint) {
+    const reviewWords = getReviewWords(lessonNum, 10);
+    const useWords    = reviewWords.length >= 5 ? reviewWords : shuffle(lessonWords);
+
+    steps.push({ type:"checkpoint_intro", lessonNum, totalQ: useWords.length });
+
+    useWords.forEach((word, i) => {
+      const exTypes = [
+        makeMCQ_MeaningFromHanzi(word, false, true),
+        makeMCQ_HanziFromMeaning(word, false, true),
+        makeMCQ_PinyinFromHanzi(word, false, true),
+        makeTypingPinyin(word, false, true),
+        makeSentenceMCQ(word, true),
+        makeWordBankFill(word, true),
+      ];
+      steps.push(exTypes[i % exTypes.length]);
+    });
+
+    steps.push(makeMatchStep(shuffle(useWords).slice(0, 4)));
+
+    return {
+      title: `Checkpoint ${Math.ceil(lessonNum / 6)}`,
+      words: useWords.map(w => w.hanzi),
+      steps, config
+    };
+  }
+
+  // ── REGULAR LESSON
+  const newWords    = shuffle(lessonWords).slice(0, config.newWordCount);
+  const reviewWords = config.reviewWordCount > 0 ? getReviewWords(lessonNum, config.reviewWordCount) : [];
+
+  // 1. Introduce each new word + 2 immediate exercises
+  newWords.forEach(word => {
+    steps.push(makeWordStep(word, false));
+    steps.push(Math.random() > 0.4
+      ? makeMCQ_MeaningFromHanzi(word, true, false)
+      : makeTypingPinyin(word, true, false)
+    );
+    steps.push(rand([
+      makeMCQ_HanziFromMeaning(word, true, false),
+      makeWordBankFill(word, true, false),
+    ]));
+  });
+
+  // 2. Grammar note — inserted at midpoint
+  if (config.grammarCount > 0) {
+    const g = getGrammarForLesson(lessonNum);
+    if (g) {
+      const insertAt = Math.max(1, Math.floor(steps.length / 2));
+      steps.splice(insertAt, 0, { type:"grammar", ...g });
+    }
+  }
+
+  // 3. Review section
+  if (reviewWords.length > 0) {
+    steps.push({ type:"review_intro", words: reviewWords });
+    reviewWords.forEach(word => {
+      steps.push(makeWordStep(word, true));
+      steps.push(randomExercise(word, true, true));
+    });
+  }
+
+  // 4. Mixed matching round
+  const matchPool = shuffle([...newWords, ...reviewWords]).slice(0, 4);
+  if (matchPool.length >= 3) {
+    steps.push(makeMatchStep(matchPool));
+  }
+
+  // 5. Final blast: sentence MCQ or word bank for each new word
+  newWords.forEach(word => {
+    steps.push(rand([makeSentenceMCQ(word), makeWordBankFill(word)]));
+  });
+
+  return {
+    title: buildLessonTitle(lessonNum),
+    words: [...newWords.map(w => w.hanzi), ...reviewWords.map(w => w.hanzi)],
+    steps, config
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// HEARTS
+// ═══════════════════════════════════════════════════════════
+function renderHearts() {
+  heartsEl.innerHTML = "";
+  for (let i = 0; i < 5; i++) {
+    const h = document.createElement("span");
+    h.className = "heart-icon" + (i >= hearts ? " lost" : "");
+    h.textContent = "❤️";
+    heartsEl.appendChild(h);
+  }
+}
+function loseHeart() {
+  hearts = Math.max(0, hearts - 1);
+  localStorage.setItem(key("hearts"), hearts);
+  renderHearts();
+  if (hearts === 0) setTimeout(() => overlay.classList.add("show"), 400);
+}
+function watchAd() {
+  overlay.classList.remove("show");
+  hearts = 5;
+  localStorage.setItem(key("hearts"), hearts);
+  renderHearts();
+  showToast("❤️ Hearts restored!");
+  if (currentStep === 0 && !stepArea.querySelector(".step-visible")) renderStep(0);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROGRESS
+// ═══════════════════════════════════════════════════════════
+function updateProgress() {
+  const pct = steps.length ? ((currentStep + 1) / steps.length) * 100 : 0;
+  progressBar.style.width = Math.min(pct, 100) + "%";
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER STEP
+// ═══════════════════════════════════════════════════════════
+function renderStep(idx) {
+  answeredStep     = false;
+  typingAnswered   = false;
+  wordBankAnswered = false;
+  matchState       = null;
+  updateProgress();
+
+  // Clear loading spinner on first step, slide-out on subsequent steps
+  if (idx === 0) {
+    stepArea.innerHTML = "";
+  } else {
+    const old = stepArea.querySelector(".step-visible");
+    if (old) {
+      old.classList.remove("step-visible");
+      old.classList.add("step-exit");
+      setTimeout(() => old.remove(), 280);
+    }
+  }
+
+  const step = steps[idx];
+  if (!step) return showComplete();
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "step-visible";
+  wrapper.style.display = "contents";
+
+  switch (step.type) {
+    case "word":             buildWordStep(wrapper, step);        break;
+    case "grammar":          buildGrammarStep(wrapper, step);     break;
+    case "multiple_choice":  buildMCStep(wrapper, step);          break;
+    case "matching":         buildMatchStep(wrapper, step);       break;
+    case "typing":           buildTypingStep(wrapper, step);      break;
+    case "sentence_mcq":     buildSentenceMCQ(wrapper, step);     break;
+    case "word_bank":        buildWordBank(wrapper, step);        break;
+    case "checkpoint_intro": buildCheckpointIntro(wrapper, step); break;
+    case "review_intro":     buildReviewIntro(wrapper, step);     break;
+    default:                 buildGrammarStep(wrapper, step);     break;
+  }
+
+  stepArea.appendChild(wrapper);
+  renderBottom(step, false, step.type === "typing");
+}
+
+// ═══════════════════════════════════════════════════════════
+// WORD STEP
+// ═══════════════════════════════════════════════════════════
+function buildWordStep(wrap, step) {
+  const reviewClass = step.isReview ? "review-card" : "";
+  const label = step.isReview
+    ? `<div class="review-badge">🔄 Review Word</div>`
+    : `<div class="step-label green">New Word</div>`;
+  wrap.innerHTML = `
+    ${label}
+    <div class="word-card ${reviewClass}">
+      <div class="word-card-top">
+        <div class="word-chinese">${step.hanzi}</div>
+        <button class="btn-audio" id="btn-audio-word" title="Play pronunciation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+        </button>
+      </div>
+      <div class="word-pinyin">${step.pinyin}</div>
+      <div class="word-meaning"><strong>${step.meaning}</strong></div>
+      ${step.example ? `
+      <div class="word-example">
+        <div class="example-label">Example</div>
+        <div class="example-chinese">${step.example.chinese}</div>
+        <div class="example-pinyin">${step.example.pinyin || ""}</div>
+        <div class="example-translation">${step.example.translation}</div>
+      </div>` : ""}
+    </div>
+  `;
+  const audioBtn = wrap.querySelector("#btn-audio-word");
+  if (audioBtn) {
+    audioBtn.addEventListener("click", () => speakChinese(step.hanzi));
+    setTimeout(() => speakChinese(step.hanzi), 300);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// GRAMMAR STEP
+// ═══════════════════════════════════════════════════════════
+function buildGrammarStep(wrap, step) {
+  const examplesHtml = step.examples ? `
+    <div class="grammar-examples">
+      ${step.examples.map(e => `
+        <div class="grammar-ex-item">
+          <div class="grammar-ex-chinese">${e.chinese}</div>
+          <div class="grammar-ex-translation">${e.translation}</div>
+        </div>
+      `).join("")}
+    </div>` : "";
+  const patternHtml = step.pattern ? `<p style="margin-top:10px"><span class="highlight">${step.pattern}</span></p>` : "";
+  wrap.innerHTML = `
+    <div class="step-label purple">Grammar Note</div>
+    <div class="grammar-card purple-card">
+      <div class="grammar-title">${step.title}</div>
+      <div class="grammar-body">${step.explanation}${patternHtml}${examplesHtml}</div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// REVIEW INTRO
+// ═══════════════════════════════════════════════════════════
+function buildReviewIntro(wrap, step) {
+  const wordChips = step.words.map(w =>
+    `<span style="font-family:'Noto Sans SC',sans-serif;font-size:16px;color:var(--yellow)">${w.hanzi}</span>`
+  ).join(", ");
+  wrap.innerHTML = `
+    <div class="review-badge">🔄 Review Section</div>
+    <div class="grammar-card" style="border-color:rgba(251,191,36,.2);background:rgba(251,191,36,.04)">
+      <div class="grammar-title" style="color:var(--yellow)">Let's review previous words!</div>
+      <div class="grammar-body">Time to practice what you've learned. These words will appear: ${wordChips}</div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHECKPOINT INTRO
+// ═══════════════════════════════════════════════════════════
+function buildCheckpointIntro(wrap, step) {
+  checkpointTotal   = step.totalQ;
+  checkpointCorrect = 0;
+  wrap.innerHTML = `
+    <div class="checkpoint-header">
+      <div class="checkpoint-icon">🏁</div>
+      <div class="checkpoint-title">Checkpoint Test</div>
+      <div class="checkpoint-sub">Time to test everything you've learned so far!<br>${step.totalQ} questions · All word types</div>
+    </div>
+    <div class="grammar-card" style="text-align:center">
+      <div class="grammar-body">
+        This checkpoint covers words from the <strong style="color:var(--text)">last few lessons</strong>.<br>
+        Each correct answer earns bonus XP. Let's go! 💪
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MCQ
+// ═══════════════════════════════════════════════════════════
+function buildMCStep(wrap, step) {
+  const isChinese = !!step.chineseOptions;
+  const badge = step.isReview
+    ? `<div class="review-badge">🔄 Review</div>`
+    : step.isMini
+      ? `<div class="mini-quiz-badge">⚡ Quick Check</div>`
+      : `<div class="step-label green">Exercise</div>`;
+  wrap.innerHTML = `
+    ${badge}
+    <div class="exercise-question">${step.question}</div>
+    <div class="options-grid" id="options-grid"></div>
+    <div class="feedback-banner" id="feedback-banner"></div>
+  `;
+  const grid = wrap.querySelector("#options-grid");
+  step.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    if (isChinese) { btn.style.fontFamily = "'Noto Sans SC', sans-serif"; btn.style.fontSize = "17px"; }
+    btn.textContent = opt;
+    btn.onclick = () => handleMCAnswer(btn, opt, step, wrap);
+    grid.appendChild(btn);
+  });
+}
+
+function handleMCAnswer(btn, chosen, step, wrap) {
+  if (answeredStep) return;
+  answeredStep = true;
+  const allBtns   = wrap.querySelectorAll(".option-btn");
+  const isCorrect = chosen === step.correct;
+  const fb        = wrap.querySelector("#feedback-banner");
+  allBtns.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === step.correct) b.classList.add("correct");
+  });
+  if (!isCorrect) {
+    btn.classList.add("wrong");
+    loseHeart();
+    logMistake(step, chosen);
+    const tipHtml = step.tip ? `<span class="fb-tip">💡 ${step.tip}</span>` : "";
+    fb.innerHTML = `<span class="feedback-icon">❌</span><span class="feedback-text"><span class="fb-main">Not quite! The answer is <strong>${step.correct}</strong></span>${tipHtml}</span>`;
+    fb.className = "feedback-banner wrong-fb show";
+  } else {
+    sessionXP += 2;
+    if (step.isReview) checkpointCorrect++;
+    showToast("+2 XP");
+    fb.innerHTML = `<span class="feedback-icon">✅</span><span class="feedback-text"><span class="fb-main">${pickPraise()}</span></span>`;
+    fb.className = "feedback-banner correct-fb show";
+  }
+  renderBottom(step, true);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SENTENCE MCQ
+// ═══════════════════════════════════════════════════════════
+function buildSentenceMCQ(wrap, step) {
+  const badge = step.isReview
+    ? `<div class="review-badge">🔄 Review</div>`
+    : `<div class="step-label green">Reading</div>`;
+  wrap.innerHTML = `
+    ${badge}
+    <div class="sentence-card">
+      <div class="sentence-chinese">${step.sentence}</div>
+      ${step.pinyin ? `<div class="sentence-pinyin">${step.pinyin}</div>` : ""}
+    </div>
+    <div class="exercise-question">${step.question}</div>
+    <div class="options-grid single-col" id="options-grid"></div>
+    <div class="feedback-banner" id="feedback-banner"></div>
+  `;
+  const grid = wrap.querySelector("#options-grid");
+  step.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = opt;
+    btn.onclick = () => handleMCAnswer(btn, opt, step, wrap);
+    grid.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// WORD BANK
+// ═══════════════════════════════════════════════════════════
+function buildWordBank(wrap, step) {
+  const badge = step.isReview ? `<div class="review-badge">🔄 Review</div>` : `<div class="step-label green">Fill in the Blank</div>`;
+  wrap.innerHTML = `
+    ${badge}
+    <div class="fill-sentence">
+      ${step.before}<span class="fill-blank" id="fill-blank">＿</span>${step.after}
+    </div>
+    <div class="step-label" style="font-size:10px;color:var(--soft)">Translation hint: ${step.hint}</div>
+    <div class="word-bank-chips" id="word-bank-chips"></div>
+    <div class="feedback-banner" id="feedback-banner"></div>
+  `;
+  const chipsWrap = wrap.querySelector("#word-bank-chips");
+  step.options.forEach(opt => {
+    const chip = document.createElement("button");
+    chip.className = "word-chip";
+    chip.textContent = opt;
+    chip.onclick = () => handleWordBank(chip, opt, step, wrap);
+    chipsWrap.appendChild(chip);
+  });
+}
+
+function handleWordBank(chip, chosen, step, wrap) {
+  if (wordBankAnswered) return;
+  wordBankAnswered = true;
+  answeredStep     = true;
+  const isCorrect  = chosen === step.correct;
+  const fb    = wrap.querySelector("#feedback-banner");
+  const blank = wrap.querySelector("#fill-blank");
+  wrap.querySelectorAll(".word-chip").forEach(c => c.disabled = true);
+  blank.textContent = chosen;
+  if (!isCorrect) {
+    chip.classList.add("wrong-chip");
+    blank.style.color            = "var(--red)";
+    blank.style.borderBottomColor = "var(--red)";
+    loseHeart();
+    logMistake(step, chosen);
+    const tipHtml = step.tip ? `<span class="fb-tip">💡 ${step.tip}</span>` : "";
+    fb.innerHTML  = `<span class="feedback-icon">❌</span><span class="feedback-text"><span class="fb-main">Incorrect! The answer is <strong style="font-family:'Noto Sans SC',sans-serif">${step.correct}</strong></span>${tipHtml}</span>`;
+    fb.className  = "feedback-banner wrong-fb show";
+  } else {
+    chip.classList.add("correct-chip");
+    blank.style.color = "var(--green)";
+    sessionXP += 2;
+    showToast("+2 XP");
+    fb.innerHTML = `<span class="feedback-icon">✅</span><span class="feedback-text"><span class="fb-main">${pickPraise()}</span></span>`;
+    fb.className = "feedback-banner correct-fb show";
+  }
+  renderBottom(step, true);
+}
+
+// ═══════════════════════════════════════════════════════════
+// TYPING STEP
+// ═══════════════════════════════════════════════════════════
+function buildTypingStep(wrap, step) {
+  const badge = step.isReview
+    ? `<div class="review-badge">🔄 Review</div>`
+    : step.isMini
+      ? `<div class="mini-quiz-badge">⚡ Quick Check</div>`
+      : `<div class="step-label green">Type It</div>`;
+  const hint = step.subtype === "meaning" ? "Type the English meaning" : "Type without tone marks (e.g. ni hao)";
+  wrap.innerHTML = `
+    ${badge}
+    <div class="exercise-question">${step.prompt}</div>
+    <div class="typing-input-wrap">
+      <input class="typing-input" id="typing-input" type="text" placeholder="Type your answer…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <div class="typing-hint">${hint}</div>
+    </div>
+    <div class="feedback-banner" id="feedback-banner"></div>
+  `;
+  const input = wrap.querySelector("#typing-input");
+  input.addEventListener("keydown", e => { if (e.key === "Enter") submitTyping(wrap, step); });
+  input.focus();
+}
+
+function submitTyping(wrap, step) {
+  if (typingAnswered) return;
+  const input = wrap.querySelector("#typing-input");
+  const raw   = input.value.trim().toLowerCase();
+  if (!raw) return;
+  typingAnswered = true;
+  answeredStep   = true;
+  const normalise = s => s.replace(/\s+/g," ").trim().toLowerCase();
+  const isCorrect = normalise(raw) === normalise(step.correct) || stripTones(raw) === stripTones(step.correct);
+  const fb = wrap.querySelector("#feedback-banner");
+  input.disabled = true;
+  if (!isCorrect) {
+    input.classList.add("wrong-input");
+    loseHeart();
+    logMistake(step, raw);
+    const tipHtml = step.tip ? `<span class="fb-tip">💡 ${step.tip}</span>` : "";
+    fb.innerHTML  = `<span class="feedback-icon">❌</span><span class="feedback-text"><span class="fb-main">The answer is <strong>${step.correctDisplay}</strong></span>${tipHtml}</span>`;
+    fb.className  = "feedback-banner wrong-fb show";
+  } else {
+    input.classList.add("correct-input");
+    sessionXP += 2;
+    showToast("+2 XP");
+    fb.innerHTML = `<span class="feedback-icon">✅</span><span class="feedback-text"><span class="fb-main">${pickPraise()}</span></span>`;
+    fb.className = "feedback-banner correct-fb show";
+  }
+  renderBottom(step, true);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MATCHING STEP
+// ═══════════════════════════════════════════════════════════
+function buildMatchStep(wrap, step) {
+  matchState = {
+    pairs: step.pairs,
+    selectedChinese: null, selectedEnglish: null,
+    matched: new Set(), total: step.pairs.length
+  };
+  const chineseItems = shuffle(step.pairs);
+  const englishItems = shuffle(step.pairs);
+  wrap.innerHTML = `
+    <div class="step-label green">Match the Words</div>
+    <div class="exercise-question">Match each Chinese word to its meaning</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="match-col-label">Chinese</div>
+      <div class="match-col-label">English</div>
+    </div>
+    <div class="match-grid" id="match-grid"></div>
+    <div class="feedback-banner" id="feedback-banner"></div>
+  `;
+  const grid = wrap.querySelector("#match-grid");
+  chineseItems.forEach(p => {
+    const el = document.createElement("div");
+    el.className  = "match-item chinese-item";
+    el.dataset.key  = p.chinese; el.dataset.side = "chinese";
+    el.textContent  = p.chinese;
+    el.onclick = () => handleMatchClick(el, wrap, step);
+    grid.appendChild(el);
+  });
+  englishItems.forEach(p => {
+    const el = document.createElement("div");
+    el.className  = "match-item";
+    el.dataset.key  = p.chinese; el.dataset.side = "english";
+    el.textContent  = p.english;
+    el.onclick = () => handleMatchClick(el, wrap, step);
+    grid.appendChild(el);
+  });
+}
+
+function handleMatchClick(el, wrap, step) {
+  const ms = matchState;
+  if (!ms || el.classList.contains("matched") || el.classList.contains("disabled-match")) return;
+  const side = el.dataset.side;
+  if (el.classList.contains("selected")) {
+    el.classList.remove("selected");
+    if (side === "chinese") ms.selectedChinese = null;
+    else ms.selectedEnglish = null;
+    return;
+  }
+  if (side === "chinese") {
+    if (ms.selectedChinese) ms.selectedChinese.classList.remove("selected");
+    ms.selectedChinese = el;
+  } else {
+    if (ms.selectedEnglish) ms.selectedEnglish.classList.remove("selected");
+    ms.selectedEnglish = el;
+  }
+  el.classList.add("selected");
+
+  if (ms.selectedChinese && ms.selectedEnglish) {
+    const cKey = ms.selectedChinese.dataset.key;
+    const eKey = ms.selectedEnglish.dataset.key;
+    const fb   = wrap.querySelector("#feedback-banner");
+    if (cKey === eKey) {
+      ms.selectedChinese.classList.remove("selected"); ms.selectedEnglish.classList.remove("selected");
+      ms.selectedChinese.classList.add("matched");     ms.selectedEnglish.classList.add("matched");
+      ms.matched.add(cKey);
+      ms.selectedChinese = null; ms.selectedEnglish = null;
+      if (ms.matched.size === ms.total) {
+        answeredStep = true;
+        sessionXP += 2; showToast("+2 XP");
+        fb.innerHTML = `<span class="feedback-icon">✅</span><span class="feedback-text"><span class="fb-main">🔥 All matched! Perfect!</span></span>`;
+        fb.className = "feedback-banner correct-fb show";
+        renderBottom(step, true);
+      }
+    } else {
+      loseHeart();
+      logMistake({ type:"matching", correct:cKey }, ms.selectedEnglish.textContent);
+      const sc = ms.selectedChinese, se = ms.selectedEnglish;
+      sc.classList.remove("selected"); se.classList.remove("selected");
+      sc.classList.add("wrong-shake"); se.classList.add("wrong-shake");
+      setTimeout(() => { sc.classList.remove("wrong-shake"); se.classList.remove("wrong-shake"); }, 450);
+      ms.selectedChinese = null; ms.selectedEnglish = null;
+      fb.innerHTML = `<span class="feedback-icon">❌</span><span class="feedback-text"><span class="fb-main">Not a match — try again!</span></span>`;
+      fb.className = "feedback-banner wrong-fb show";
+      setTimeout(() => { fb.className = "feedback-banner"; }, 1500);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOTTOM BUTTONS
+// ═══════════════════════════════════════════════════════════
+function renderBottom(step, answered=false, isTyping=false) {
+  bottomArea.innerHTML = "";
+  const isExercise = ["multiple_choice","matching","typing","sentence_mcq","word_bank"].includes(step.type);
+  const isPassive  = ["word","grammar","checkpoint_intro","review_intro"].includes(step.type);
+  const isLast     = currentStep >= steps.length - 1;
+
+  if (isPassive || (isExercise && answered)) {
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.textContent = isLast ? "Finish Lesson 🎉" : "Continue →";
+    btn.onclick = nextStep;
+    bottomArea.appendChild(btn);
+  } else if (isTyping) {
+    const btn = document.createElement("button");
+    btn.className   = "btn-primary";
+    btn.textContent = "Check Answer";
+    btn.onclick = () => {
+      const wrap = stepArea.querySelector(".step-visible");
+      if (wrap) submitTyping(wrap, step);
+    };
+    bottomArea.appendChild(btn);
+  } else if (!answered) {
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.disabled  = true;
+    btn.textContent = "Select an answer";
+    bottomArea.appendChild(btn);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function nextStep() {
+  currentStep++;
+  if (currentStep >= steps.length) showComplete();
+  else renderStep(currentStep);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MISTAKES
+// ═══════════════════════════════════════════════════════════
+function logMistake(step, userAnswer) {
+  const entry = { sessionId, lessonId, type:step.type||"mcq", correct:step.correct, userAnswer, timestamp:Date.now() };
+  sessionMistakes.push(entry);
+  allMistakes.push(entry);
+  localStorage.setItem(key("mistakes"), JSON.stringify(allMistakes));
+}
+
+// ═══════════════════════════════════════════════════════════
+// COMPLETE SCREEN
+// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// LEADERBOARD SYNC
+// ═══════════════════════════════════════════════════════════
+async function saveXP(xpEarned) {
+  try {
+    // 1. Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error("saveXP: no authenticated user", authError);
+      return;
+    }
+    console.log("saveXP: user =", user.id, "| xpEarned =", xpEarned);
+
+    // 2. Get username from profiles table, fallback to "Learner"
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle();
+    const username = profile?.username || "Learner";
+    console.log("saveXP: username =", username);
+
+    // 3. Get existing leaderboard row to accumulate XP
+    const { data: existing } = await supabase
+      .from("leaderboard")
+      .select("xp")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    console.log("saveXP: existing leaderboard row =", existing);
+
+    const currentXP = existing?.xp || 0;
+    const newXP     = currentXP + xpEarned;
+    console.log("saveXP: saving newXP =", newXP);
+
+    // 4. Upsert into leaderboard — insert if new, update if exists
+    const { error } = await supabase
+      .from("leaderboard")
+      .upsert(
+        { user_id: user.id, xp: newXP, username: username },
+        { onConflict: "user_id" }
+      );
+
+    if (error) console.error("saveXP: upsert error:", error);
+    else       console.log("saveXP: leaderboard updated successfully, XP =", newXP);
+  } catch(e) {
+    console.error("saveXP: unexpected error:", e);
+  }
+}
+
+function showComplete() {
+  progressBar.style.width = "100%";
+  stepArea.innerHTML  = "";
+  bottomArea.innerHTML = "";
+
+  let earnedXP = sessionXP;
+  if (!alreadyCompleted) {
+    earnedXP += 10;
+    xp += earnedXP;
+    localStorage.setItem(key("completed_lessons"), JSON.stringify([...completedLessons, lessonId]));
+  } else {
+    xp += sessionXP;
+  }
+  localStorage.setItem(key("xp"), xp);
+  saveXP(earnedXP); // Save XP to Supabase leaderboard
+
+  // ── Advance lesson counter
+  const savedLesson = parseInt(localStorage.getItem(key("user_lesson")) || "1", 10);
+  if (lessonId >= savedLesson) {
+    localStorage.setItem(key("user_lesson"), String(lessonId + 1));
+  }
+
+  // ── Daily challenge count (only once per unique lesson)
+  if (!alreadyCompleted) {
+    const today    = new Date().toDateString();
+    const lastDate = localStorage.getItem(key("daily_date"));
+    let   dailyCount = Number(localStorage.getItem(key("daily_done"))) || 0;
+    if (lastDate !== today) {
+      dailyCount = 0;
+      localStorage.setItem(key("daily_date"), today);
+    }
+    dailyCount += 1;
+    localStorage.setItem(key("daily_done"), dailyCount);
+  }
+
+  // ── Streak system
+  const streakToday = new Date().toDateString();
+  const yesterday   = new Date(Date.now() - 864e5).toDateString();
+  const lastStreakDay = localStorage.getItem(key("streak_day"));
+  let   streak = Number(localStorage.getItem(key("streak"))) || 0;
+
+  if (lastStreakDay === streakToday) {
+    // Already counted today — do nothing
+  } else if (lastStreakDay === yesterday) {
+    streak += 1;
+    localStorage.setItem(key("streak"),     String(streak));
+    localStorage.setItem(key("streak_day"), streakToday);
+  } else {
+    streak = 1;
+    localStorage.setItem(key("streak"),     "1");
+    localStorage.setItem(key("streak_day"), streakToday);
+  }
+
+  const accuracy     = calculateAccuracy();
+  const mistakeCount = sessionMistakes.length;
+  const wordsLearned = lesson.words.length;
+
+  const isCheckpoint = lesson.config.isCheckpoint;
+  const cpScore = isCheckpoint && checkpointTotal > 0
+    ? Math.round((checkpointCorrect / checkpointTotal) * 100)
+    : null;
+
+  let ringHtml = "";
+  if (cpScore !== null) {
+    const circ   = 2 * Math.PI * 52;
+    const offset = circ * (1 - cpScore / 100);
+    ringHtml = `
+      <div class="checkpoint-result">
+        <div class="score-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle class="score-ring-track" cx="60" cy="60" r="52"/>
+            <circle class="score-ring-fill"  cx="60" cy="60" r="52"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+          </svg>
+          <div class="score-ring-text">
+            <div class="score-pct">${cpScore}%</div>
+            <div class="score-sub">Score</div>
+          </div>
+        </div>
+        <div style="font-size:14px;color:var(--muted)">Checkpoint ${Math.ceil(lessonId/6)} complete!</div>
+      </div>`;
+  }
+
+  stepArea.innerHTML = `
+    <div class="complete-screen">
+      <div class="complete-emoji">${isCheckpoint ? "🏆" : "🎉"}</div>
+      <div class="complete-title">${isCheckpoint ? "Checkpoint Passed!" : "Lesson Complete!"}</div>
+      <div class="complete-sub">${lesson.title}</div>
+      <div style="font-size:13px;color:var(--yellow);font-weight:700;letter-spacing:.02em">🔥 ${streak} day streak</div>
+      ${ringHtml}
+      <div class="xp-pill" id="xp-pill">+${earnedXP} XP</div>
+      <div class="complete-stats">
+        <div class="stat-box"><div class="stat-val">${wordsLearned}</div><div class="stat-label">Words</div></div>
+        <div class="stat-box"><div class="stat-val">${mistakeCount}</div><div class="stat-label">Mistakes</div></div>
+        <div class="stat-box"><div class="stat-val">${accuracy}%</div><div class="stat-label">Accuracy</div></div>
+        <div class="stat-box"><div class="stat-val">${hearts}<span style="font-size:12px"> ❤️</span></div><div class="stat-label">Hearts</div></div>
+      </div>
+      <div class="complete-actions" style="width:100%">
+        <button class="btn-primary" id="btn-continue-lesson">Continue</button>
+        <button class="btn-ad" id="btn-double-xp">🎥 Watch Ad for +10 Bonus XP</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("btn-continue-lesson").onclick = () => { window.location.href = "dashboard.html"; };
+  document.getElementById("btn-double-xp").onclick = doubleXP;
+}
+
+function doubleXP() {
+  const btn = document.getElementById("btn-double-xp");
+  if (!btn || btn.disabled) return;
+  btn.disabled    = true;
+  btn.textContent = "🎥 Loading ad...";
+  setTimeout(() => {
+    xp += 10;
+    localStorage.setItem(key("xp"), xp);
+    saveXP(10); // Save bonus XP to leaderboard
+    const pill = document.getElementById("xp-pill");
+    if (pill) { const cur = parseInt(pill.textContent.replace(/\D/g,"")) || 0; pill.textContent = `+${cur + 10} XP 🔥`; }
+    btn.textContent = "✅ Bonus XP Claimed!";
+    showToast("+10 Bonus XP 🔥");
+  }, 1200);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACCURACY
+// ═══════════════════════════════════════════════════════════
+function calculateAccuracy() {
+  const exerciseSteps = steps.filter(s => ["multiple_choice","matching","typing","sentence_mcq","word_bank"].includes(s.type));
+  if (!exerciseSteps.length) return 100;
+  const wrongs   = sessionMistakes.length;
+  const attempts = exerciseSteps.length + wrongs;
+  return Math.round((exerciseSteps.length / attempts) * 100);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PRAISE + TOAST
+// ═══════════════════════════════════════════════════════════
+const PRAISES = ["🔥 Perfect!","Nice! You got it!","Excellent!","🎯 Spot on!","Keep it up!","Great memory!","You've got this!","💪 Nailed it!","Well done!","🌟 Outstanding!"];
+let lastPraiseIdx = -1;
+function pickPraise() {
+  let idx;
+  do { idx = Math.floor(Math.random() * PRAISES.length); } while (idx === lastPraiseIdx);
+  lastPraiseIdx = idx;
+  return PRAISES[idx];
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("xp-toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SPEECH — Web Speech API (Chinese TTS)
+// ═══════════════════════════════════════════════════════════
+function speakChinese(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utter  = new SpeechSynthesisUtterance(text);
+  utter.lang   = "zh-CN";
+  utter.rate   = 0.85;
+  utter.pitch  = 1;
+  const voices  = window.speechSynthesis.getVoices();
+  const zhVoice = voices.find(v =>
+    v.lang === "zh-CN" || v.lang === "zh_CN" ||
+    v.lang.startsWith("zh") ||
+    v.name.toLowerCase().includes("chinese") ||
+    v.name.toLowerCase().includes("mandarin")
+  );
+  if (zhVoice) utter.voice = zhVoice;
+  window.speechSynthesis.speak(utter);
+}
+
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", () => window.speechSynthesis.getVoices());
+}
+</script>
+</body>
+</html>
