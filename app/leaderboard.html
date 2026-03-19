@@ -129,6 +129,30 @@
   .empty-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:72px 24px;gap:12px;text-align:center;animation:fadeUp .4s ease both}
   .empty-emoji{font-size:56px}.empty-title{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text)}.empty-sub{font-size:13px;color:var(--text-muted);line-height:1.6;max-width:260px}
   .error-wrap{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-sm);padding:16px 18px;font-size:13px;color:#f87171;font-family:'Nunito',sans-serif;font-weight:700;text-align:center;animation:fadeUp .3s ease both}
+  /* WEEKLY TIMER */
+  .weekly-timer{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;animation:fadeUp .3s ease both}
+  .timer-left{display:flex;align-items:center;gap:8px}
+  .timer-icon{font-size:16px}
+  .timer-label{font-size:11px;font-weight:700;color:var(--text-muted);font-family:'Nunito',sans-serif}
+  .timer-value{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--gold);letter-spacing:.02em}
+  .timer-reset{font-size:10px;color:var(--text-muted);font-weight:600}
+
+  /* NEXT TARGET */
+  .next-target{border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(74,222,128,.1),rgba(74,222,128,.04));border:1px solid rgba(74,222,128,.2);animation:fadeUp .38s ease .06s both}
+  .next-target-icon{font-size:22px;flex-shrink:0}
+  .next-target-info{flex:1;min-width:0}
+  .next-target-label{font-size:10px;font-weight:800;color:rgba(74,222,128,.7);letter-spacing:.1em;text-transform:uppercase}
+  .next-target-text{font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--green);margin-top:1px}
+  .next-target-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+  .next-target-xp{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--green);flex-shrink:0}
+
+  /* DANGER ZONE — stronger when it's YOU */
+  .lb-row.danger.is-me{border-color:rgba(248,113,113,.55) !important;background:rgba(248,113,113,.14) !important;box-shadow:0 0 0 1px rgba(248,113,113,.12),0 0 16px rgba(248,113,113,.08) !important}
+  .lb-row.danger.is-me .lb-name-text{color:#fca5a5 !important}
+  .lb-row.danger.is-me .lb-xp{color:var(--rose) !important}
+  .lb-row.danger.is-me .lb-rank{color:var(--rose) !important}
+  .danger-warning{font-size:10px;color:var(--rose);font-weight:700;margin-top:2px;font-family:'Nunito',sans-serif}
+
   @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -215,7 +239,52 @@
       <div class="league-icon">${league.icon}</div>`;
     main.appendChild(banner);
 
-    // 2 — YOU CARD
+    // 1b — WEEKLY TIMER
+    const timerEl = document.createElement("div");
+    timerEl.className = "weekly-timer";
+    timerEl.innerHTML = `
+      <div class="timer-left">
+        <div class="timer-icon">⏳</div>
+        <div>
+          <div class="timer-label">Week Resets In</div>
+          <div class="timer-value" id="timer-val">Loading…</div>
+        </div>
+      </div>
+      <div class="timer-reset">League resets weekly</div>`;
+    main.appendChild(timerEl);
+
+    // Start live countdown
+    (function startTimer() {
+      function getNextMonday() {
+        const now = new Date();
+        const day = now.getDay(); // 0=Sun,1=Mon...
+        const daysUntil = day === 1 ? 7 : (8 - day) % 7 || 7;
+        const next = new Date(now);
+        next.setDate(now.getDate() + daysUntil);
+        next.setHours(0, 0, 0, 0);
+        return next;
+      }
+      function fmt(ms) {
+        const total = Math.floor(ms / 1000);
+        const d = Math.floor(total / 86400);
+        const h = Math.floor((total % 86400) / 3600);
+        const m = Math.floor((total % 3600) / 60);
+        const s = total % 60;
+        if (d > 0) return d + "d " + h + "h left";
+        if (h > 0) return h + "h " + m + "m left";
+        return m + "m " + s + "s left";
+      }
+      function tick() {
+        const el = document.getElementById("timer-val");
+        if (!el) return;
+        const diff = getNextMonday() - new Date();
+        el.textContent = diff > 0 ? fmt(diff) : "Resetting…";
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+
+    // 2 — YOU CARD + NEXT TARGET
     if (currentUserId) {
       const move    = myData ? getRankMovement(currentUserId, myRank) : {dir:"same",label:"—"};
       const youCard = document.createElement("div");
@@ -241,6 +310,36 @@
           <div class="you-xp">Complete a lesson to join!</div>
         </div>`;
       main.appendChild(youCard);
+
+      // NEXT TARGET card
+      if (myData && myRank > 1) {
+        const above     = users[myIdx - 1];
+        const xpNeeded  = (above.xp || 0) - (myData.xp || 0) + 1;
+        const aboveName = displayName(above);
+        const aboveRank = myRank - 1;
+        const targetEl  = document.createElement("div");
+        targetEl.className = "next-target";
+        targetEl.innerHTML = `
+          <div class="next-target-icon">🔥</div>
+          <div class="next-target-info">
+            <div class="next-target-label">Next Target</div>
+            <div class="next-target-text">${xpNeeded} XP to reach #${aboveRank}</div>
+            <div class="next-target-sub">Beat ${aboveName} · ${above.xp||0} XP</div>
+          </div>
+          <div class="next-target-xp">+${xpNeeded}</div>`;
+        main.appendChild(targetEl);
+      } else if (myData && myRank === 1) {
+        const targetEl = document.createElement("div");
+        targetEl.className = "next-target";
+        targetEl.innerHTML = `
+          <div class="next-target-icon">👑</div>
+          <div class="next-target-info">
+            <div class="next-target-label">You're #1</div>
+            <div class="next-target-text">Defend your throne!</div>
+            <div class="next-target-sub">Keep earning XP to stay on top</div>
+          </div>`;
+        main.appendChild(targetEl);
+      }
     }
 
     // 3 — PODIUM (top 3)
@@ -301,7 +400,8 @@
               <span class="lb-name-text">${displayName(u)}</span>
               ${isMe?'<span class="you-badge-inline">YOU</span>':""}
             </div>
-            <div class="lb-sub">${rank<=10?"⚡ Top 10":"📚 Studying"}${isDanger?" · At risk of demotion":""}</div>
+            <div class="lb-sub">${rank<=10?"⚡ Top 10":"📚 Studying"}${isDanger&&!isMe?" · At risk of demotion":""}</div>
+            ${isDanger&&isMe?'<div class="danger-warning">⚠️ You will be demoted if you stay here!</div>':""}
           </div>
           <div class="lb-right">
             <div class="lb-xp"><span class="xi">⚡</span> ${xp}</div>
