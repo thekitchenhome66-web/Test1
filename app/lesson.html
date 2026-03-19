@@ -1610,7 +1610,7 @@ async function updateLeaderboard(xpEarned = 10) {
       .from("leaderboard")
       .select("xp")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     const currentXP = existing?.xp || 0;
     const newXP     = currentXP + xpEarned;
@@ -1624,7 +1624,7 @@ async function updateLeaderboard(xpEarned = 10) {
       }, { onConflict: "user_id" });
 
     if (error) console.error("updateLeaderboard error:", error);
-    else       console.log("Leaderboard updated:", username, "→", newXP, "XP");
+    else       console.log("Leaderboard updated:", newXP);
   } catch(e) {
     console.error("updateLeaderboard error:", e);
   }
