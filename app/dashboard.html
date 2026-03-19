@@ -855,9 +855,7 @@
 <div class="page" id="page-profile">
   <div class="placeholder-page">
     <div class="ph-icon">👤</div>
-    <h2>Profile</h2>
-    <p>Your stats, badges and history<br/>will appear here.</p>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="window.location.href='/app/profile.html'">Open Profile →</button>
+    <h2>Loading Profile…</h2>
   </div>
 </div>
 
@@ -875,7 +873,7 @@
     <span class="nav-icon">🏆</span>
     <span class="nav-label">Leaderboard</span>
   </a>
-  <a class="nav-item" id="nav-profile" href="#" onclick="switchTab('profile');return false">
+  <a class="nav-item" id="nav-profile" href="/app/profile.html">
     <span class="nav-icon">👤</span>
     <span class="nav-label">Profile</span>
   </a>
@@ -1579,112 +1577,88 @@ function render() {
   HSK_LEVELS.forEach(hsk => list.appendChild(buildHSK(hsk)));
 }
 
-initUserId().then(() => checkAndShowUsernamePrompt());
+initUserId().then(()=>checkUsernamePrompt());
 window.addEventListener('load', () => {
   const active = document.querySelector('.active-node');
   if (active) setTimeout(() => active.scrollIntoView({behavior:'smooth',block:'center'}), 400);
 });
-
-/* ─── USERNAME SETUP ─────────────────────────────────── */
-async function checkAndShowUsernamePrompt() {
-  if (!_userId || _userId === 'anonymous') return;
-
-  // Check if we've already set a username this session
-  const alreadySet = localStorage.getItem(`username_set_${_userId}`);
-  if (alreadySet) return;
-
-  // Check leaderboard for existing username
-  try {
-    const { data: row } = await window._supabaseClient
-      .from('leaderboard')
-      .select('username')
-      .eq('user_id', _userId)
-      .maybeSingle();
-
-    if (row?.username && row.username !== 'Learner') {
-      localStorage.setItem(`username_set_${_userId}`, '1');
-      return; // Already has a real username
-    }
-  } catch(e) { /* non-fatal */ }
-
-  // Show popup after a short delay so dashboard renders first
-  setTimeout(() => {
-    const overlay = document.getElementById('username-overlay');
-    if (overlay) {
-      overlay.style.display = 'flex';
-      overlay.style.alignItems = 'center';
-      overlay.style.justifyContent = 'center';
-      overlay.style.padding = '24px';
-      overlay.style.background = 'rgba(0,0,0,.75)';
-      overlay.style.backdropFilter = 'blur(8px)';
-      overlay.classList.add('visible');
-      setTimeout(() => {
-        const inp = document.getElementById('username-input');
-        if (inp) inp.focus();
-      }, 300);
-    }
-  }, 1200);
-}
-
-async function saveUsername() {
-  const inp = document.getElementById('username-input');
-  const val = inp ? inp.value.trim() : '';
-  if (val.length < 2) {
-    inp.style.borderColor = 'rgba(248,113,113,.6)';
-    inp.placeholder = 'At least 2 characters!';
-    return;
-  }
-
-  const btn = document.getElementById('btn-save-username');
-  btn.textContent = 'Saving…'; btn.disabled = true;
-
-  try {
-    // Save to leaderboard if row exists, else will be set on next lesson complete
-    const sb = window._supabaseClient;
-    const { data: existing } = await sb.from('leaderboard').select('user_id').eq('user_id', _userId).maybeSingle();
-    if (existing) {
-      await sb.from('leaderboard').update({ username: val }).eq('user_id', _userId);
-    }
-    localStorage.setItem(`username_${_userId}`, val);
-    localStorage.setItem(`username_set_${_userId}`, '1');
-    document.getElementById('username-overlay').classList.remove('visible');
-    setTimeout(() => { document.getElementById('username-overlay').style.display = 'none'; }, 200);
-  } catch(e) {
-    console.warn('Username save error:', e);
-    localStorage.setItem(`username_${_userId}`, val);
-    localStorage.setItem(`username_set_${_userId}`, '1');
-    document.getElementById('username-overlay').classList.remove('visible');
-    setTimeout(() => { document.getElementById('username-overlay').style.display = 'none'; }, 200);
-  }
-}
-
-function skipUsername() {
-  if (_userId) localStorage.setItem(`username_set_${_userId}`, '1');
-  document.getElementById('username-overlay').classList.remove('visible');
-  setTimeout(() => { document.getElementById('username-overlay').style.display = 'none'; }, 200);
-}
-
 </script>
 
 <!-- ══ USERNAME SETUP MODAL ════════════════════════════ -->
-<div class="overlay" id="username-overlay" style="display:none;z-index:200">
-  <div class="modal" id="username-modal" style="max-width:360px;padding:28px 24px 24px">
-    <div style="font-size:42px;text-align:center;margin-bottom:4px">🐼</div>
-    <div class="modal-title" style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text);text-align:center;margin-bottom:6px;letter-spacing:-.3px">What should we call you?</div>
-    <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:20px;line-height:1.5">Your name appears on the leaderboard.<br/>You can change it anytime in your profile.</div>
-    <input id="username-input"
-      type="text" maxlength="20" autocomplete="off" spellcheck="false"
-      placeholder="Enter your username…"
-      style="width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:14px 16px;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;color:var(--text);outline:none;caret-color:var(--green);transition:border-color .2s;box-sizing:border-box"
-      oninput="document.getElementById('username-input').style.borderColor='rgba(74,222,128,.5)'"
-    />
-    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-weight:600">2–20 characters · visible to other learners</div>
-    <div style="display:flex;gap:10px;margin-top:20px">
-      <button onclick="skipUsername()" style="flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:13px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text-muted);cursor:pointer">Skip</button>
-      <button onclick="saveUsername()" id="btn-save-username" style="flex:2;background:var(--green);border:none;border-radius:12px;padding:13px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:#0f1923;cursor:pointer;box-shadow:0 4px 16px rgba(74,222,128,.28)">Let's Go! 🚀</button>
+<style>
+.username-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s}
+.username-overlay.show{opacity:1;pointer-events:all}
+.username-sheet{background:var(--card);border:1px solid var(--border2);border-radius:24px;padding:28px 24px 28px;width:100%;max-width:360px;transform:translateY(20px) scale(.97);transition:transform .3s cubic-bezier(.4,0,.2,1);text-align:center}
+.username-overlay.show .username-sheet{transform:translateY(0) scale(1)}
+</style>
+<div class="username-overlay" id="un-overlay">
+  <div class="username-sheet">
+    <div style="font-size:46px;margin-bottom:8px">🐼</div>
+    <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text);margin-bottom:6px;letter-spacing:-.3px">What should we call you?</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.55">Your name shows on the leaderboard.<br/>You can change it anytime in Profile.</div>
+    <input id="un-input" type="text" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Enter your username…"
+      style="width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:13px 16px;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;color:var(--text);outline:none;caret-color:var(--green);box-sizing:border-box;transition:border-color .2s"
+      onfocus="this.style.borderColor='rgba(74,222,128,.5)'" onblur="this.style.borderColor='var(--border2)'"
+      onkeydown="if(event.key==='Enter')saveUN()"/>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-weight:600;text-align:left">2–20 characters · visible to other learners</div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="skipUN()" style="flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text-muted);cursor:pointer;transition:all .2s">Skip</button>
+      <button onclick="saveUN()" id="btn-un-save" style="flex:2;background:var(--green);border:none;border-radius:12px;padding:12px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:#0f1923;cursor:pointer;box-shadow:0 4px 16px rgba(74,222,128,.28);transition:all .2s">Let's Go! 🚀</button>
     </div>
   </div>
 </div>
+
+<script>
+/* ─── USERNAME SETUP ─────────────────────────────────── */
+async function checkUsernamePrompt() {
+  if (!_userId || _userId === 'anonymous') return;
+  if (localStorage.getItem('un_set_' + _userId)) return;
+  try {
+    const { data: row } = await window._supabaseClient
+      .from('leaderboard').select('username').eq('user_id', _userId).maybeSingle();
+    if (row?.username && row.username !== 'Learner') {
+      localStorage.setItem('un_set_' + _userId, '1'); return;
+    }
+  } catch(e) {}
+  setTimeout(() => {
+    document.getElementById('un-overlay').classList.add('show');
+    setTimeout(() => document.getElementById('un-input')?.focus(), 300);
+  }, 1200);
+}
+
+function closeUN() {
+  document.getElementById('un-overlay').classList.remove('show');
+}
+
+function skipUN() {
+  if (_userId) localStorage.setItem('un_set_' + _userId, '1');
+  closeUN();
+}
+
+async function saveUN() {
+  const inp = document.getElementById('un-input');
+  const val = inp ? inp.value.trim() : '';
+  if (val.length < 2) {
+    inp.style.borderColor = 'rgba(248,113,113,.6)';
+    inp.focus(); return;
+  }
+  const btn = document.getElementById('btn-un-save');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    const sb = window._supabaseClient;
+    const { data: row } = await sb.from('leaderboard').select('user_id').eq('user_id', _userId).maybeSingle();
+    if (row) {
+      await sb.from('leaderboard').update({ username: val }).eq('user_id', _userId);
+    } else {
+      await sb.from('leaderboard').insert({ user_id: _userId, xp: 0, username: val });
+    }
+  } catch(e) { console.warn('UN save error:', e); }
+  localStorage.setItem('username_' + _userId, val);
+  localStorage.setItem('un_set_' + _userId, '1');
+  btn.textContent = "Let's Go! 🚀"; btn.disabled = false;
+  closeUN();
+}
+</script>
 
 </body>
 </html>
