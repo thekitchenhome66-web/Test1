@@ -1044,10 +1044,10 @@ function loseHeart() {
 }
 function watchAd() {
   overlay.classList.remove("show");
-  hearts = 5;
+  hearts = Math.min(hearts + 1, 5);
   localStorage.setItem(key("hearts"), hearts);
   renderHearts();
-  showToast("❤️ Hearts restored!");
+  showToast("❤️ +1 Heart!");
   if (currentStep === 0 && !stepArea.querySelector(".step-visible")) renderStep(0);
 }
 
