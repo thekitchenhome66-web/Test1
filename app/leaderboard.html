@@ -415,6 +415,12 @@ function getRankMovement(userId, currentRank) {
   return               { dir:"same", label:"—" };
 }
 
+
+// ── OPEN PUBLIC PROFILE
+function openProfile(userId) {
+  if (!userId || userId === currentUserId) return;
+  window.location.href = '/app/public_profile.html?uid=' + encodeURIComponent(userId) + '&from=' + encodeURIComponent(location.pathname);
+}
 // ══════════════════════════════════════════
 // WEEKLY LEAGUE VIEW
 // ══════════════════════════════════════════
@@ -529,6 +535,8 @@ function renderWeekly(users) {
       const isMe = s.u.user_id === currentUserId;
       const el   = document.createElement("div");
       el.className = "podium-slot " + s.cls;
+      el.style.cursor = isMe ? 'default' : 'pointer';
+      if (!isMe) el.onclick = () => openProfile(s.u.user_id);
       el.innerHTML = `
         <div class="podium-avatar">${s.r===1?'<div class="podium-crown">👑</div>':''}${initials(s.u)}</div>
         <div class="podium-name">${displayName(s.u)}${isMe?' 👤':''}</div>
@@ -567,6 +575,7 @@ function renderWeekly(users) {
 
       const row = document.createElement("div");
       row.className = "lb-row" + (isDanger?" danger":"") + (isMe?" is-me":"");
+      if (!isMe) { row.style.cursor = 'pointer'; row.onclick = () => openProfile(u.user_id); }
       row.innerHTML = `
         <div class="lb-rank${rank===1?' r1':rank===2?' r2':rank===3?' r3':''}">#${rank}</div>
         <div class="lb-medal">${isDanger?"⚠️":""}</div>
@@ -700,6 +709,7 @@ function renderGlobal() {
     const numCls = rank===1?"g1":rank===2?"g2":rank===3?"g3":"";
     const rankIcon = rank<=3 ? medal(rank) : "#"+rank;
 
+    if (!isMe) { row.style.cursor = 'pointer'; row.onclick = () => openProfile(u.user_id); }
     row.innerHTML = `
       <div class="gl-num ${numCls}">${rank<=3?medal(rank):"#"+rank}</div>
       <div class="gl-avatar">${displayName(u).slice(0,2).toUpperCase()}</div>
@@ -851,6 +861,7 @@ async function loadFriends() {
       const rankCls = rank===1?'g1':rank===2?'g2':rank===3?'g3':'';
       const rankTxt = rank<=3 ? ['🥇','🥈','🥉'][rank-1] : '#'+rank;
 
+      if (!isMe) { row.style.cursor = 'pointer'; row.onclick = () => openProfile(u.user_id); }
       row.innerHTML = `
         <div class="fr-rank ${rankCls}">${rankTxt}</div>
         <div class="fr-avatar">${name.slice(0,2).toUpperCase()}</div>
@@ -986,6 +997,8 @@ function makeFFRow(u) {
 
   const row = document.createElement('div');
   row.className = 'ff-row';
+  row.style.cursor = 'pointer';
+  row.onclick = (e) => { if (!e.target.classList.contains('btn-follow')) openProfile(u.user_id); };
   row.innerHTML = `
     <div class="ff-avatar">${name.slice(0,2).toUpperCase()}</div>
     <div class="ff-info">
