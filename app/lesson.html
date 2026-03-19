@@ -753,13 +753,14 @@ function getLessonPlan(levelNum, lessonNum) {
   const blockNum   = Math.ceil(lessonNum / 6);
   const words      = HSK[levelNum]?.words || [];
   const grammar    = HSK[levelNum]?.grammar || [];
-  const totalWords = words.length;
 
-  // Words for this block — 5 per block
-  const blockStart  = (blockNum - 1) * 5;
-  const newWords    = words.slice(blockStart, blockStart + 5);
-  const reviewWords = blockStart > 0 ? words.slice(Math.max(0, blockStart - 10), blockStart) : [];
-  const grammarItem = grammar[blockNum % grammar.length] || grammar[0];
+  // Words for this block — 5 per block, cycle if stub level doesn't have enough
+  const blockStart  = words.length > 0 ? ((blockNum - 1) * 5) % Math.max(words.length, 1) : 0;
+  const rawNew      = words.slice(blockStart, blockStart + 5);
+  const newWords    = rawNew.length >= 2 ? rawNew : words.slice(0, Math.min(5, words.length));
+  const reviewStart = Math.max(0, blockStart - 10);
+  const reviewWords = blockStart > 0 ? words.slice(reviewStart, blockStart) : [];
+  const grammarItem = grammar.length > 0 ? (grammar[blockNum % grammar.length] || grammar[0]) : null;
 
   const LESSON_NAMES = ['Introduction','Reinforcement','Expansion','Mixed Practice','⚡ Speed Challenge','✓ Checkpoint'];
   const plan = {
@@ -993,42 +994,59 @@ function renderMCQ(step, mode) {
 // ── TRUE/FALSE
 function renderTrueFalse(step, isListen) {
   const w = step.word;
-  const pool = step.pool || HSK[lesson.plan.levelNum]?.words || [];
-  const isTrue = Math.random() > 0.5;
-  const displayWord = isTrue ? w : rand(pool.filter(x => x.zh !== w.zh));
-  const correct = isTrue ? '对' : '错';
+  const pool = (step.pool || HSK[lesson.plan.levelNum]?.words || []).filter(x => x.zh !== w.zh);
 
-  const html = isListen
-    ? `<div class="q-label listen">🎧 Listening — True or False</div>
-       <div class="q-text">Does the spoken word match this meaning?<span class="zh">${w.en}</span></div>`
-    : `<div class="q-label read">📖 Reading — True or False</div>
-       <div class="q-text">Does this character mean "${w.en}"?<span class="zh">${displayWord.zh}</span></div>`;
+  // Decide if this is a TRUE or FALSE question
+  const isTrue = Math.random() > 0.5;
+
+  // The "spoken / shown" word — either the correct one or a distractor
+  const spokenWord  = isTrue ? w : rand(pool);
+  const correct     = isTrue ? '对' : '错';
+
+  // Hint shown after answering
+  const hintText = isTrue
+    ? `${w.zh} = ${w.en} ✓`
+    : `${spokenWord.zh} = ${spokenWord.en} (not "${w.en}")`;
+
+  let html;
+  if (isListen) {
+    // Question: "I will say a word. Does it match the meaning shown?"
+    html = `
+      <div class="q-label listen">🎧 Listening — True or False</div>
+      <div class="q-text">Does the spoken word mean: <span class="zh">${w.en}</span></div>`;
+  } else {
+    // Question: "Does this character match the meaning shown?"
+    html = `
+      <div class="q-label read">📖 Reading — True or False</div>
+      <div class="q-text">Does <span class="zh">${spokenWord.zh}</span> mean "${w.en}"?</div>`;
+  }
 
   stepArea.innerHTML = `${html}
     <div class="tf-grid">
-      <button class="tf-btn" onclick="handleTF('对','${correct}',this)">
+      <button class="tf-btn" onclick="handleTF('对','${correct}','${hintText.replace(/'/g,"\\'")}',this)">
         ✓ <span class="tf-label">对 (True)</span>
       </button>
-      <button class="tf-btn" onclick="handleTF('错','${correct}',this)">
+      <button class="tf-btn" onclick="handleTF('错','${correct}','${hintText.replace(/'/g,"\\'")}',this)">
         ✗ <span class="tf-label">错 (False)</span>
       </button>
     </div>
     <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
 
   if (isListen) {
-    speak(w.zh);
+    // Play the spoken word (could be correct or distractor)
+    speak(spokenWord.zh);
     const listenBtn = document.createElement('button');
     listenBtn.className = 'btn-play-big';
     listenBtn.id = 'listen-btn';
-    listenBtn.innerHTML = `<span class="play-icon">🔊</span> Tap to play again`;
-    listenBtn.onclick = () => speak(w.zh);
+    listenBtn.innerHTML = `<span class="play-icon">🔊</span> Tap to hear again`;
+    listenBtn.onclick = () => speak(spokenWord.zh);
     stepArea.insertBefore(listenBtn, stepArea.children[2]);
   }
 }
 
 function renderListenTF(step) { renderTrueFalse(step, true); }
 
-function handleTF(chosen, correct, btn) {
+function handleTF(chosen, correct, hint, btn) {
   if (answeredStep) return;
   answeredStep = true;
   clearInterval(speedTimer);
@@ -1036,15 +1054,22 @@ function handleTF(chosen, correct, btn) {
   document.querySelectorAll('.tf-btn').forEach(b => b.disabled = true);
   btn.classList.add(isCorrect ? 'correct' : 'wrong');
   if (!isCorrect) {
-    document.querySelectorAll('.tf-btn').forEach(b => { if (b.textContent.includes(correct)) b.classList.add('correct'); });
+    document.querySelectorAll('.tf-btn').forEach(b => {
+      if (b.getAttribute('onclick')?.includes(`'${correct}'`)) b.classList.add('correct');
+    });
     loseHeart();
     sessionMistakes.push({ word: steps[currentStep].word, type:'tf' });
   } else {
     sessionXP += 1;
     updateSRS(steps[currentStep].word?.id, true);
   }
-  const w = steps[currentStep].word;
-  showFeedback(isCorrect, w);
+  const fb = document.getElementById('feedback');
+  if (fb) {
+    fb.className = 'feedback show ' + (isCorrect ? 'ok' : 'err');
+    fb.querySelector('.fb-icon').textContent = isCorrect ? '✓' : '✕';
+    fb.querySelector('.fb-main').textContent = isCorrect ? 'Correct!' : 'Not quite';
+    fb.querySelector('.fb-hint').textContent = hint || '';
+  }
   if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
   bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
 }
