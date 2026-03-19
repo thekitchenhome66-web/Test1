@@ -9,267 +9,136 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --bg:          #0f1923;
-    --bg2:         #0d1720;
-    --card:        #162235;
-    --card2:       #1a2a3d;
-    --border:      #1f3349;
-    --border2:     #243d57;
-    --green:       #4ade80;
-    --green-dark:  #22c55e;
-    --green-glow:  rgba(74,222,128,.28);
-    --green-muted: rgba(74,222,128,.10);
-    --text:        #e8f4ef;
-    --text-mid:    #8fb3c4;
-    --text-muted:  #5a7a8a;
-    --gold:        #fbbf24;
-    --silver:      #cbd5e1;
-    --bronze:      #fb923c;
-    --radius:      20px;
-    --radius-sm:   12px;
-    --t:           .2s cubic-bezier(.4,0,.2,1);
+    --bg:#0f1923;--bg2:#0d1720;--card:#162235;--card2:#1a2a3d;
+    --border:#1f3349;--border2:#243d57;--green:#4ade80;--green-dark:#22c55e;
+    --green-muted:rgba(74,222,128,.10);--text:#e8f4ef;--text-mid:#8fb3c4;
+    --text-muted:#5a7a8a;--gold:#fbbf24;--silver:#cbd5e1;--bronze:#fb923c;
+    --rose:#f87171;--rose-muted:rgba(248,113,113,.10);--rose-border:rgba(248,113,113,.25);
+    --radius:20px;--radius-sm:12px;--t:.2s cubic-bezier(.4,0,.2,1);
   }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:60px}
+  ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    font-family: 'Nunito Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-    padding-bottom: 48px;
-  }
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  /* HEADER */
+  .header-outer{position:sticky;top:0;z-index:60;background:rgba(15,25,35,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+  .header{max-width:520px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+  .btn-back{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 10px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--text-mid);cursor:pointer;text-decoration:none;transition:background var(--t),border-color var(--t),color var(--t)}
+  .btn-back:hover{background:var(--card2);border-color:var(--border2);color:var(--text)}
+  .btn-back svg{width:14px;height:14px}
+  .header-title{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.3px}
+  .header-spacer{width:80px}
 
-  /* ── HEADER ── */
-  .header-outer {
-    position: sticky; top: 0; z-index: 60;
-    background: rgba(15,25,35,.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-  }
-  .header {
-    max-width: 520px; margin: 0 auto;
-    height: 64px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 18px;
-  }
-  .btn-back {
-    display: flex; align-items: center; gap: 6px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 999px; padding: 6px 14px 6px 10px;
-    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
-    color: var(--text-mid); cursor: pointer; text-decoration: none;
-    transition: background var(--t), border-color var(--t), color var(--t);
-  }
-  .btn-back:hover { background: var(--card2); border-color: var(--border2); color: var(--text); }
-  .btn-back svg { width: 14px; height: 14px; }
-  .header-title {
-    font-family: 'Nunito', sans-serif;
-    font-size: 18px; font-weight: 900;
-    color: var(--text); letter-spacing: -.3px;
-  }
-  .header-spacer { width: 80px; }
+  /* MAIN */
+  .main{max-width:520px;margin:0 auto;padding:20px 16px 0;display:flex;flex-direction:column;gap:16px}
 
-  /* ── MAIN ── */
-  .main {
-    max-width: 520px; margin: 0 auto;
-    padding: 24px 16px 0;
-    display: flex; flex-direction: column; gap: 16px;
-  }
+  /* LEAGUE BANNER */
+  .league-banner{border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;animation:fadeUp .3s ease both}
+  .league-banner.gold-league{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border:1.5px solid rgba(251,191,36,.35);box-shadow:0 0 32px rgba(251,191,36,.08)}
+  .league-banner.silver-league{background:linear-gradient(135deg,rgba(203,213,225,.12),rgba(203,213,225,.04));border:1.5px solid rgba(203,213,225,.3)}
+  .league-banner.bronze-league{background:linear-gradient(135deg,rgba(251,146,60,.12),rgba(251,146,60,.04));border:1.5px solid rgba(251,146,60,.3)}
+  .league-banner.diamond-league{background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(96,165,250,.05));border:1.5px solid rgba(96,165,250,.35);box-shadow:0 0 32px rgba(96,165,250,.08)}
+  .league-left{display:flex;flex-direction:column;gap:2px}
+  .league-label{font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase}
+  .league-name{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;letter-spacing:-.3px}
+  .league-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+  .league-icon{font-size:42px;line-height:1}
 
-  /* ── USER CARD ── */
-  .user-card {
-    background: var(--card);
-    border: 1.5px solid rgba(74,222,128,.25);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    display: flex; align-items: center; gap: 16px;
-    position: relative; overflow: hidden;
-    box-shadow: 0 0 0 1px rgba(74,222,128,.06), 0 8px 32px rgba(74,222,128,.06);
-    animation: fadeUp .4s ease both;
-  }
-  .user-card::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 0% 50%, rgba(74,222,128,.07) 0%, transparent 65%);
-    pointer-events: none;
-  }
-  .user-rank-badge {
-    width: 52px; height: 52px; border-radius: 14px;
-    background: var(--green-muted);
-    border: 1.5px solid rgba(74,222,128,.3);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .rank-label { font-size: 9px; font-weight: 900; color: rgba(74,222,128,.6); letter-spacing: .5px; }
-  .rank-num   { font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 900; color: var(--green); line-height: 1.1; }
-  .user-info  { flex: 1; }
-  .user-you   { font-size: 10px; font-weight: 800; color: var(--green); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
-  .user-name  { font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900; color: var(--text); letter-spacing: -.1px; }
-  .user-xp    { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .user-xp span { color: var(--green); font-weight: 700; }
+  /* YOU CARD */
+  .you-card{background:var(--card);border:1.5px solid rgba(74,222,128,.3);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(74,222,128,.06),0 8px 32px rgba(74,222,128,.06);animation:fadeUp .35s ease .05s both}
+  .you-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 50%,rgba(74,222,128,.08) 0%,transparent 65%);pointer-events:none}
+  .you-rank-box{width:50px;height:50px;border-radius:14px;background:var(--green-muted);border:1.5px solid rgba(74,222,128,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+  .you-rank-label{font-size:8px;font-weight:900;color:rgba(74,222,128,.6);letter-spacing:.5px;text-transform:uppercase}
+  .you-rank-num{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--green);line-height:1.1}
+  .you-info{flex:1;min-width:0}
+  .you-tag{font-size:9px;font-weight:900;color:var(--green);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+  .you-name{font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:var(--green);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .you-xp{font-size:12px;color:var(--text-muted);margin-top:2px}
+  .you-xp span{color:var(--green);font-weight:700}
+  .you-move{font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;flex-shrink:0}
+  .you-move.up{color:var(--green)}.you-move.down{color:var(--rose)}.you-move.same{color:var(--text-muted);font-size:11px}
 
-  /* ── SECTION HEADING ── */
-  .section-heading {
-    font-family: 'Nunito', sans-serif;
-    font-size: 11px; font-weight: 800;
-    color: var(--text-muted); letter-spacing: .12em;
-    text-transform: uppercase; padding: 0 2px;
-    animation: fadeUp .4s ease .05s both;
-  }
+  /* PODIUM */
+  .podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:8px 4px 0;animation:fadeUp .4s ease .08s both}
+  .podium-slot{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+  .podium-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;position:relative;flex-shrink:0;color:var(--text)}
+  .podium-slot.p1 .podium-avatar{width:66px;height:66px;font-size:20px;background:radial-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.08));border:2px solid rgba(251,191,36,.6);box-shadow:0 0 20px rgba(251,191,36,.25)}
+  .podium-slot.p2 .podium-avatar{background:radial-gradient(135deg,rgba(203,213,225,.18),rgba(203,213,225,.06));border:2px solid rgba(203,213,225,.4)}
+  .podium-slot.p3 .podium-avatar{background:radial-gradient(135deg,rgba(251,146,60,.18),rgba(251,146,60,.06));border:2px solid rgba(251,146,60,.4)}
+  .podium-crown{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:18px;line-height:1}
+  .podium-name{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;text-align:center;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .podium-slot.p1 .podium-name{color:var(--gold);font-size:12px}
+  .podium-slot.p2 .podium-name{color:var(--silver)}
+  .podium-slot.p3 .podium-name{color:var(--bronze)}
+  .podium-xp{font-size:11px;font-weight:700;color:var(--text-muted)}
+  .podium-slot.p1 .podium-xp{color:var(--gold);font-weight:800}
+  .podium-base{width:100%;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;padding:10px 0 8px}
+  .podium-slot.p1 .podium-base{background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.25);height:64px;color:var(--gold)}
+  .podium-slot.p2 .podium-base{background:rgba(203,213,225,.10);border:1px solid rgba(203,213,225,.18);height:48px;color:var(--silver)}
+  .podium-slot.p3 .podium-base{background:rgba(251,146,60,.10);border:1px solid rgba(251,146,60,.18);height:38px;color:var(--bronze)}
 
-  /* ── LEADERBOARD LIST ── */
-  .lb-list {
-    display: flex; flex-direction: column; gap: 8px;
-    animation: fadeUp .4s ease .08s both;
-  }
-  .lb-row {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    display: flex; align-items: center; gap: 14px;
-    transition: border-color var(--t), background var(--t), transform var(--t);
-    position: relative; overflow: hidden;
-  }
-  .lb-row:hover { background: var(--card2); transform: translateX(2px); }
+  /* SECTION HEADINGS */
+  .section-heading{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;padding:0 2px}
+  .danger-label{color:var(--rose) !important;display:flex;align-items:center;gap:6px;margin-top:4px}
+  .danger-pulse{width:7px;height:7px;border-radius:50%;background:var(--rose);box-shadow:0 0 6px var(--rose);animation:pulse 1.4s ease infinite;flex-shrink:0}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
 
-  /* rank accent strips */
-  .lb-row.rank-1 { border-color: rgba(251,191,36,.3); background: rgba(251,191,36,.03); }
-  .lb-row.rank-1::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--gold); border-radius:3px 0 0 3px; }
-  .lb-row.rank-2 { border-color: rgba(203,213,225,.2); background: rgba(203,213,225,.02); }
-  .lb-row.rank-2::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--silver); border-radius:3px 0 0 3px; }
-  .lb-row.rank-3 { border-color: rgba(251,146,60,.22); background: rgba(251,146,60,.02); }
-  .lb-row.rank-3::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--bronze); border-radius:3px 0 0 3px; }
+  /* LIST ROWS */
+  .lb-list{display:flex;flex-direction:column;gap:8px}
+  .lb-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px;display:flex;align-items:center;gap:12px;transition:border-color var(--t),background var(--t),transform var(--t);position:relative;overflow:hidden}
+  .lb-row:hover{background:var(--card2);transform:translateX(2px)}
+  .lb-row.rank-1{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.03)}
+  .lb-row.rank-1::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);border-radius:3px 0 0 3px}
+  .lb-row.rank-2{border-color:rgba(203,213,225,.2);background:rgba(203,213,225,.02)}
+  .lb-row.rank-2::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--silver);border-radius:3px 0 0 3px}
+  .lb-row.rank-3{border-color:rgba(251,146,60,.22);background:rgba(251,146,60,.02)}
+  .lb-row.rank-3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bronze);border-radius:3px 0 0 3px}
+  .lb-row.danger{border-color:var(--rose-border);background:var(--rose-muted)}
+  .lb-row.danger::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rose);border-radius:3px 0 0 3px}
+  .lb-row.danger .lb-name-text{color:#fca5a5}
+  .lb-row.danger .lb-xp{color:var(--rose)}
+  .lb-row.danger .lb-rank{color:var(--rose)}
+  .lb-row.is-me{border-color:rgba(74,222,128,.28) !important;background:rgba(74,222,128,.04) !important;box-shadow:0 0 0 1px rgba(74,222,128,.07)}
+  .lb-row.is-me .lb-name-text{color:var(--green) !important}
+  .lb-row.is-me .lb-xp{color:var(--green) !important}
+  .lb-row.is-me .lb-rank{color:var(--green) !important}
+  .you-badge-inline{font-family:'Nunito',sans-serif;font-size:8px;font-weight:900;color:var(--green);letter-spacing:.1em;background:var(--green-muted);border:1px solid rgba(74,222,128,.2);border-radius:999px;padding:1px 5px;flex-shrink:0}
+  .lb-rank{width:28px;flex-shrink:0;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;text-align:center;line-height:1;color:var(--text-muted)}
+  .lb-rank.r1{color:var(--gold)}.lb-rank.r2{color:var(--silver)}.lb-rank.r3{color:var(--bronze)}
+  .lb-medal{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+  .lb-info{flex:1;min-width:0}
+  .lb-name{display:flex;align-items:center;gap:6px;font-family:'Nunito',sans-serif}
+  .lb-name-text{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lb-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+  .lb-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+  .lb-xp{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;display:flex;align-items:center;gap:3px;color:var(--text-mid)}
+  .lb-xp .xi{font-size:10px}
+  .lb-row.rank-1 .lb-xp{color:var(--gold)}.lb-row.rank-2 .lb-xp{color:var(--silver)}.lb-row.rank-3 .lb-xp{color:var(--bronze)}
+  .lb-move{font-size:10px;font-weight:900;font-family:'Nunito',sans-serif}
+  .lb-move.up{color:var(--green)}.lb-move.down{color:var(--rose)}.lb-move.same{color:var(--text-muted);font-size:9px}
 
-  /* current user */
-  .lb-row.is-me { border-color: rgba(74,222,128,.28); background: rgba(74,222,128,.04); box-shadow: 0 0 0 1px rgba(74,222,128,.07); }
-  .you-badge {
-    position: absolute; right: 10px; top: 6px;
-    font-family: 'Nunito', sans-serif; font-size: 8px; font-weight: 900;
-    color: var(--green); letter-spacing: .1em;
-    background: var(--green-muted); border: 1px solid rgba(74,222,128,.2);
-    border-radius: 999px; padding: 2px 6px;
-  }
-  /* Extra right padding on is-me rows so XP never slides under the badge */
-  .lb-row.is-me { padding-right: 46px; }
-
-  .lb-rank {
-    width: 28px; flex-shrink: 0;
-    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 900;
-    text-align: center; line-height: 1;
-  }
-  .lb-rank.r1 { color: var(--gold); }
-  .lb-rank.r2 { color: var(--silver); }
-  .lb-rank.r3 { color: var(--bronze); }
-  .lb-rank.rn { color: var(--text-muted); font-size: 11px; }
-
-  .lb-medal { font-size: 18px; width: 22px; text-align: center; flex-shrink: 0; }
-
-  .lb-info { flex: 1; min-width: 0; }
-  .lb-name {
-    font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
-    color: var(--text); letter-spacing: -.1px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .lb-row.is-me .lb-name { color: var(--green); }
-  .lb-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-  .lb-xp {
-    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 900;
-    flex-shrink: 0; display: flex; align-items: center; gap: 3px;
-    color: var(--text-mid);
-  }
-  .lb-xp .xi { font-size: 11px; }
-  .lb-row.rank-1 .lb-xp { color: var(--gold); }
-  .lb-row.rank-2 .lb-xp { color: var(--silver); }
-  .lb-row.rank-3 .lb-xp { color: var(--bronze); }
-  .lb-row.is-me  .lb-xp { color: var(--green); }
-
-  /* ── DIVIDER ── */
-  .divider {
-    height: 1px; background: var(--border);
-    margin: 4px 0; border-radius: 1px;
-    opacity: .5;
-  }
-
-  /* ── NOT IN TOP 20 ── */
-  .not-ranked {
-    background: var(--card); border: 1px dashed var(--border2);
-    border-radius: var(--radius-sm); padding: 14px 18px;
-    font-size: 13px; color: var(--text-muted); text-align: center;
-    font-family: 'Nunito', sans-serif; font-weight: 700;
-    animation: fadeUp .4s ease .14s both;
-  }
-  .not-ranked strong { color: var(--text); }
-
-  /* ── REFRESH ── */
-  .btn-refresh {
-    align-self: center;
-    display: flex; align-items: center; gap: 6px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 999px; padding: 8px 18px;
-    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 800;
-    color: var(--text-muted); cursor: pointer;
-    transition: background var(--t), border-color var(--t), color var(--t);
-    animation: fadeUp .4s ease .2s both;
-  }
-  .btn-refresh:hover:not(:disabled) { background: var(--card2); border-color: var(--green); color: var(--green); }
-  .btn-refresh:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-refresh svg { width: 13px; height: 13px; }
-  .btn-refresh.spinning svg { animation: spin .8s linear infinite; }
-
-  /* ── LOADING ── */
-  .loading-wrap {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 80px 24px; gap: 14px;
-    animation: fadeUp .3s ease both;
-  }
-  .spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--border2); border-top-color: var(--green); animation: spin .8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 13px; color: var(--text-muted); font-family: 'Nunito', sans-serif; font-weight: 700; }
-
-  /* ── EMPTY ── */
-  .empty-wrap {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 72px 24px; gap: 12px; text-align: center;
-    animation: fadeUp .4s ease both;
-  }
-  .empty-emoji { font-size: 56px; }
-  .empty-title { font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 900; color: var(--text); }
-  .empty-sub   { font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 260px; }
-
-  /* ── ERROR ── */
-  .error-wrap {
-    background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.2);
-    border-radius: var(--radius-sm); padding: 16px 18px;
-    font-size: 13px; color: #f87171;
-    font-family: 'Nunito', sans-serif; font-weight: 700;
-    text-align: center; animation: fadeUp .3s ease both;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+  /* MISC */
+  .divider{height:1px;background:var(--border);margin:2px 0;border-radius:1px;opacity:.5}
+  .not-ranked{background:var(--card);border:1px dashed var(--border2);border-radius:var(--radius-sm);padding:14px 18px;font-size:13px;color:var(--text-muted);text-align:center;font-family:'Nunito',sans-serif;font-weight:700}
+  .not-ranked strong{color:var(--text)}
+  .loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;gap:14px;animation:fadeUp .3s ease both}
+  .spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:13px;color:var(--text-muted);font-family:'Nunito',sans-serif;font-weight:700}
+  .empty-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:72px 24px;gap:12px;text-align:center;animation:fadeUp .4s ease both}
+  .empty-emoji{font-size:56px}.empty-title{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text)}.empty-sub{font-size:13px;color:var(--text-muted);line-height:1.6;max-width:260px}
+  .error-wrap{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-sm);padding:16px 18px;font-size:13px;color:#f87171;font-family:'Nunito',sans-serif;font-weight:700;text-align:center;animation:fadeUp .3s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header-outer">
   <div class="header">
     <a class="btn-back" href="/app/dashboard.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Back
     </a>
     <div class="header-title">🏆 Leaderboard</div>
@@ -277,7 +146,6 @@
   </div>
 </div>
 
-<!-- MAIN -->
 <main class="main" id="main">
   <div class="loading-wrap" id="initial-loader">
     <div class="spinner"></div>
@@ -286,9 +154,6 @@
 </main>
 
 <script>
-  console.log("SCRIPT STARTED");
-
-  console.log("Supabase loaded:", supabase);
   const { createClient } = supabase;
   const supabaseClient = createClient(
     "https://cuiznbvvlqtwcoocehnd.supabase.co",
@@ -297,103 +162,173 @@
 
   const main = document.getElementById("main");
 
-  // ── HELPERS
-  function medal(rank) {
-    if (rank === 1) return "🥇";
-    if (rank === 2) return "🥈";
-    if (rank === 3) return "🥉";
-    return "";
-  }
-  function displayName(user) {
-    if (user.username) return user.username;
-    if (user.email)    return user.email.split("@")[0];
-    if (user.user_id)  return "Learner " + user.user_id.slice(0, 6).toUpperCase();
+  function displayName(u) {
+    if (u.username) return u.username;
+    if (u.user_id)  return "Learner " + u.user_id.slice(0,6).toUpperCase();
     return "Anonymous";
   }
+  function initials(u) { return displayName(u).slice(0,2).toUpperCase(); }
+  function medal(r) { return r===1?"🥇":r===2?"🥈":r===3?"🥉":""; }
 
-  // ── RENDER
+  function getLeague(topXP) {
+    if (topXP >= 500) return { name:"Diamond League", icon:"💎", cls:"diamond-league", color:"#60a5fa" };
+    if (topXP >= 200) return { name:"Gold League",    icon:"🏆", cls:"gold-league",    color:"#fbbf24" };
+    if (topXP >= 100) return { name:"Silver League",  icon:"🥈", cls:"silver-league",  color:"#cbd5e1" };
+    return                   { name:"Bronze League",  icon:"🛡️", cls:"bronze-league",  color:"#fb923c" };
+  }
+
+  function getRankMovement(userId, currentRank) {
+    const key  = "lb_rank_" + userId;
+    const prev = localStorage.getItem(key);
+    localStorage.setItem(key, String(currentRank));
+    if (!prev) return { dir:"same", label:"NEW" };
+    const diff = parseInt(prev) - currentRank;
+    if (diff > 0)  return { dir:"up",   label:"↑" + diff };
+    if (diff < 0)  return { dir:"down", label:"↓" + Math.abs(diff) };
+    return               { dir:"same", label:"—" };
+  }
+
   function renderLeaderboard(users, currentUserId) {
     main.innerHTML = "";
-
     if (!users || users.length === 0) {
       main.innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🚀</div><div class="empty-title">No players yet</div><div class="empty-sub">Be the first to complete a lesson and claim the top spot!</div></div>`;
       return;
     }
 
-    const userRank   = users.findIndex(u => u.user_id === currentUserId) + 1; // 0 if not found
-    const inList     = userRank > 0;
+    const total       = users.length;
+    const topXP       = users[0]?.xp || 0;
+    const league      = getLeague(topXP);
+    const dangerStart = Math.max(total - 5, 3);
+    const myIdx       = users.findIndex(u => u.user_id === currentUserId);
+    const myRank      = myIdx + 1;
+    const myData      = myIdx >= 0 ? users[myIdx] : null;
 
-    // Section heading
-    const heading = document.createElement("div");
-    heading.className = "section-heading";
-    heading.textContent = "Top " + users.length + " Learners";
-    main.appendChild(heading);
+    // 1 — LEAGUE BANNER
+    const banner = document.createElement("div");
+    banner.className = "league-banner " + league.cls;
+    banner.innerHTML = `
+      <div class="league-left">
+        <div class="league-label">Current League</div>
+        <div class="league-name" style="color:${league.color}">${league.name}</div>
+        <div class="league-sub">${total} player${total!==1?"s":""} competing this week</div>
+      </div>
+      <div class="league-icon">${league.icon}</div>`;
+    main.appendChild(banner);
 
-    const list = document.createElement("div");
-    list.className = "lb-list";
-
-    users.forEach((user, i) => {
-      const rank  = i + 1;
-      const isMe  = user.user_id === currentUserId;
-
-      if (rank === 4) {
-        const div = document.createElement("div");
-        div.className = "divider";
-        list.appendChild(div);
-      }
-
-      let rankClass = rank <= 3 ? "rank-" + rank : "";
-      let rankColor = rank === 1 ? "r1" : rank === 2 ? "r2" : rank === 3 ? "r3" : "rn";
-      let xp = typeof user.xp === "number" ? user.xp : 0;
-
-      const row = document.createElement("div");
-      row.className = "lb-row " + rankClass + (isMe ? " is-me" : "");
-      row.innerHTML = `
-        ${isMe ? '<div class="you-badge">YOU</div>' : ""}
-        <div class="lb-rank ${rankColor}">${rank <= 3 ? "" : "#" + rank}</div>
-        <div class="lb-medal">${medal(rank)}</div>
-        <div class="lb-info">
-          <div class="lb-name">${displayName(user)}</div>
-          <div class="lb-sub">${rank === 1 ? "👑 Champion" : rank <= 3 ? "🔥 Top 3" : rank <= 10 ? "⚡ Top 10" : "📚 Studying"}</div>
+    // 2 — YOU CARD
+    if (currentUserId) {
+      const move    = myData ? getRankMovement(currentUserId, myRank) : {dir:"same",label:"—"};
+      const youCard = document.createElement("div");
+      youCard.className = "you-card";
+      youCard.innerHTML = myData ? `
+        <div class="you-rank-box">
+          <div class="you-rank-label">Rank</div>
+          <div class="you-rank-num">#${myRank}</div>
         </div>
-        <div class="lb-xp"><span class="xi">⚡</span> ${Number(xp)}</div>
-      `;
-      list.appendChild(row);
-    });
+        <div class="you-info">
+          <div class="you-tag">You</div>
+          <div class="you-name">${displayName(myData)}</div>
+          <div class="you-xp"><span>${myData.xp||0}</span> XP</div>
+        </div>
+        <div class="you-move ${move.dir}">${move.label}</div>` : `
+        <div class="you-rank-box">
+          <div class="you-rank-label">Rank</div>
+          <div class="you-rank-num">—</div>
+        </div>
+        <div class="you-info">
+          <div class="you-tag">You</div>
+          <div class="you-name">Not ranked yet</div>
+          <div class="you-xp">Complete a lesson to join!</div>
+        </div>`;
+      main.appendChild(youCard);
+    }
 
-    main.appendChild(list);
+    // 3 — PODIUM (top 3)
+    if (total >= 2) {
+      const podium = document.createElement("div");
+      podium.className = "podium-wrap";
+      const slots = total >= 3
+        ? [{u:users[1],r:2,cls:"p2"},{u:users[0],r:1,cls:"p1"},{u:users[2],r:3,cls:"p3"}]
+        : [{u:users[0],r:1,cls:"p1"},{u:users[1],r:2,cls:"p2"}];
+      slots.forEach(s => {
+        const isMe = s.u.user_id === currentUserId;
+        const el   = document.createElement("div");
+        el.className = "podium-slot " + s.cls;
+        el.innerHTML = `
+          <div class="podium-avatar">${s.r===1?'<div class="podium-crown">👑</div>':''}${initials(s.u)}</div>
+          <div class="podium-name">${displayName(s.u)}${isMe?' 👤':''}</div>
+          <div class="podium-xp">⚡ ${s.u.xp||0}</div>
+          <div class="podium-base">${medal(s.r)}</div>`;
+        podium.appendChild(el);
+      });
+      main.appendChild(podium);
+    }
 
-    // Show "You are ranked #X" if not visible in list
-    if (currentUserId && !inList) {
-      const banner = document.createElement("div");
-      banner.className = "not-ranked";
-      banner.innerHTML = `You are not ranked yet — complete a lesson to appear on the leaderboard! 💪`;
-      main.appendChild(banner);
-    } else if (currentUserId && inList && userRank > users.length) {
-      const banner = document.createElement("div");
-      banner.className = "not-ranked";
-      banner.innerHTML = `You are ranked <strong>#${userRank}</strong> globally — keep studying to reach the top! 💪`;
-      main.appendChild(banner);
+    // 4 — RANKED LIST (rank 4+)
+    const listStart = Math.min(3, total);
+    if (listStart < total) {
+      const h = document.createElement("div");
+      h.className = "section-heading";
+      h.textContent = "All Rankings";
+      main.appendChild(h);
+
+      const list = document.createElement("div");
+      list.className = "lb-list";
+
+      for (let i = listStart; i < total; i++) {
+        const u        = users[i];
+        const rank     = i + 1;
+        const isMe     = u.user_id === currentUserId;
+        const isDanger = i >= dangerStart;
+        const xp       = typeof u.xp === "number" ? u.xp : 0;
+        const move     = isMe ? getRankMovement(currentUserId, rank) : null;
+
+        // Danger zone header
+        if (i === dangerStart) {
+          const dz = document.createElement("div");
+          dz.className = "section-heading danger-label";
+          dz.innerHTML = `<div class="danger-pulse"></div> Danger Zone — Bottom 5`;
+          list.appendChild(dz);
+        }
+
+        const row = document.createElement("div");
+        row.className = "lb-row" + (isDanger?" danger":"") + (isMe?" is-me":"");
+        row.innerHTML = `
+          <div class="lb-rank${rank===1?' r1':rank===2?' r2':rank===3?' r3':''}">#${rank}</div>
+          <div class="lb-medal">${isDanger?"⚠️":""}</div>
+          <div class="lb-info">
+            <div class="lb-name">
+              <span class="lb-name-text">${displayName(u)}</span>
+              ${isMe?'<span class="you-badge-inline">YOU</span>':""}
+            </div>
+            <div class="lb-sub">${rank<=10?"⚡ Top 10":"📚 Studying"}${isDanger?" · At risk of demotion":""}</div>
+          </div>
+          <div class="lb-right">
+            <div class="lb-xp"><span class="xi">⚡</span> ${xp}</div>
+            ${move?`<div class="lb-move ${move.dir}">${move.label}</div>`:""}
+          </div>`;
+        list.appendChild(row);
+      }
+      main.appendChild(list);
+    }
+
+    // 5 — NOT RANKED
+    if (currentUserId && !myData) {
+      const nr = document.createElement("div");
+      nr.className = "not-ranked";
+      nr.innerHTML = `You're not on the leaderboard yet — <strong>complete a lesson</strong> to claim your spot! 💪`;
+      main.appendChild(nr);
     }
   }
 
-  // ── LOAD — no auth required, public leaderboard
   async function loadLeaderboard() {
-    const loadingElement = document.getElementById("initial-loader");
-    console.log("Loading leaderboard...");
-
-    // Try to get current user — non-blocking, leaderboard shows regardless
+    const loader = document.getElementById("initial-loader");
     let currentUserId = null;
     try {
       const { data: authData } = await supabaseClient.auth.getSession();
       const authUser = authData?.session?.user;
-      if (authUser?.id) {
-        currentUserId = authUser.id;
-        console.log("Current user ID:", currentUserId);
-      }
-    } catch(e) {
-      console.warn("Could not get user:", e);
-    }
+      if (authUser?.id) currentUserId = authUser.id;
+    } catch(e) { console.warn("Auth error:", e); }
 
     try {
       const { data, error } = await supabaseClient
@@ -401,34 +336,20 @@
         .select("user_id, xp")
         .order("xp", { ascending: false });
 
-      // Always hide spinner — no matter what happens
-      if (loadingElement) loadingElement.style.display = "none";
+      if (loader) loader.style.display = "none";
 
-      console.log("data:", data);
-      console.log("error:", error);
-
-      if (error) {
-        console.error("Leaderboard error:", error);
-        main.innerHTML = `<div class="error-wrap">Error loading leaderboard: ${error.message}</div>`;
-        return;
-      }
-
+      if (error) { main.innerHTML = `<div class="error-wrap">Error: ${error.message}</div>`; return; }
       if (!data || data.length === 0) {
         main.innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🚀</div><div class="empty-title">No players yet</div><div class="empty-sub">Be the first to complete a lesson and claim the top spot!</div></div>`;
         return;
       }
-
       renderLeaderboard(data, currentUserId);
-
-    } catch (e) {
-      // Catch-all — spinner always hidden even on unexpected JS errors
-      if (loadingElement) loadingElement.style.display = "none";
-      console.error("Unexpected error:", e);
-      main.innerHTML = `<div class="error-wrap">Error loading leaderboard: ${e.message}</div>`;
+    } catch(e) {
+      if (loader) loader.style.display = "none";
+      main.innerHTML = `<div class="error-wrap">Error: ${e.message}</div>`;
     }
   }
 
-  // Run on page load — no authentication needed
   loadLeaderboard();
 </script>
 </body>
