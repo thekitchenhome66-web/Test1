@@ -1548,25 +1548,30 @@ async function saveXP(xpEarned) {
     const user = sessionData?.session?.user;
     if (!user) return;
 
+    // Get stored username (set by username popup) or fall back to metadata/email
+    const storedUsername = localStorage.getItem('username_' + user.id);
+    const metaName = user.user_metadata?.full_name || user.user_metadata?.name;
+    const emailName = user.email ? user.email.split('@')[0] : null;
+    const username = storedUsername || metaName || emailName || 'Learner';
+
     // Check if row already exists
     const { data: existing } = await sb
       .from("leaderboard")
-      .select("xp")
+      .select("xp, username")
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (existing) {
-      // Row exists — add XP to current total
+      // Row exists — add XP, also update username if it was missing or was default
       const newXP = (existing.xp || 0) + xpEarned;
-      await sb
-        .from("leaderboard")
-        .update({ xp: newXP })
-        .eq("user_id", user.id);
+      const updateData = { xp: newXP };
+      if (!existing.username || existing.username === 'Learner') {
+        updateData.username = username;
+      }
+      await sb.from("leaderboard").update(updateData).eq("user_id", user.id);
     } else {
-      // No row yet — create new entry
-      await sb
-        .from("leaderboard")
-        .insert({ user_id: user.id, xp: xpEarned });
+      // No row yet — create new entry with username
+      await sb.from("leaderboard").insert({ user_id: user.id, xp: xpEarned, username: username });
     }
   } catch(e) {
     console.error("saveXP error:", e);
