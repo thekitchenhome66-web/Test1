@@ -385,32 +385,11 @@
     // Try to get current user — non-blocking, leaderboard shows regardless
     let currentUserId = null;
     try {
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const authUser = authData?.user;
+      const { data: authData } = await supabaseClient.auth.getSession();
+      const authUser = authData?.session?.user;
       if (authUser?.id) {
         currentUserId = authUser.id;
         console.log("Current user ID:", currentUserId);
-
-        // Backfill username if row exists but username is missing
-        const meta = authUser.user_metadata || {};
-        const resolvedUsername = meta.full_name || meta.name || meta.display_name
-          || (authUser.email ? authUser.email.split("@")[0] : null);
-
-        if (resolvedUsername) {
-          const { data: existing } = await supabaseClient
-            .from("leaderboard")
-            .select("username")
-            .eq("user_id", currentUserId)
-            .single();
-
-          if (existing && !existing.username) {
-            await supabaseClient
-              .from("leaderboard")
-              .update({ username: resolvedUsername })
-              .eq("user_id", currentUserId);
-            console.log("Username backfilled:", resolvedUsername);
-          }
-        }
       }
     } catch(e) {
       console.warn("Could not get user:", e);
@@ -419,7 +398,7 @@
     try {
       const { data, error } = await supabaseClient
         .from("leaderboard")
-        .select("user_id, xp, username")
+        .select("user_id, xp")
         .order("xp", { ascending: false });
 
       // Always hide spinner — no matter what happens
