@@ -1,542 +1,497 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Maobai — Choose Your Level</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>汉路 Hànlù — Choose Your Level</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window._sb = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#080f0b;--bg2:#0c1610;--card:#111e16;--card2:#162218;
+  --border:rgba(74,222,128,.13);--border2:rgba(74,222,128,.28);
+  --green:#3ddb7a;--green2:#2ab862;--green3:#1a8a45;
+  --glow:rgba(61,219,122,.18);
+  --ink:#e8f2ee;--ink2:#9ab8aa;--ink3:#4a6b5a;
+  --gold:#f5c842;--blue:#60a5fa;--orange:#fb923c;--purple:#a78bfa;--rose:#f87171;
+  --t:.22s cubic-bezier(.4,0,.2,1);
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);color:var(--ink);
+  min-height:100vh;overflow-x:hidden;
+  background-image:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(61,219,122,.08) 0%,transparent 60%);
+}
 
-    :root {
-      --bg:        #0f1923;
-      --card:      #162235;
-      --card2:     #1a2a42;
-      --border:    #1f3150;
-      --green:     #4ade80;
-      --green-dim: #1a4a2e;
-      --blue:      #38bdf8;
-      --purple:    #a78bfa;
-      --text:      #e2eaf5;
-      --muted:     #5a7a9a;
-      --radius:    20px;
-    }
+/* ── LOADING GATE ── */
+#gate{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
+#gate.hide{opacity:0;pointer-events:none}
+.gate-panda{font-size:52px;animation:bob 2s ease infinite}
+@keyframes bob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.gate-spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-    html { scroll-behavior: smooth; }
+/* ── PAGE ── */
+.page{max-width:520px;margin:0 auto;padding:40px 20px 80px;display:flex;flex-direction:column;align-items:center;gap:0}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Nunito', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow-x: hidden;
-    }
+/* ── HEADER ── */
+.top-logo{display:flex;align-items:center;gap:8px;margin-bottom:36px;text-decoration:none}
+.top-logo-panda{font-size:28px}
+.top-logo-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink)}
+.top-logo-name em{color:var(--green);font-style:normal}
 
-    /* noise texture */
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-    }
+/* ── USERNAME STEP ── */
+#step-username{width:100%;animation:fadeUp .5s ease both}
+.un-panda{font-size:64px;text-align:center;display:block;margin-bottom:16px;animation:bob 3s ease infinite}
+.un-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--ink);text-align:center;letter-spacing:-.5px;margin-bottom:8px}
+.un-sub{font-size:14px;color:var(--ink2);text-align:center;margin-bottom:28px;font-weight:300;line-height:1.6}
+.un-input{
+  width:100%;padding:15px 18px;
+  background:var(--card);border:1.5px solid var(--border2);
+  border-radius:14px;
+  font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;
+  color:var(--ink);outline:none;caret-color:var(--green);
+  transition:border-color var(--t),box-shadow var(--t);
+  text-align:center;letter-spacing:.02em;
+  margin-bottom:8px;
+}
+.un-input::placeholder{color:var(--ink3);font-weight:400}
+.un-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(61,219,122,.1)}
+.un-input.err{border-color:var(--rose);box-shadow:0 0 0 3px rgba(248,113,113,.1)}
+.un-hint{font-size:11px;color:var(--ink3);text-align:center;margin-bottom:24px}
+.un-hint.ok{color:var(--green)}
+.un-hint.bad{color:var(--rose)}
+.btn-next{
+  width:100%;padding:15px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:#080f0b;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
+  cursor:pointer;transition:all var(--t);
+  box-shadow:0 4px 20px rgba(61,219,122,.25);
+}
+.btn-next:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 28px rgba(61,219,122,.35)}
+.btn-next:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-next.loading{position:relative;color:transparent}
+.btn-next.loading::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(0,0,0,.2);border-top-color:#080f0b;animation:spin .7s linear infinite}
 
-    /* radial glow */
-    body::after {
-      content: '';
-      position: fixed;
-      top: -120px; left: 50%;
-      transform: translateX(-50%);
-      width: 600px; height: 400px;
-      background: radial-gradient(ellipse at center, rgba(74,222,128,.07) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
+/* ── LEVEL STEP ── */
+#step-level{display:none;width:100%;animation:fadeUp .5s ease both}
+.lv-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--ink);text-align:center;letter-spacing:-.5px;margin-bottom:6px}
+.lv-sub{font-size:14px;color:var(--ink2);text-align:center;margin-bottom:28px;font-weight:300}
 
-    /* ── LOADING GATE ─────────────────────────────────────
-       Covers the full page while we verify auth.
-       Hidden once ready so there is no flash/redirect race. */
-    #loading-gate {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      z-index: 9999;
-      display: flex; align-items: center; justify-content: center;
-      flex-direction: column; gap: 16px;
-      transition: opacity .3s ease;
-    }
-    #loading-gate.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .gate-panda  { font-size: 3rem; animation: floatPanda 2.5s ease-in-out infinite; }
-    .gate-label  { font-size: .85rem; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
-    .gate-dots span {
-      display: inline-block;
-      animation: blink 1.2s infinite;
-    }
-    .gate-dots span:nth-child(2) { animation-delay: .2s; }
-    .gate-dots span:nth-child(3) { animation-delay: .4s; }
-    @keyframes blink { 0%,80%,100% { opacity: 0; } 40% { opacity: 1; } }
+.level-cards{display:flex;flex-direction:column;gap:10px;width:100%}
+.lc{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:18px;padding:18px 20px;
+  display:flex;align-items:center;gap:16px;
+  cursor:pointer;transition:all var(--t);
+  position:relative;overflow:hidden;
+}
+.lc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 50%,rgba(61,219,122,.05),transparent 60%);pointer-events:none;opacity:0;transition:opacity var(--t)}
+.lc:hover{border-color:var(--border2);transform:translateX(3px)}
+.lc:hover::before{opacity:1}
+.lc.selected{border-color:var(--green);background:rgba(61,219,122,.06);transform:translateX(3px)}
+.lc.selected::before{opacity:1}
 
-    /* ── HEADER ─────────────────────────────────── */
-    header {
-      position: relative; z-index: 10;
-      display: flex; align-items: center;
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(15,25,35,.8);
-      backdrop-filter: blur(16px);
-    }
-    .logo {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 1.35rem; font-weight: 900;
-      letter-spacing: -0.5px;
-    }
-    .logo span { font-size: 1.5rem; }
+.lc-badge{
+  width:48px;height:48px;border-radius:13px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.lc-badge.l1{background:rgba(61,219,122,.15);border:1.5px solid rgba(61,219,122,.3)}
+.lc-badge.l2{background:rgba(96,165,250,.12);border:1.5px solid rgba(96,165,250,.25)}
+.lc-badge.l3{background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.22)}
+.lc-badge.l4{background:rgba(251,146,60,.1);border:1.5px solid rgba(251,146,60,.22)}
+.lc-badge.l5{background:rgba(167,139,250,.1);border:1.5px solid rgba(167,139,250,.22)}
+.lc-badge.l6{background:rgba(245,200,66,.15);border:1.5px solid rgba(245,200,66,.35)}
+.lc-num{font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;line-height:1}
+.lc-badge.l1 .lc-num{color:var(--green)}
+.lc-badge.l2 .lc-num{color:var(--blue)}
+.lc-badge.l3 .lc-num{color:var(--gold)}
+.lc-badge.l4 .lc-num{color:var(--orange)}
+.lc-badge.l5 .lc-num{color:var(--purple)}
+.lc-badge.l6 .lc-num{color:var(--gold)}
+.lc-tag{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:600}
 
-    /* ── HERO ───────────────────────────────────── */
-    .hero {
-      position: relative; z-index: 1;
-      text-align: center;
-      padding: 52px 24px 36px;
-      animation: fadeUp .5s ease both;
-    }
-    .hero-panda {
-      font-size: 4.5rem;
-      display: block;
-      margin-bottom: 18px;
-      animation: floatPanda 3.5s ease-in-out infinite;
-    }
-    @keyframes floatPanda {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-10px); }
-    }
-    .hero h1 {
-      font-size: 1.9rem; font-weight: 900;
-      letter-spacing: -0.5px;
-      line-height: 1.2;
-      margin-bottom: 10px;
-    }
-    .hero h1 em {
-      font-style: normal;
-      background: linear-gradient(90deg, var(--green), var(--blue));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero p {
-      font-size: 1rem; font-weight: 600;
-      color: var(--muted);
-    }
+.lc-info{flex:1;min-width:0}
+.lc-name{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.lc-desc{font-size:12px;color:var(--ink2);line-height:1.5}
 
-    /* ── CARDS ──────────────────────────────────── */
-    .cards {
-      position: relative; z-index: 1;
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 0 18px 48px;
-      display: flex; flex-direction: column; gap: 16px;
-      width: 100%;
-    }
+.lc-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.lc-lessons{font-size:11px;font-weight:700;color:var(--ink3)}
+.lc-words{font-size:10px;color:var(--ink3)}
+.lc-check{
+  width:22px;height:22px;border-radius:50%;
+  border:1.5px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);margin-top:4px;
+}
+.lc.selected .lc-check{background:var(--green);border-color:var(--green)}
+.lc.selected .lc-check::after{content:'✓';font-size:11px;font-weight:800;color:#080f0b}
 
-    /* ── LEVEL CARD ─────────────────────────────── */
-    .level-card {
-      background: var(--card);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 26px 24px;
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
-      animation: fadeUp .5s ease both;
-      text-align: left;
-    }
-    .level-card:nth-child(1) { animation-delay: .1s; }
-    .level-card:nth-child(2) { animation-delay: .2s; }
-    .level-card::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,.04) 0%, transparent 55%);
-      pointer-events: none;
-    }
-    .level-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+/* test option */
+.test-card{
+  background:var(--card2);border:1.5px dashed var(--border2);
+  border-radius:18px;padding:16px 20px;
+  display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:all var(--t);
+  margin-top:4px;
+}
+.test-card:hover{border-color:var(--green);background:rgba(61,219,122,.05)}
+.test-icon{font-size:28px;flex-shrink:0}
+.test-info{flex:1}
+.test-name{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.test-desc{font-size:12px;color:var(--ink2)}
+.test-time{font-size:10px;color:var(--ink3);margin-top:2px}
 
-    .level-card.green {
-      background: linear-gradient(135deg, #0d2a1a 0%, #162235 60%);
-      border-color: rgba(74,222,128,.3);
-    }
-    .level-card.green:hover { border-color: var(--green); box-shadow: 0 12px 40px rgba(74,222,128,.15); }
+.gap{height:20px}
 
-    .level-card.blue {
-      background: linear-gradient(135deg, #0d1f2e 0%, #162235 60%);
-      border-color: rgba(56,189,248,.25);
-    }
-    .level-card.blue:hover { border-color: var(--blue); box-shadow: 0 12px 40px rgba(56,189,248,.12); }
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card2);border:1px solid var(--border2);
+  border-radius:999px;padding:10px 20px;
+  font-size:13px;font-weight:700;color:var(--ink);
+  opacity:0;transition:all .3s;pointer-events:none;z-index:100;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:rgba(248,113,113,.3);color:var(--rose)}
 
-    .card-icon { font-size: 2.4rem; margin-bottom: 14px; display: block; }
-
-    .card-tag {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.68rem; font-weight: 800; letter-spacing: 1px;
-      text-transform: uppercase; border-radius: 50px;
-      padding: 4px 10px; margin-bottom: 10px;
-    }
-    .green .card-tag { color: var(--green); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); }
-    .blue  .card-tag { color: var(--blue);  background: rgba(56,189,248,.1);  border: 1px solid rgba(56,189,248,.2); }
-
-    .level-card h2 { font-size: 1.3rem; font-weight: 900; margin-bottom: 6px; letter-spacing: -.3px; }
-    .level-card p  { font-size: 0.88rem; font-weight: 600; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
-
-    .pill-list { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 22px; }
-    .pill {
-      font-size: 0.7rem; font-weight: 700; border-radius: 50px;
-      padding: 4px 10px;
-      background: rgba(255,255,255,.05); border: 1px solid var(--border);
-      color: var(--muted);
-    }
-
-    /* ── CARD BUTTON ────────────────────────────── */
-    .card-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      border: none; border-radius: 50px;
-      padding: 12px 26px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 0.9rem; font-weight: 900;
-      cursor: pointer;
-      transition: transform .15s ease, box-shadow .15s ease, opacity .15s;
-      position: relative; z-index: 1;
-      width: 100%; justify-content: center;
-    }
-    .card-btn:active { transform: scale(0.97); }
-    .card-btn:disabled { opacity: .55; cursor: not-allowed; }
-
-    .green .card-btn { background: var(--green); color: #0a1a10; box-shadow: 0 4px 20px rgba(74,222,128,.25); }
-    .green .card-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(74,222,128,.4); }
-
-    .blue .card-btn { background: var(--blue); color: #071525; box-shadow: 0 4px 20px rgba(56,189,248,.2); }
-    .blue .card-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(56,189,248,.35); }
-
-    /* deco characters */
-    .card-deco {
-      position: absolute; right: 16px; top: 16px;
-      font-size: 4rem; opacity: .07;
-      pointer-events: none; user-select: none;
-      transform: rotate(8deg);
-      font-family: 'Space Mono', monospace;
-    }
-
-    /* ── DIVIDER ────────────────────────────────── */
-    .or-divider {
-      display: flex; align-items: center; gap: 12px; padding: 0 2px;
-    }
-    .or-divider::before, .or-divider::after {
-      content: ''; flex: 1; height: 1px; background: var(--border);
-    }
-    .or-divider span {
-      font-size: 0.72rem; font-weight: 800; letter-spacing: 1px;
-      text-transform: uppercase; color: var(--muted);
-    }
-
-    /* ── SPINNER ────────────────────────────────── */
-    .spinner {
-      width: 16px; height: 16px;
-      border: 2.5px solid rgba(0,0,0,.2);
-      border-top-color: #0a1a10;
-      border-radius: 50%;
-      animation: spin .6s linear infinite;
-      display: none;
-    }
-    .spinner.blue-spin { border-top-color: #071525; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── TOAST ──────────────────────────────────── */
-    .toast {
-      position: fixed; bottom: 28px; left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: #1e2d3d; border: 1px solid var(--border);
-      border-radius: 14px; padding: 12px 22px;
-      font-size: 0.85rem; font-weight: 700; color: var(--text);
-      z-index: 100;
-      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .3s;
-      opacity: 0; white-space: nowrap; pointer-events: none;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    .toast.error { border-color: #f87171; color: #f87171; }
-
-    /* ── ANIMATIONS ─────────────────────────────── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (min-width: 520px) {
-      .cards { padding: 0 24px 60px; }
-      .hero h1 { font-size: 2.2rem; }
-    }
-  </style>
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+</style>
 </head>
 <body>
 
-<!-- ── LOADING GATE (shown while auth check runs) ── -->
-<div id="loading-gate">
+<!-- LOADING GATE -->
+<div id="gate">
   <div class="gate-panda">🐼</div>
-  <div class="gate-label">Loading<span class="gate-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  <div class="gate-spin"></div>
 </div>
 
-<!-- ── HEADER ─────────────────────────── -->
-<header>
-  <div class="logo">
-    <span>🐼</span> Maobai
-  </div>
-</header>
+<!-- PAGE -->
+<div class="page">
+  <a class="top-logo" href="/index.html">
+    <span class="top-logo-panda">🐼</span>
+    <span class="top-logo-name">汉路 <em>Hànlù</em></span>
+  </a>
 
-<!-- ── HERO ───────────────────────────── -->
-<div class="hero">
-  <span class="hero-panda">🐼</span>
-  <h1>Start your <em>journey</em></h1>
-  <p>Choose your level to get started</p>
-</div>
-
-<!-- ── CARDS ──────────────────────────── -->
-<div class="cards">
-
-  <!-- Beginner -->
-  <div class="level-card green" id="beginnerCard">
-    <span class="card-deco">你好</span>
-    <span class="card-icon">🌱</span>
-    <div class="card-tag">✦ Recommended</div>
-    <h2>Beginner</h2>
-    <p>I'm new to Chinese. Start me from the very basics.</p>
-    <div class="pill-list">
-      <span class="pill">Pinyin</span>
-      <span class="pill">Tones</span>
-      <span class="pill">150 Characters</span>
-      <span class="pill">HSK 1</span>
-    </div>
-    <button class="card-btn" id="beginnerBtn">
-      <span id="beginnerLabel">Start from HSK 1</span>
-      <div class="spinner" id="beginnerSpinner"></div>
+  <!-- STEP 1: USERNAME -->
+  <div id="step-username">
+    <span class="un-panda">🐼</span>
+    <div class="un-title">What's your name?</div>
+    <div class="un-sub">This shows on the leaderboard.<br/>You can change it anytime.</div>
+    <input
+      class="un-input" id="un-input"
+      type="text" maxlength="20"
+      placeholder="Enter your username…"
+      autocomplete="off" spellcheck="false"
+      oninput="checkUsername(this.value)"
+      onkeydown="if(event.key==='Enter')goToLevel()"
+    />
+    <div class="un-hint" id="un-hint">2–20 characters · visible to other learners</div>
+    <button class="btn-next" id="btn-un" onclick="goToLevel()" disabled>
+      Continue →
     </button>
   </div>
 
-  <div class="or-divider"><span>or</span></div>
+  <!-- STEP 2: LEVEL PICKER -->
+  <div id="step-level">
+    <div class="lv-title">Choose your level</div>
+    <div class="lv-sub">All levels are free. Pick where you want to start.</div>
 
-  <!-- Placement Test -->
-  <div class="level-card blue" id="testCard">
-    <span class="card-deco">HSK</span>
-    <span class="card-icon">🎯</span>
-    <div class="card-tag">⚡ 5 min test</div>
-    <h2>I know some Chinese</h2>
-    <p>Find your level with a quick placement test and jump right in.</p>
-    <div class="pill-list">
-      <span class="pill">HSK 1 – 6</span>
-      <span class="pill">~30–35 questions</span>
-      <span class="pill">Auto-place</span>
+    <div class="level-cards" id="level-cards">
+
+      <div class="lc" data-level="1" onclick="selectLevel(1)">
+        <div class="lc-badge l1"><div class="lc-num">1</div><div class="lc-tag">HSK</div></div>
+        <div class="lc-info">
+          <div class="lc-name">Beginner</div>
+          <div class="lc-desc">No Chinese knowledge needed. Start from zero.</div>
+        </div>
+        <div class="lc-right">
+          <div class="lc-lessons">40 lessons</div>
+          <div class="lc-words">150 words</div>
+          <div class="lc-check"></div>
+        </div>
+      </div>
+
+      <div class="lc" data-level="2" onclick="selectLevel(2)">
+        <div class="lc-badge l2"><div class="lc-num">2</div><div class="lc-tag">HSK</div></div>
+        <div class="lc-info">
+          <div class="lc-name">Elementary</div>
+          <div class="lc-desc">Know basic greetings and numbers. Ready for more.</div>
+        </div>
+        <div class="lc-right">
+          <div class="lc-lessons">37 lessons</div>
+          <div class="lc-words">150 words</div>
+          <div class="lc-check"></div>
+        </div>
+      </div>
+
+      <div class="lc" data-level="3" onclick="selectLevel(3)">
+        <div class="lc-badge l3"><div class="lc-num">3</div><div class="lc-tag">HSK</div></div>
+        <div class="lc-info">
+          <div class="lc-name">Intermediate</div>
+          <div class="lc-desc">Can hold basic conversations. Ready to expand.</div>
+        </div>
+        <div class="lc-right">
+          <div class="lc-lessons">63 lessons</div>
+          <div class="lc-words">300 words</div>
+          <div class="lc-check"></div>
+        </div>
+      </div>
+
+      <div class="lc" data-level="4" onclick="selectLevel(4)">
+        <div class="lc-badge l4"><div class="lc-num">4</div><div class="lc-tag">HSK</div></div>
+        <div class="lc-info">
+          <div class="lc-name">Upper-Intermediate</div>
+          <div class="lc-desc">Comfortable with everyday topics. Going deeper.</div>
+        </div>
+        <div class="lc-right">
+          <div class="lc-lessons">97 lessons</div>
+          <div class="lc-words">600 words</div>
+          <div class="lc-check"></div>
+        </div>
+      </div>
+
+      <div class="lc" data-level="5" onclick="selectLevel(5)">
+        <div class="lc-badge l5"><div class="lc-num">5</div><div class="lc-tag">HSK</div></div>
+        <div class="lc-info">
+          <div class="lc-name">Advanced</div>
+          <div class="lc-desc">Strong Chinese. Preparing for professional use.</div>
+        </div>
+        <div class="lc-right">
+          <div class="lc-lessons">160 lessons</div>
+          <div class="lc-words">1,300 words</div>
+          <div class="lc-check"></div>
+        </div>
+      </div>
+
+      <div class="lc" data-level="6" onclick="selectLevel(6)">
+        <div class="lc-badge l6"><div class="lc-num">6</div><div class="lc-tag">HSK</div></div>
+        <div class="lc-info">
+          <div class="lc-name">Mastery</div>
+          <div class="lc-desc">Near-native level. The ultimate challenge.</div>
+        </div>
+        <div class="lc-right">
+          <div class="lc-lessons">260 lessons</div>
+          <div class="lc-words">2,500 words</div>
+          <div class="lc-check"></div>
+        </div>
+      </div>
+
     </div>
-    <button class="card-btn" id="testBtn">
-      <span id="testLabel">Take placement test</span>
-      <div class="spinner blue-spin" id="testSpinner"></div>
+
+    <div class="gap"></div>
+
+    <!-- Not sure? Take a test -->
+    <div class="test-card" onclick="startPlacement()">
+      <div class="test-icon">🎯</div>
+      <div class="test-info">
+        <div class="test-name">Not sure? Take a placement test</div>
+        <div class="test-desc">20 quick questions to find your perfect level.</div>
+        <div class="test-time">⏱ About 3 minutes</div>
+      </div>
+    </div>
+
+    <div class="gap"></div>
+
+    <button class="btn-next" id="btn-level" onclick="confirmLevel()" disabled>
+      Start Learning →
     </button>
   </div>
-
 </div>
 
-<!-- ── TOAST ───────────────────────────── -->
+<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- ── Supabase ────────────────────────── -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-// ════════════════════════════════════════════════════════════
-// CONFIG — replace with your actual values
-// ════════════════════════════════════════════════════════════
-const SUPABASE_URL = window.__SUPABASE_URL__ || 'https://cuiznbvvlqtwcoocehnd.supabase.co';
-const SUPABASE_KEY = window.__SUPABASE_KEY__ || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w';
+const sb = window._sb;
+let userId   = null;
+let username = '';
+let selectedLevel = 0;
+let checkTimer = null;
 
-// How many seconds after sign-up we still consider someone "new".
-// Supabase sets created_at at account creation time.
-const NEW_USER_THRESHOLD_SEC = 30;
-
-// ════════════════════════════════════════════════════════════
-// HELPERS
-// ════════════════════════════════════════════════════════════
-function showToast(msg, isError = false) {
+// ── TOAST
+function showToast(msg, isErr=false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast' + (isError ? ' error' : '');
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => t.classList.remove('show'), 3200);
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-function setLoading(id, loading) {
-  const btn     = document.getElementById(id + 'Btn');
-  const label   = document.getElementById(id + 'Label');
-  const spinner = document.getElementById(id + 'Spinner');
-  if (!btn) return;
-  btn.disabled = loading;
-  label.style.opacity = loading ? '0' : '1';
-  spinner.style.display = loading ? 'block' : 'none';
-}
-
-function revealPage() {
-  const gate = document.getElementById('loading-gate');
-  gate.classList.add('hidden');
-  setTimeout(() => gate.remove(), 350);
-}
-
-function redirectToDashboard() {
-  window.location.replace('/app/dashboard.html');
-}
-
-// ════════════════════════════════════════════════════════════
-// NEW-USER DETECTION — three-layer check
-//
-//  Layer 1 (fastest):  user_level_<id> already in localStorage
-//                      → definitely returning, go to dashboard
-//
-//  Layer 2 (reliable): user_metadata.level_chosen flag stored in
-//                      Supabase user metadata by this page after
-//                      the user picks a level.
-//                      → returning user on a fresh device/browser
-//
-//  Layer 3 (fallback): created_at recency — account was created
-//                      within the last NEW_USER_THRESHOLD_SEC seconds.
-//                      Only true during the actual sign-up flow.
-//
-// A user is shown this page ONLY when all three layers agree
-// they are genuinely new.
-// ════════════════════════════════════════════════════════════
-function isNewSignup(user) {
-  // Layer 3: created_at within threshold
-  const createdAt  = new Date(user.created_at).getTime();
-  const ageSeconds = (Date.now() - createdAt) / 1000;
-  return ageSeconds <= NEW_USER_THRESHOLD_SEC;
-}
-
-// ════════════════════════════════════════════════════════════
-// MAIN
-// ════════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', async () => {
-
-  // ── Step 1: Get authenticated user ───────────────────────
-  let userId = null;
-  let sbClient = null;
-
+// ── AUTH GATE — verify logged in, redirect if not
+async function init() {
   try {
-    if (SUPABASE_URL && SUPABASE_KEY) {
-      const { createClient } = window.supabase;
-      sbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-      const { data, error } = await sbClient.auth.getUser();
+    const { data } = await sb.auth.getSession();
+    const user = data?.session?.user;
+    if (!user) { window.location.replace('/app/login.html'); return; }
+    userId = user.id;
 
-      if (error || !data?.user) {
-        window.location.replace('/app/login.html');
-        return;
-      }
-
-      userId = data.user.id;
-
-      // ── Layer 1: localStorage fast-path ────────────────
-      if (localStorage.getItem(`user_level_${userId}`)) {
-        redirectToDashboard();
-        return;
-      }
-
-      // ── Layer 2: Supabase user_metadata flag ───────────
-      // Written by this page (see saveLevel below) so it
-      // survives the user clearing localStorage or using a
-      // different device.
-      const metaLevel = data.user.user_metadata?.level_chosen;
-      if (metaLevel) {
-        // Re-hydrate localStorage for this device and redirect
-        localStorage.setItem(`user_level_${userId}`, String(metaLevel));
-        localStorage.setItem(`user_lesson_${userId}`,
-          data.user.user_metadata?.lesson_start || '1');
-        redirectToDashboard();
-        return;
-      }
-
-      // ── Layer 3: created_at recency ────────────────────
-      // If the account is older than threshold it's a returning
-      // user who somehow lost their metadata — send to dashboard.
-      if (!isNewSignup(data.user)) {
-        // Edge case: returning user, no metadata, no localStorage.
-        // Default them to level 1 so they land somewhere sensible.
-        localStorage.setItem(`user_level_${userId}`, '1');
-        localStorage.setItem(`user_lesson_${userId}`, '1');
-        redirectToDashboard();
-        return;
-      }
-
-      // All three layers confirm: genuinely new user → show page
-    } else {
-      // ── DEV fallback (no Supabase credentials) ─────────
-      userId = localStorage.getItem('dev_user_id') || 'dev_user';
-      localStorage.setItem('dev_user_id', userId);
-
-      if (localStorage.getItem(`user_level_${userId}`)) {
-        redirectToDashboard();
-        return;
-      }
+    // Already chose a level? Go to dashboard
+    if (localStorage.getItem('user_level_' + userId)) {
+      window.location.replace('/app/dashboard.html');
+      return;
     }
-  } catch (err) {
-    console.error('Auth error:', err);
-    showToast('Could not connect — please refresh.', true);
-    revealPage();
+
+    // Pre-fill username if we have one
+    const storedName = localStorage.getItem('username_' + userId);
+    if (storedName) {
+      document.getElementById('un-input').value = storedName;
+      checkUsername(storedName);
+    }
+
+    // Hide gate
+    const gate = document.getElementById('gate');
+    gate.classList.add('hide');
+    setTimeout(() => gate.style.display = 'none', 400);
+
+  } catch(e) {
+    console.error(e);
+    window.location.replace('/app/login.html');
+  }
+}
+
+// ── USERNAME CHECK
+function checkUsername(val) {
+  const hint = document.getElementById('un-hint');
+  const btn  = document.getElementById('btn-un');
+  const inp  = document.getElementById('un-input');
+  const v    = val.trim();
+
+  if (v.length === 0) {
+    hint.textContent = '2–20 characters · visible to other learners';
+    hint.className = 'un-hint';
+    inp.classList.remove('err');
+    btn.disabled = true;
     return;
   }
-
-  // ── New user confirmed — reveal the level picker ─────────
-  revealPage();
-
-  // ── saveLevel: persist locally + write to Supabase metadata
-  async function saveLevel(level, lessonStart = '1') {
-    // Always write localStorage first (instant)
-    localStorage.setItem(`user_level_${userId}`, String(level));
-    localStorage.setItem(`user_lesson_${userId}`, lessonStart);
-
-    // Write to Supabase user_metadata so other devices/browsers
-    // can detect this user has already chosen a level (Layer 2)
-    if (sbClient) {
-      try {
-        await sbClient.auth.updateUser({
-          data: {
-            level_chosen:  level,
-            lesson_start:  lessonStart,
-          }
-        });
-      } catch (e) {
-        // Non-fatal — localStorage already saved
-        console.warn('metadata write failed:', e);
-      }
-    }
+  if (v.length < 2) {
+    hint.textContent = 'Too short — at least 2 characters';
+    hint.className = 'un-hint bad';
+    inp.classList.add('err');
+    btn.disabled = true;
+    return;
   }
+  if (v.length > 20) {
+    hint.textContent = 'Too long — max 20 characters';
+    hint.className = 'un-hint bad';
+    inp.classList.add('err');
+    btn.disabled = true;
+    return;
+  }
+  // valid
+  hint.textContent = '✓ Looks good!';
+  hint.className = 'un-hint ok';
+  inp.classList.remove('err');
+  username = v;
+  btn.disabled = false;
+}
 
-  // ── Step 3: Beginner button ───────────────────────────────
-  document.getElementById('beginnerBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('beginnerBtn');
-    if (btn.disabled) return;
+// ── GO TO LEVEL STEP
+async function goToLevel() {
+  const v = document.getElementById('un-input').value.trim();
+  if (v.length < 2) return;
+  username = v;
 
-    setLoading('beginner', true);
-    await saveLevel(1, '1');
-    showToast("✅ HSK 1 selected — let's go!");
-    setTimeout(redirectToDashboard, 900);
+  const btn = document.getElementById('btn-un');
+  btn.classList.add('loading'); btn.disabled = true;
+
+  try {
+    // Save username to leaderboard (upsert)
+    const { data: existing } = await sb.from('leaderboard')
+      .select('user_id').eq('user_id', userId).maybeSingle();
+
+    if (existing) {
+      await sb.from('leaderboard').update({ username }).eq('user_id', userId);
+    } else {
+      await sb.from('leaderboard').insert({ user_id: userId, xp: 0, username });
+    }
+
+    // Save to localStorage
+    localStorage.setItem('username_' + userId, username);
+    localStorage.setItem('un_set_' + userId, '1');
+
+    // Show level step
+    document.getElementById('step-username').style.display = 'none';
+    const lvStep = document.getElementById('step-level');
+    lvStep.style.display = 'block';
+    lvStep.style.animation = 'fadeUp .5s ease both';
+
+  } catch(e) {
+    // Even if Supabase fails, save locally and continue
+    localStorage.setItem('username_' + userId, username);
+    localStorage.setItem('un_set_' + userId, '1');
+    document.getElementById('step-username').style.display = 'none';
+    document.getElementById('step-level').style.display = 'block';
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+// ── SELECT LEVEL
+function selectLevel(level) {
+  selectedLevel = level;
+  document.querySelectorAll('.lc').forEach(c => {
+    c.classList.toggle('selected', parseInt(c.dataset.level) === level);
   });
+  document.getElementById('btn-level').disabled = false;
+}
 
-  // ── Step 4: Placement test button ────────────────────────
-  document.getElementById('testBtn').addEventListener('click', () => {
-    const btn = document.getElementById('testBtn');
-    if (btn.disabled) return;
+// ── CONFIRM LEVEL & GO
+async function confirmLevel() {
+  if (!selectedLevel) return;
 
-    setLoading('test', true);
-    const dest = `/app/test.html?placement=true&uid=${encodeURIComponent(userId)}`;
-    setTimeout(() => window.location.replace(dest), 300);
-  });
+  const btn = document.getElementById('btn-level');
+  btn.classList.add('loading'); btn.disabled = true;
 
-});
+  try {
+    // Save level to localStorage
+    localStorage.setItem('user_level_'  + userId, String(selectedLevel));
+    localStorage.setItem('user_lesson_' + userId, '1');
+    localStorage.setItem('hearts_'      + userId, '5');
+    localStorage.setItem('xp_'          + userId, '0');
+
+    // Save to Supabase user metadata
+    await sb.auth.updateUser({
+      data: { level_chosen: selectedLevel, lesson_start: 1 }
+    });
+
+    // Create profile row if needed
+    try {
+      const { data: prof } = await sb.from('profiles')
+        .select('id').eq('id', userId).maybeSingle();
+      if (!prof) {
+        await sb.from('profiles').insert([{ id: userId, xp: 0, hearts: 5 }]);
+      }
+    } catch(e) {}
+
+    showToast('🎉 Let\'s go! Starting HSK ' + selectedLevel);
+    setTimeout(() => window.location.replace('/app/dashboard.html'), 800);
+
+  } catch(e) {
+    // Save locally even if Supabase fails
+    localStorage.setItem('user_level_'  + userId, String(selectedLevel));
+    localStorage.setItem('user_lesson_' + userId, '1');
+    showToast('🎉 Starting HSK ' + selectedLevel);
+    setTimeout(() => window.location.replace('/app/dashboard.html'), 800);
+  }
+}
+
+// ── PLACEMENT TEST (stub — will be built later)
+function startPlacement() {
+  showToast('Placement test coming soon! Pick a level for now.');
+}
+
+init();
 </script>
 </body>
 </html>
