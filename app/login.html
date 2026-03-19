@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>汉路 Hànlù — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window._sb = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+:root{
+  --bg:#080f0b;--bg2:#0c1610;--card:#111e16;--card2:#162218;
+  --border:rgba(74,222,128,.13);--border2:rgba(74,222,128,.28);
+  --green:#3ddb7a;--green2:#2ab862;--green3:#1a8a45;
+  --glow:rgba(61,219,122,.2);
+  --ink:#e8f2ee;--ink2:#9ab8aa;--ink3:#4a6b5a;
+  --rose:#f87171;--rose-bg:rgba(248,113,113,.08);--rose-border:rgba(248,113,113,.25);
+  --r:16px;--t:.22s cubic-bezier(.4,0,.2,1);
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:24px 16px;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(61,219,122,.09) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 30% at 90% 90%, rgba(61,219,122,.05) 0%, transparent 55%);
+}
+
+/* ── BACK LINK ── */
+.back{
+  position:fixed;top:20px;left:20px;
+  display:flex;align-items:center;gap:6px;
+  text-decoration:none;color:var(--ink2);font-size:13px;font-weight:500;
+  transition:color var(--t);
+}
+.back:hover{color:var(--green)}
+.back svg{width:16px;height:16px}
+
+/* ── CARD ── */
+.card{
+  width:100%;max-width:400px;
+  background:var(--card);
+  border:1.5px solid var(--border);
+  border-radius:24px;
+  padding:36px 32px;
+  box-shadow:0 0 60px rgba(61,219,122,.06), 0 32px 64px rgba(0,0,0,.4);
+  animation:fadeUp .5s ease both;
+}
+@media(max-width:440px){.card{padding:28px 22px}}
+
+/* ── LOGO ── */
+.logo{text-align:center;margin-bottom:28px}
+.logo-panda{font-size:52px;line-height:1;margin-bottom:8px;display:block;animation:pandaBob 3s ease infinite}
+@keyframes pandaBob{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.logo-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--ink)}
+.logo-name em{color:var(--green);font-style:normal}
+.logo-sub{font-size:12px;color:var(--ink3);margin-top:3px}
+
+/* ── TAB SWITCHER ── */
+.tabs{
+  display:flex;background:var(--bg2);border-radius:12px;padding:4px;
+  margin-bottom:26px;gap:4px;
+  border:1px solid var(--border);
+}
+.tab{
+  flex:1;padding:9px;border-radius:9px;border:none;
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all var(--t);background:transparent;color:var(--ink3);
+}
+.tab.on{background:var(--card2);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+
+/* ── FORM ── */
+.form-group{margin-bottom:16px}
+label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;letter-spacing:.04em}
+.input{
+  width:100%;padding:13px 16px;
+  background:var(--bg2);
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:400;
+  color:var(--ink);outline:none;
+  transition:border-color var(--t),box-shadow var(--t);
+  caret-color:var(--green);
+}
+.input::placeholder{color:var(--ink3)}
+.input:focus{border-color:var(--border2);box-shadow:0 0 0 3px rgba(61,219,122,.08)}
+.input.err{border-color:var(--rose-border);box-shadow:0 0 0 3px rgba(248,113,113,.08)}
+
+/* password wrapper */
+.pw-wrap{position:relative}
+.pw-toggle{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:var(--ink3);
+  transition:color var(--t);padding:4px;
+}
+.pw-toggle:hover{color:var(--green)}
+.pw-toggle svg{width:18px;height:18px;display:block}
+
+/* ── ERROR ── */
+.error-box{
+  background:var(--rose-bg);border:1px solid var(--rose-border);
+  border-radius:10px;padding:11px 14px;
+  font-size:13px;color:var(--rose);
+  margin-bottom:16px;display:none;
+  animation:shake .35s ease;
+}
+.error-box.show{display:block}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ── SUBMIT ── */
+.btn-submit{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:#080f0b;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all var(--t);
+  box-shadow:0 4px 20px rgba(61,219,122,.25);
+  margin-top:6px;
+  position:relative;overflow:hidden;
+}
+.btn-submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 28px rgba(61,219,122,.35)}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-submit .spinner{
+  width:18px;height:18px;border-radius:50%;
+  border:2.5px solid rgba(0,0,0,.25);border-top-color:#080f0b;
+  animation:spin .7s linear infinite;
+  display:none;margin:0 auto;
+}
+.btn-submit.loading .btn-text{display:none}
+.btn-submit.loading .spinner{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── DIVIDER ── */
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ink3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── GOOGLE BTN ── */
+.btn-google{
+  width:100%;padding:13px;border-radius:12px;
+  background:var(--bg2);border:1.5px solid var(--border2);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+  color:var(--ink);cursor:pointer;transition:all var(--t);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-google:hover{background:var(--card2);border-color:rgba(61,219,122,.4)}
+.btn-google svg{width:20px;height:20px;flex-shrink:0}
+
+/* ── FORGOT / LINKS ── */
+.forgot{
+  display:block;text-align:right;font-size:12px;color:var(--ink3);
+  text-decoration:none;margin-top:-8px;margin-bottom:16px;
+  transition:color var(--t);
+}
+.forgot:hover{color:var(--green)}
+
+/* ── TERMS ── */
+.terms{font-size:11px;color:var(--ink3);text-align:center;margin-top:18px;line-height:1.6}
+.terms a{color:var(--ink2);text-decoration:none}
+.terms a:hover{color:var(--green)}
+
+/* ── SUCCESS ── */
+.success-box{
+  text-align:center;padding:20px 0 10px;display:none;
+}
+.success-box.show{display:block;animation:fadeUp .4s ease both}
+.success-emoji{font-size:52px;margin-bottom:12px;display:block;animation:pandaBob 2s ease infinite}
+.success-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--green);margin-bottom:6px}
+.success-sub{font-size:13px;color:var(--ink2)}
+
+/* ── FORGOT FORM ── */
+#form-forgot{display:none}
+.back-to-login{
+  display:flex;align-items:center;gap:6px;
+  background:none;border:none;color:var(--ink2);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;margin-bottom:20px;padding:0;
+  transition:color var(--t);
+}
+.back-to-login:hover{color:var(--green)}
+.back-to-login svg{width:14px;height:14px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- BACK TO LANDING -->
+<a class="back" href="/index.html">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Back
+</a>
+
+<div class="card">
+
+  <!-- LOGO -->
+  <div class="logo">
+    <span class="logo-panda">🐼</span>
+    <div class="logo-name">汉路 <em>Hànlù</em></div>
+    <div class="logo-sub">The Chinese Path</div>
+  </div>
+
+  <!-- LOGIN FORM -->
+  <div id="form-login">
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab on" id="tab-in"  onclick="switchTab('in')">Sign In</button>
+      <button class="tab"    id="tab-up"  onclick="switchTab('up')">Sign Up</button>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <!-- EMAIL -->
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" spellcheck="false"/>
+    </div>
+
+    <!-- PASSWORD -->
+    <div class="form-group" id="pw-group">
+      <label for="password">Password</label>
+      <div class="pw-wrap">
+        <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+        <button class="pw-toggle" type="button" onclick="togglePw()" aria-label="Toggle password">
+          <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONFIRM PASSWORD (sign up only) -->
+    <div class="form-group" id="pw2-group" style="display:none">
+      <label for="password2">Confirm Password</label>
+      <div class="pw-wrap">
+        <input class="input" id="password2" type="password" placeholder="••••••••" autocomplete="new-password"/>
+      </div>
+    </div>
+
+    <!-- FORGOT (sign in only) -->
+    <a class="forgot" id="forgot-link" href="#" onclick="showForgot();return false">Forgot password?</a>
+
+    <!-- SUBMIT -->
+    <button class="btn-submit" id="btn-submit" onclick="handleSubmit()">
+      <span class="btn-text" id="btn-text">Sign In</span>
+      <div class="spinner"></div>
+    </button>
+
+    <div class="divider">or</div>
+
+    <!-- GOOGLE -->
+    <button class="btn-google" onclick="signInGoogle()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div class="terms">
+      By continuing you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+    </div>
+  </div>
+
+  <!-- FORGOT PASSWORD FORM -->
+  <div id="form-forgot">
+    <button class="back-to-login" onclick="hideForgot()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Sign In
+    </button>
+    <div style="margin-bottom:20px">
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:6px">Reset Password</div>
+      <div style="font-size:13px;color:var(--ink2)">Enter your email and we'll send you a reset link.</div>
+    </div>
+    <div class="error-box" id="error-forgot"></div>
+    <div class="success-box" id="success-forgot">
+      <span class="success-emoji">📬</span>
+      <div class="success-title">Check your email!</div>
+      <div class="success-sub">We sent a password reset link to your email address.</div>
+    </div>
+    <div id="forgot-fields">
+      <div class="form-group">
+        <label for="forgot-email">Email</label>
+        <input class="input" id="forgot-email" type="email" placeholder="you@example.com"/>
+      </div>
+      <button class="btn-submit" id="btn-forgot" onclick="handleForgot()">
+        <span class="btn-text">Send Reset Link</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const sb = window._sb;
+let mode = 'in'; // 'in' or 'up'
+
+// ── TAB SWITCH
+function switchTab(m) {
+  mode = m;
+  document.getElementById('tab-in').classList.toggle('on', m === 'in');
+  document.getElementById('tab-up').classList.toggle('on', m === 'up');
+  document.getElementById('pw2-group').style.display  = m === 'up' ? 'block' : 'none';
+  document.getElementById('forgot-link').style.display = m === 'in' ? 'block' : 'none';
+  document.getElementById('btn-text').textContent = m === 'in' ? 'Sign In' : 'Create Account';
+  document.getElementById('password').autocomplete = m === 'in' ? 'current-password' : 'new-password';
+  clearError();
+}
+
+// ── PASSWORD TOGGLE
+let pwVisible = false;
+function togglePw() {
+  pwVisible = !pwVisible;
+  document.getElementById('password').type = pwVisible ? 'text' : 'password';
+  document.getElementById('eye-icon').innerHTML = pwVisible
+    ? '<line x1="1" y1="1" x2="23" y2="23"/><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+// ── ERROR
+function showError(msg, boxId='error-box') {
+  const box = document.getElementById(boxId);
+  box.textContent = msg;
+  box.classList.add('show');
+}
+function clearError() {
+  document.getElementById('error-box').classList.remove('show');
+  document.querySelectorAll('.input').forEach(i => i.classList.remove('err'));
+}
+
+function setLoading(btnId, on) {
+  const btn = document.getElementById(btnId);
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+}
+
+// ── MAIN SUBMIT
+async function handleSubmit() {
+  clearError();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email) { showError('Please enter your email'); document.getElementById('email').classList.add('err'); return; }
+  if (!password) { showError('Please enter your password'); document.getElementById('password').classList.add('err'); return; }
+
+  if (mode === 'up') {
+    const pw2 = document.getElementById('password2').value;
+    if (password.length < 6) { showError('Password must be at least 6 characters'); return; }
+    if (password !== pw2) { showError('Passwords do not match'); document.getElementById('password2').classList.add('err'); return; }
+  }
+
+  setLoading('btn-submit', true);
+
+  try {
+    if (mode === 'in') {
+      // SIGN IN
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      window.location.replace('/app/dashboard.html');
+
+    } else {
+      // SIGN UP
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+
+      // New user — go to level picker
+      if (data.session) {
+        window.location.replace('/app/level.html');
+      } else {
+        // Email confirmation required
+        document.getElementById('form-login').innerHTML = `
+          <div class="success-box show">
+            <span class="success-emoji">📬</span>
+            <div class="success-title">Check your email!</div>
+            <div class="success-sub">We sent a confirmation link to <strong style="color:var(--ink)">${email}</strong>. Click it to activate your account.</div>
+          </div>`;
+      }
+    }
+  } catch(e) {
+    let msg = e.message || 'Something went wrong. Please try again.';
+    if (msg.includes('Invalid login')) msg = 'Wrong email or password.';
+    if (msg.includes('already registered')) msg = 'This email is already registered. Try signing in.';
+    if (msg.includes('valid email')) msg = 'Please enter a valid email address.';
+    showError(msg);
+  } finally {
+    setLoading('btn-submit', false);
+  }
+}
+
+// ── GOOGLE
+async function signInGoogle() {
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/app/dashboard.html' }
+    });
+    if (error) throw error;
+  } catch(e) {
+    showError('Could not connect to Google. Try email instead.');
+  }
+}
+
+// ── FORGOT PASSWORD
+function showForgot() {
+  document.getElementById('form-login').style.display = 'none';
+  document.getElementById('form-forgot').style.display = 'block';
+}
+function hideForgot() {
+  document.getElementById('form-forgot').style.display = 'none';
+  document.getElementById('form-login').style.display  = 'block';
+}
+
+async function handleForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const errBox = document.getElementById('error-forgot');
+  errBox.classList.remove('show');
+
+  if (!email) { showError('Please enter your email', 'error-forgot'); return; }
+
+  setLoading('btn-forgot', true);
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/app/login.html'
+    });
+    if (error) throw error;
+    document.getElementById('forgot-fields').style.display = 'none';
+    document.getElementById('success-forgot').classList.add('show');
+  } catch(e) {
+    showError(e.message || 'Could not send reset email.', 'error-forgot');
+  } finally {
+    setLoading('btn-forgot', false);
+  }
+}
+
+// ── CHECK ALREADY LOGGED IN
+(async () => {
+  try {
+    const { data } = await sb.auth.getSession();
+    if (data?.session?.user) {
+      // already logged in — check if level chosen
+      const uid = data.session.user.id;
+      const hasLevel = localStorage.getItem('user_level_' + uid);
+      window.location.replace(hasLevel ? '/app/dashboard.html' : '/app/level.html');
+    }
+  } catch(e) {}
+})();
+
+// ── ENTER KEY
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('form-forgot').style.display === 'block') handleForgot();
+    else handleSubmit();
+  }
+});
+</script>
+</body>
+</html>
