@@ -1543,40 +1543,46 @@ async function saveXP(xpEarned) {
     // 1. Get current user via session
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData?.session?.user;
-    console.log("saveXP: USER =", user);
     if (!user) {
-      console.error("saveXP: NO AUTH USER — XP NOT SAVED");
+      alert("saveXP: NO USER — not logged in");
       return;
     }
-    console.log("saveXP: user =", user.id, "| xpEarned =", xpEarned);
+    alert("saveXP: user=" + user.id + " xp=" + xpEarned);
 
-    // 2. Get existing leaderboard row to accumulate XP
-    const { data: existing, error: fetchError } = await supabase
+    // 2. Try INSERT first — if user doesn't exist yet
+    const { error: insertError } = await supabase
       .from("leaderboard")
-      .select("xp")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    console.log("saveXP: existing row =", existing, "fetchError =", fetchError);
+      .insert({ user_id: user.id, xp: xpEarned });
 
-    const currentXP = existing?.xp || 0;
-    const newXP     = currentXP + xpEarned;
-    console.log("saveXP: currentXP =", currentXP, "→ newXP =", newXP);
+    if (insertError) {
+      // Row already exists — UPDATE instead
+      alert("saveXP: insert failed (" + insertError.message + "), trying update...");
 
-    // 3. Upsert only user_id and xp (matches actual table columns)
-    const { error } = await supabase
-      .from("leaderboard")
-      .upsert(
-        { user_id: user.id, xp: newXP },
-        { onConflict: "user_id" }
-      );
+      // Get current XP then add to it
+      const { data: existing } = await supabase
+        .from("leaderboard")
+        .select("xp")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (error) {
-      console.error("saveXP: upsert FAILED:", error.message, error);
+      const currentXP = existing?.xp || 0;
+      const newXP = currentXP + xpEarned;
+
+      const { error: updateError } = await supabase
+        .from("leaderboard")
+        .update({ xp: newXP })
+        .eq("user_id", user.id);
+
+      if (updateError) {
+        alert("saveXP: UPDATE also failed: " + updateError.message);
+      } else {
+        alert("saveXP: UPDATE SUCCESS — XP=" + newXP);
+      }
     } else {
-      console.log("saveXP: SUCCESS — leaderboard updated, XP =", newXP);
+      alert("saveXP: INSERT SUCCESS — XP=" + xpEarned);
     }
   } catch(e) {
-    console.error("saveXP: unexpected error:", e);
+    alert("saveXP: CRASH — " + e.message);
   }
 }
 
