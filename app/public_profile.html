@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Maobai — Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window._sb = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
+</script>
+<style>
+:root{
+  --bg:#0f1923;--bg2:#0d1720;--card:#162235;--card2:#1a2a3d;
+  --border:#1f3349;--border2:#243d57;
+  --green:#4ade80;--green-dark:#22c55e;--green-muted:rgba(74,222,128,.10);--green-glow:rgba(74,222,128,.28);
+  --blue:#60a5fa;--blue-muted:rgba(96,165,250,.12);
+  --text:#e8f4ef;--text-mid:#8fb3c4;--text-muted:#5a7a8a;
+  --gold:#fbbf24;--silver:#cbd5e1;--bronze:#fb923c;
+  --rose:#f87171;--purple:#a78bfa;
+  --radius:20px;--radius-sm:12px;--t:.2s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:80px}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── HEADER ── */
+.header{position:sticky;top:0;z-index:60;height:64px;background:rgba(15,25,35,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;max-width:100%}
+.btn-back{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 10px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--text-mid);cursor:pointer;text-decoration:none;transition:all var(--t)}
+.btn-back:hover{background:var(--card2);border-color:var(--border2);color:var(--text)}
+.btn-back svg{width:14px;height:14px}
+.header-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--text);letter-spacing:-.3px}
+.header-spacer{width:80px}
+
+/* ── PAGE ── */
+.page{max-width:520px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:18px}
+
+/* ── HERO CARD ── */
+.hero-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 20px;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(74,222,128,.07) 0%,transparent 65%);pointer-events:none}
+.hero-top{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.hero-avatar{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:26px;font-weight:900;flex-shrink:0;background:linear-gradient(135deg,rgba(74,222,128,.25),rgba(74,222,128,.08));border:2.5px solid rgba(74,222,128,.4);color:var(--green)}
+.hero-info{flex:1;min-width:0}
+.hero-name{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-level{display:inline-flex;align-items:center;gap:5px;background:var(--green-muted);border:1px solid rgba(74,222,128,.2);border-radius:999px;padding:3px 10px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:var(--green);margin-top:6px;letter-spacing:.05em}
+.hero-rank{font-size:12px;color:var(--text-muted);margin-top:4px}
+.hero-rank span{color:var(--gold);font-weight:700}
+
+/* ── FOLLOW BUTTON ── */
+.btn-follow-hero{width:100%;padding:13px;border-radius:14px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;cursor:pointer;transition:all var(--t);border:none;letter-spacing:.02em}
+.btn-follow-hero.follow{background:var(--green);color:#0f1923;box-shadow:0 4px 16px rgba(74,222,128,.28)}
+.btn-follow-hero.follow:hover{box-shadow:0 6px 24px rgba(74,222,128,.4);transform:translateY(-1px)}
+.btn-follow-hero.following{background:var(--card2);border:1.5px solid var(--border2);color:var(--text-muted)}
+.btn-follow-hero.following:hover{border-color:var(--rose);color:var(--rose)}
+
+/* ── STATS GRID ── */
+.section-label{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;padding:0 2px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 12px;display:flex;flex-direction:column;gap:5px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;inset:0;pointer-events:none}
+.stat-card.xp::before{background:linear-gradient(135deg,rgba(74,222,128,.08),transparent)}
+.stat-card.streak::before{background:linear-gradient(135deg,rgba(251,191,36,.08),transparent)}
+.stat-card.lessons::before{background:linear-gradient(135deg,rgba(167,139,250,.08),transparent)}
+.stat-icon{font-size:18px;line-height:1}
+.stat-val{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;line-height:1}
+.stat-card.xp .stat-val{color:var(--green)}
+.stat-card.streak .stat-val{color:var(--gold)}
+.stat-card.lessons .stat-val{color:var(--purple)}
+.stat-lbl{font-size:10px;font-weight:700;color:var(--text-muted)}
+
+/* ── HSK PROGRESS ── */
+.hsk-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px}
+.hsk-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.hsk-card-title{font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text)}
+.hsk-card-pct{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--green)}
+.hsk-bars{display:flex;flex-direction:column;gap:7px}
+.hsk-bar-row{display:flex;align-items:center;gap:8px}
+.hsk-bar-name{font-size:10px;font-weight:700;color:var(--text-muted);width:40px;flex-shrink:0;font-family:'Nunito',sans-serif}
+.hsk-bar-track{flex:1;height:6px;background:var(--border);border-radius:999px;overflow:hidden}
+.hsk-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green-dark),var(--green));transition:width .8s cubic-bezier(.4,0,.2,1)}
+.hsk-bar-num{font-size:10px;font-weight:800;color:var(--text-mid);width:20px;text-align:right;font-family:'Nunito',sans-serif;flex-shrink:0}
+
+/* ── BADGES ── */
+.badges-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.badge-item{display:flex;flex-direction:column;align-items:center;gap:5px}
+.badge-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative}
+.badge-icon.earned{background:var(--card2);border:1.5px solid var(--border2)}
+.badge-icon.locked{background:var(--bg2);border:1.5px dashed var(--border);opacity:.4;filter:grayscale(1)}
+.badge-lock{position:absolute;bottom:2px;right:2px;font-size:9px}
+.badge-name{font-size:9px;font-weight:700;color:var(--text-muted);text-align:center;line-height:1.3;font-family:'Nunito',sans-serif}
+.badge-name.earned{color:var(--text-mid)}
+
+/* ── XP BATTLE COMPARISON ── */
+.battle-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden}
+.battle-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(96,165,250,.06),rgba(248,113,113,.06));pointer-events:none}
+.battle-title{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;text-align:center;margin-bottom:16px}
+.battle-names{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.battle-player{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:120px}
+.battle-player-name{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.battle-player.me .battle-player-name{color:var(--blue)}
+.battle-player.them .battle-player-name{color:var(--rose)}
+.battle-player-xp{font-size:11px;font-weight:700}
+.battle-player.me .battle-player-xp{color:var(--blue)}
+.battle-player.them .battle-player-xp{color:var(--rose)}
+.battle-vs{font-family:'Nunito',sans-serif;font-size:16px;font-weight:900;color:var(--text-muted);flex-shrink:0}
+.battle-bar-wrap{height:18px;border-radius:999px;overflow:hidden;display:flex;position:relative;background:var(--border)}
+.battle-bar-me{height:100%;background:linear-gradient(90deg,#3b82f6,var(--blue));border-radius:999px 0 0 999px;transition:width 1s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;min-width:18px}
+.battle-bar-them{height:100%;background:linear-gradient(90deg,var(--rose),#ef4444);border-radius:0 999px 999px 0;transition:width 1s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;padding-left:6px;min-width:18px}
+.battle-bar-pct{font-family:'Nunito',sans-serif;font-size:9px;font-weight:900;color:#fff;white-space:nowrap}
+.battle-result{text-align:center;margin-top:10px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;color:var(--text-muted)}
+.battle-result.winning{color:var(--green)}
+.battle-result.losing{color:var(--rose)}
+.battle-result.tied{color:var(--gold)}
+
+/* ── LOADING / ERROR ── */
+.loading-screen{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--text-muted);font-family:'Nunito',sans-serif;font-weight:700}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:68px;background:rgba(13,23,32,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;padding:8px 4px;cursor:pointer;text-decoration:none;border-radius:12px;transition:background .2s;-webkit-tap-highlight-color:transparent}
+.nav-item:hover{background:rgba(255,255,255,.04)}
+.nav-icon{font-size:21px;line-height:1}
+.nav-label{font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:800;color:var(--text-muted);letter-spacing:.2px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:300;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a class="btn-back" id="btn-back" href="/app/leaderboard.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </a>
+  <div class="header-title" id="header-title">Profile</div>
+  <div class="header-spacer"></div>
+</header>
+
+<!-- PAGE -->
+<div class="page" id="page">
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading profile…</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a class="nav-item" href="/app/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+  <a class="nav-item" href="/app/dashboard.html"><span class="nav-icon">✅</span><span class="nav-label">Tasks</span></a>
+  <a class="nav-item" href="/app/leaderboard.html"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+  <a class="nav-item" href="/app/profile.html"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const sb = window._sb;
+const params = new URLSearchParams(location.search);
+const targetUserId = params.get('uid');
+const backUrl = params.get('from') || '/app/leaderboard.html';
+
+// Set back button href dynamically
+document.getElementById('btn-back').href = backUrl;
+
+let myUserId = null;
+let myXP = 0;
+let myUsername = 'You';
+let isFollowing = false;
+let targetData = null;
+
+// ── Toast
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Badges
+const BADGES = [
+  { icon:'🎓', name:'First Step',    check: s => s.lessons >= 1 },
+  { icon:'🔥', name:'On Fire',       check: s => s.streak >= 3 },
+  { icon:'⚡', name:'Unstoppable',   check: s => s.streak >= 7 },
+  { icon:'💯', name:'Century',       check: s => s.xp >= 100 },
+  { icon:'🏅', name:'Gold Rush',     check: s => s.xp >= 500 },
+  { icon:'📚', name:'Bookworm',      check: s => s.lessons >= 10 },
+  { icon:'🎯', name:'Dedicated',     check: s => s.lessons >= 30 },
+  { icon:'🏆', name:'Podium',        check: s => s.rank <= 3 && s.rank > 0 },
+  { icon:'🀄', name:'HSK 2 Hero',    check: s => s.level >= 2 },
+  { icon:'🌟', name:'Intermediate',  check: s => s.level >= 3 },
+  { icon:'💎', name:'Perfectionist', check: s => false },
+  { icon:'👑', name:'Champion',      check: s => s.streak >= 30 },
+];
+
+function renderPage(target, myData, allUsers) {
+  const page = document.getElementById('page');
+  page.innerHTML = '';
+
+  const name = target.username || ('Learner ' + target.user_id.slice(0,6).toUpperCase());
+  const xp   = target.xp || 0;
+  const level = target.level || 1;
+  const lessons = target.lessons || 0;
+  const streak = target.streak || 0;
+
+  // Global rank
+  const rankIdx = allUsers.findIndex(u => u.user_id === target.user_id);
+  const rank = rankIdx >= 0 ? rankIdx + 1 : 0;
+
+  const lvlNames = ['','HSK 1','HSK 2','HSK 3','HSK 4','HSK 5','HSK 6'];
+
+  document.getElementById('header-title').textContent = name;
+
+  // ── HERO CARD
+  const hero = document.createElement('div');
+  hero.className = 'hero-card';
+  hero.style.animation = 'fadeUp .35s ease both';
+  hero.innerHTML = `
+    <div class="hero-top">
+      <div class="hero-avatar">${name.slice(0,2).toUpperCase()}</div>
+      <div class="hero-info">
+        <div class="hero-name">${name}</div>
+        <div class="hero-level">${lvlNames[level] || 'HSK 1'} · Beginner</div>
+        <div class="hero-rank">Global Rank: <span>${rank > 0 ? '#' + rank : 'Unranked'}</span></div>
+      </div>
+    </div>
+    <button class="btn-follow-hero ${isFollowing ? 'following' : 'follow'}" id="btn-follow-hero"
+      onclick="toggleFollow()">
+      ${isFollowing ? '✓ Following' : '+ Follow'}
+    </button>`;
+  page.appendChild(hero);
+
+  // ── STATS
+  const slabel = document.createElement('div');
+  slabel.className = 'section-label';
+  slabel.style.animation = 'fadeUp .35s ease .05s both';
+  slabel.textContent = 'Stats';
+  page.appendChild(slabel);
+
+  const grid = document.createElement('div');
+  grid.className = 'stats-grid';
+  grid.style.animation = 'fadeUp .35s ease .08s both';
+  [
+    { cls:'xp',      icon:'⚡', val: xp,      lbl:'Total XP' },
+    { cls:'streak',  icon:'🔥', val: streak,   lbl:'Day Streak' },
+    { cls:'lessons', icon:'📖', val: lessons,  lbl:'Lessons' },
+  ].forEach(s => {
+    const c = document.createElement('div');
+    c.className = 'stat-card ' + s.cls;
+    c.innerHTML = `<div class="stat-icon">${s.icon}</div><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div>`;
+    grid.appendChild(c);
+  });
+  page.appendChild(grid);
+
+  // ── HSK PROGRESS
+  const plabel = document.createElement('div');
+  plabel.className = 'section-label';
+  plabel.textContent = 'HSK Progress';
+  page.appendChild(plabel);
+
+  const TOTAL = 30;
+  const hskCard = document.createElement('div');
+  hskCard.className = 'hsk-card';
+  const hskLevels = [1,2,3,4,5,6].map(l => ({
+    name: 'HSK ' + l,
+    done: level > l ? TOTAL : level === l ? Math.min(lessons, TOTAL) : 0
+  }));
+  const totalDone = hskLevels.reduce((a,b) => a + b.done, 0);
+  const pct = Math.round((totalDone / (TOTAL*6)) * 100);
+
+  hskCard.innerHTML = `
+    <div class="hsk-card-top">
+      <div class="hsk-card-title">Overall Completion</div>
+      <div class="hsk-card-pct">${pct}%</div>
+    </div>
+    <div class="hsk-bars">
+      ${hskLevels.map(l => {
+        const p = Math.round((l.done / TOTAL) * 100);
+        return `<div class="hsk-bar-row">
+          <div class="hsk-bar-name">${l.name}</div>
+          <div class="hsk-bar-track"><div class="hsk-bar-fill" style="width:${p}%"></div></div>
+          <div class="hsk-bar-num">${l.done}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  page.appendChild(hskCard);
+
+  // ── BADGES
+  const blabel = document.createElement('div');
+  blabel.className = 'section-label';
+  blabel.textContent = 'Badges';
+  page.appendChild(blabel);
+
+  const stats = { xp, streak, lessons, level, rank };
+  const bgrid = document.createElement('div');
+  bgrid.className = 'badges-grid';
+  BADGES.forEach(b => {
+    const earned = b.check(stats);
+    const item = document.createElement('div');
+    item.className = 'badge-item';
+    item.innerHTML = `
+      <div class="badge-icon ${earned ? 'earned' : 'locked'}">
+        ${b.icon}${!earned ? '<span class="badge-lock">🔒</span>' : ''}
+      </div>
+      <div class="badge-name ${earned ? 'earned' : ''}">${b.name}</div>`;
+    bgrid.appendChild(item);
+  });
+  page.appendChild(bgrid);
+
+  // ── XP BATTLE COMPARISON (only if we have our own data)
+  if (myUserId && myUserId !== target.user_id) {
+    const blCard = document.createElement('div');
+    blCard.className = 'battle-card';
+    blCard.style.animation = 'fadeUp .4s ease .12s both';
+
+    const totalXP  = (myXP + xp) || 1;
+    const myPct    = Math.round((myXP / totalXP) * 100);
+    const themPct  = 100 - myPct;
+    const myWins   = myXP > xp;
+    const tied     = myXP === xp;
+
+    let resultMsg = tied
+      ? "⚖️ You're tied! — keep learning to take the lead"
+      : myWins
+        ? `🏆 You're ahead by ${myXP - xp} XP — keep it up!`
+        : `😤 ${name} leads by ${xp - myXP} XP — time to grind!`;
+
+    blCard.innerHTML = `
+      <div class="battle-title">⚔️ XP Battle</div>
+      <div class="battle-names">
+        <div class="battle-player me">
+          <div class="battle-player-name">${myUsername}</div>
+          <div class="battle-player-xp">⚡ ${myXP} XP</div>
+        </div>
+        <div class="battle-vs">VS</div>
+        <div class="battle-player them">
+          <div class="battle-player-name">${name}</div>
+          <div class="battle-player-xp">⚡ ${xp} XP</div>
+        </div>
+      </div>
+      <div class="battle-bar-wrap">
+        <div class="battle-bar-me" style="width:${myPct}%">
+          ${myPct >= 15 ? `<span class="battle-bar-pct">${myPct}%</span>` : ''}
+        </div>
+        <div class="battle-bar-them" style="width:${themPct}%">
+          ${themPct >= 15 ? `<span class="battle-bar-pct">${themPct}%</span>` : ''}
+        </div>
+      </div>
+      <div class="battle-result ${tied ? 'tied' : myWins ? 'winning' : 'losing'}">${resultMsg}</div>`;
+    page.appendChild(blCard);
+  }
+}
+
+async function toggleFollow() {
+  if (!myUserId || !targetUserId) return;
+  const btn = document.getElementById('btn-follow-hero');
+  btn.disabled = true;
+
+  try {
+    if (isFollowing) {
+      await sb.from('follows').delete()
+        .eq('follower_id', myUserId).eq('following_id', targetUserId);
+      isFollowing = false;
+      btn.className = 'btn-follow-hero follow';
+      btn.textContent = '+ Follow';
+      showToast('Unfollowed');
+    } else {
+      await sb.from('follows')
+        .insert({ follower_id: myUserId, following_id: targetUserId });
+      isFollowing = true;
+      btn.className = 'btn-follow-hero following';
+      btn.textContent = '✓ Following';
+      showToast('✅ Now following!');
+    }
+  } catch(e) {
+    console.error('Follow error:', e);
+    showToast('Could not update — try again');
+  }
+  btn.disabled = false;
+}
+
+async function init() {
+  if (!targetUserId) {
+    document.getElementById('page').innerHTML = '<div style="text-align:center;padding:60px 24px;color:var(--text-muted);font-size:14px">No user specified. <a href="/app/leaderboard.html" style="color:var(--green)">← Back</a></div>';
+    return;
+  }
+
+  try {
+    // Get current logged-in user
+    const { data: session } = await sb.auth.getSession();
+    const me = session?.session?.user;
+    if (me) {
+      myUserId   = me.id;
+      // Get my XP from leaderboard
+      const { data: myRow } = await sb.from('leaderboard').select('xp, username').eq('user_id', myUserId).maybeSingle();
+      myXP = myRow?.xp || 0;
+      myUsername = myRow?.username
+        || localStorage.getItem('username_' + myUserId)
+        || me.email?.split('@')[0]
+        || 'You';
+    }
+
+    // Get target user's leaderboard data
+    const { data: targetRow } = await sb.from('leaderboard')
+      .select('user_id, xp, username')
+      .eq('user_id', targetUserId)
+      .maybeSingle();
+
+    if (!targetRow) {
+      document.getElementById('page').innerHTML = '<div style="text-align:center;padding:60px 24px;color:var(--text-muted);font-size:14px">User not found. <a href="/app/leaderboard.html" style="color:var(--green)">← Back</a></div>';
+      return;
+    }
+
+    // Get all users for rank calculation
+    const { data: allUsers } = await sb.from('leaderboard').select('user_id, xp').order('xp', { ascending: false });
+
+    // Build target stats — pull from leaderboard + defaults
+    // (public users only have leaderboard data; localStorage is private)
+    targetData = {
+      ...targetRow,
+      level:   1,   // default — we only have leaderboard data for others
+      lessons: Math.floor((targetRow.xp || 0) / 10), // estimate from XP
+      streak:  0,
+    };
+
+    // Check if we follow this person
+    if (myUserId && myUserId !== targetUserId) {
+      const { data: followRow } = await sb.from('follows')
+        .select('follower_id')
+        .eq('follower_id', myUserId)
+        .eq('following_id', targetUserId)
+        .maybeSingle();
+      isFollowing = !!followRow;
+    }
+
+    // If viewing own profile — redirect to profile.html
+    if (myUserId === targetUserId) {
+      window.location.replace('/app/profile.html');
+      return;
+    }
+
+    renderPage(targetData, { xp: myXP }, allUsers || []);
+
+  } catch(e) {
+    console.error('Public profile error:', e);
+    document.getElementById('page').innerHTML = '<div style="text-align:center;padding:60px 24px;color:var(--text-muted);font-size:14px">Could not load profile. <a href="/app/leaderboard.html" style="color:var(--green)">← Back</a></div>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
