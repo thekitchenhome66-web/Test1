@@ -1546,8 +1546,10 @@ async function saveXP(xpEarned) {
     console.log("USER:", user);
     if (!user) {
       console.error("NO AUTH USER — XP NOT SAVED");
+      alert("NO USER FOUND");
       return;
     }
+    alert("USER: " + JSON.stringify(user));
     console.log("saveXP: user =", user.id, "| xpEarned =", xpEarned);
 
     // 2. Get username from profiles table, fallback to "Learner"
@@ -1566,6 +1568,7 @@ async function saveXP(xpEarned) {
       .eq("user_id", user.id)
       .maybeSingle();
     console.log("saveXP: existing leaderboard row =", existing);
+    alert("EXISTING: " + JSON.stringify(existing));
 
     const currentXP = existing?.xp || 0;
     const newXP     = currentXP + xpEarned;
@@ -1579,8 +1582,13 @@ async function saveXP(xpEarned) {
         { onConflict: "user_id" }
       );
 
-    if (error) console.error("saveXP: upsert error:", error);
-    else       console.log("saveXP: leaderboard updated successfully, XP =", newXP);
+    if (error) {
+      console.error("saveXP: upsert error:", error);
+      alert("ERROR: " + error.message);
+    } else {
+      console.log("saveXP: leaderboard updated successfully, XP =", newXP);
+      alert("SUCCESS XP SAVED");
+    }
   } catch(e) {
     console.error("saveXP: unexpected error:", e);
   }
