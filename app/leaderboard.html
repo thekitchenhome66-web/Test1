@@ -291,48 +291,92 @@
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w"
   );
 
-  async function init() {
-    document.body.innerHTML = "<div style='color:white;font-family:monospace;padding:20px'>INIT RUNNING</div>";
+  const main = document.getElementById("main");
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log("USER:", user);
-
-      if (!user) {
-        document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>NO USER — not logged in</div>";
-        return;
-      }
-
-      document.body.innerHTML = "<div style='color:lime;font-family:monospace;padding:20px'>USER OK — loading leaderboard...</div>";
-      loadLeaderboard();
-
-    } catch (e) {
-      document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>INIT ERROR: " + e.message + "</div>";
-    }
+  // ── HELPERS
+  function medal(rank) {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return "";
+  }
+  function displayName(user) {
+    if (user.username) return user.username;
+    if (user.id) return "Learner " + user.id.slice(0, 6).toUpperCase();
+    return "Anonymous";
   }
 
+  // ── RENDER
+  function renderLeaderboard(users) {
+    main.innerHTML = "";
+
+    if (!users || users.length === 0) {
+      main.innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🚀</div><div class="empty-title">No players yet</div><div class="empty-sub">Be the first to complete a lesson and claim the top spot!</div></div>`;
+      return;
+    }
+
+    // Section heading
+    const heading = document.createElement("div");
+    heading.className = "section-heading";
+    heading.textContent = "Top " + users.length + " Learners";
+    main.appendChild(heading);
+
+    const list = document.createElement("div");
+    list.className = "lb-list";
+
+    users.forEach((user, i) => {
+      const rank = i + 1;
+
+      if (rank === 4) {
+        const div = document.createElement("div");
+        div.className = "divider";
+        list.appendChild(div);
+      }
+
+      let rankClass = rank <= 3 ? "rank-" + rank : "";
+      let rankColor = rank === 1 ? "r1" : rank === 2 ? "r2" : rank === 3 ? "r3" : "rn";
+      let xp = typeof user.xp === "number" ? user.xp : 0;
+
+      const row = document.createElement("div");
+      row.className = "lb-row " + rankClass;
+      row.innerHTML = `
+        <div class="lb-rank ${rankColor}">${rank <= 3 ? "" : "#" + rank}</div>
+        <div class="lb-medal">${medal(rank)}</div>
+        <div class="lb-info">
+          <div class="lb-name">${displayName(user)}</div>
+          <div class="lb-sub">${rank === 1 ? "👑 Champion" : rank <= 3 ? "🔥 Top 3" : rank <= 10 ? "⚡ Top 10" : "📚 Studying"}</div>
+        </div>
+        <div class="lb-xp"><span class="xi">⚡</span>${xp.toLocaleString()}</div>
+      `;
+      list.appendChild(row);
+    });
+
+    main.appendChild(list);
+  }
+
+  // ── LOAD — no auth required, public leaderboard
   async function loadLeaderboard() {
-    document.body.innerHTML = "<div style='color:white;font-family:monospace;padding:20px'>LOADING DATA...</div>";
+    console.log("Loading leaderboard...");
 
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, xp")
-        .order("xp", { ascending: false });
+    const { data, error } = await supabase
+      .from("leaderboard")
+      .select("id, xp, username")
+      .order("xp", { ascending: false });
 
-      if (error) {
-        document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>DB ERROR:<br>" + JSON.stringify(error) + "</div>";
-        return;
-      }
+    console.log("data:", data);
+    console.log("error:", error);
 
-      document.body.innerHTML = "<pre style='color:lime;font-family:monospace;padding:20px;white-space:pre-wrap'>" + JSON.stringify(data, null, 2) + "</pre>";
-
-    } catch (e) {
-      document.body.innerHTML = "<div style='color:red;font-family:monospace;padding:20px'>LOAD ERROR: " + e.message + "</div>";
+    if (error) {
+      console.error("Leaderboard error:", error);
+      main.innerHTML = `<div class="error-wrap">Error loading leaderboard: ${error.message}</div>`;
+      return;
     }
+
+    renderLeaderboard(data);
   }
 
-  init();
+  // Run on page load — no authentication needed
+  loadLeaderboard();
 </script>
 </body>
 </html>
