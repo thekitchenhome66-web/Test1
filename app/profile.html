@@ -3,316 +3,286 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>汉路 Hànlù — Profile</title>
+<title>Maobai — Profile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-window._sb = window.supabase.createClient(
-  'https://cuiznbvvlqtwcoocehnd.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
-);
+  window._sb = window.supabase.createClient(
+    'https://cuiznbvvlqtwcoocehnd.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+  );
 </script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080f0b;--bg2:#0c1610;--card:#111e16;--card2:#162218;
-  --border:rgba(74,222,128,.12);--border2:rgba(74,222,128,.25);
-  --green:#3ddb7a;--green2:#2ab862;--green-muted:rgba(61,219,122,.10);
-  --gold:#f5c842;--gold-soft:rgba(245,200,66,.10);
+  --bg:#0f1923;--bg2:#0d1720;--card:#162235;--card2:#1a2a3d;
+  --border:#1f3349;--border2:#243d57;
+  --green:#4ade80;--green-dark:#22c55e;--green-muted:rgba(74,222,128,.10);--green-glow:rgba(74,222,128,.28);
+  --text:#e8f4ef;--text-mid:#8fb3c4;--text-muted:#5a7a8a;
+  --gold:#fbbf24;--gold-soft:rgba(251,191,36,.12);
   --blue:#60a5fa;--blue-soft:rgba(96,165,250,.10);
   --rose:#f87171;--rose-soft:rgba(248,113,113,.10);
   --purple:#a78bfa;--purple-soft:rgba(167,139,250,.10);
-  --orange:#fb923c;
-  --ink:#e8f2ee;--ink2:#9ab8aa;--ink3:#4a6b5a;
-  --nav-h:68px;--t:.22s cubic-bezier(.4,0,.2,1);
+  --radius:20px;--radius-sm:12px;--t:.2s cubic-bezier(.4,0,.2,1);
 }
-/* LIGHT THEME */
-body.light{
-  --bg:#f0f4f2;--bg2:#e8ede9;--card:#ffffff;--card2:#f5f8f5;
-  --border:rgba(61,219,122,.18);--border2:rgba(61,219,122,.3);
-  --ink:#0f1e14;--ink2:#3a5a44;--ink3:#7a9a84;
-}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+16px);transition:background .3s,color .3s}
-::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(74,222,128,.2);border-radius:3px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:60px}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
-/* HEADER */
-.header{position:sticky;top:0;z-index:60;height:64px;background:rgba(8,15,11,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:0 18px}
-body.light .header{background:rgba(240,244,242,.96)}
-.header-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink)}
-.header-title em{color:var(--green);font-style:normal}
+/* ── HEADER ── */
+.header{position:sticky;top:0;z-index:60;height:64px;background:rgba(15,25,35,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.btn-back{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 10px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--text-mid);cursor:pointer;text-decoration:none;transition:background var(--t),border-color var(--t),color var(--t)}
+.btn-back:hover{background:var(--card2);border-color:var(--border2);color:var(--text)}
+.btn-back svg{width:14px;height:14px}
+.header-title{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.3px}
+.header-spacer{width:80px}
 
-/* PAGE */
-.page{max-width:520px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px}
+/* ── PAGE ── */
+.page{max-width:520px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;gap:20px}
 
-/* SECTION LABEL */
-.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);padding:0 2px}
-
-/* AVATAR CARD */
-.avatar-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 18px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;animation:fadeUp .35s ease both}
-.avatar-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 50%,rgba(74,222,128,.06),transparent 65%);pointer-events:none}
-.av-circle{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,rgba(74,222,128,.2),rgba(74,222,128,.06));border:2.5px solid rgba(74,222,128,.35);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:24px;font-weight:900;color:var(--green);flex-shrink:0;cursor:pointer;transition:all var(--t)}
-.av-circle:hover{border-color:rgba(74,222,128,.6);box-shadow:0 0 16px rgba(74,222,128,.2)}
-.av-info{flex:1;min-width:0}
-.av-name{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.av-email{font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.av-level{display:inline-flex;align-items:center;gap:4px;background:var(--green-muted);border:1px solid rgba(74,222,128,.18);border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;color:var(--green);margin-top:7px;letter-spacing:.04em}
-.btn-edit-av{position:absolute;bottom:2px;right:2px;background:var(--green);border:2px solid var(--card);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer}
-.btn-edit-name{background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all var(--t);white-space:nowrap;flex-shrink:0}
+/* ── AVATAR CARD ── */
+.avatar-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 20px;display:flex;align-items:center;gap:18px;position:relative;overflow:hidden;animation:fadeUp .35s ease both}
+.avatar-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 50%,rgba(74,222,128,.07) 0%,transparent 65%);pointer-events:none}
+.avatar-circle{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(74,222,128,.25),rgba(74,222,128,.08));border:2.5px solid rgba(74,222,128,.4);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:26px;font-weight:900;color:var(--green);flex-shrink:0;position:relative;cursor:pointer;transition:border-color var(--t),box-shadow var(--t)}
+.avatar-circle:hover{border-color:rgba(74,222,128,.7);box-shadow:0 0 20px rgba(74,222,128,.2)}
+.avatar-edit-badge{position:absolute;bottom:2px;right:2px;width:20px;height:20px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--card)}
+.avatar-info{flex:1;min-width:0}
+.avatar-name{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text);letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar-email{font-size:12px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar-level{display:inline-flex;align-items:center;gap:5px;background:var(--green-muted);border:1px solid rgba(74,222,128,.2);border-radius:999px;padding:3px 10px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:var(--green);margin-top:8px;letter-spacing:.05em}
+.btn-edit-name{display:flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:6px 12px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--text-mid);cursor:pointer;transition:all var(--t);white-space:nowrap;flex-shrink:0}
 .btn-edit-name:hover{border-color:var(--green);color:var(--green)}
 
-/* SOCIAL ROW */
-.social-row{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.sc-counts{display:flex}
-.sc-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:5px 16px;border-radius:9px;transition:background var(--t)}
-.sc-item:hover{background:var(--card2)}
-.sc-num{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink)}
-.sc-lbl{font-size:9px;font-weight:700;color:var(--ink3)}
-.sc-divider{width:1px;background:var(--border);align-self:stretch}
-.btn-find-friends{background:var(--green);border:none;border-radius:999px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:#080f0b;cursor:pointer;transition:all var(--t);box-shadow:0 3px 10px rgba(61,219,122,.22)}
-.btn-find-friends:hover{background:var(--green2);transform:translateY(-1px)}
+/* ── SECTION LABEL ── */
+.section-label{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;padding:0 2px;animation:fadeUp .4s ease both}
 
-/* STATS GRID */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;position:relative;overflow:hidden;transition:border-color var(--t)}
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;animation:fadeUp .4s ease .05s both}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px 14px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;transition:border-color var(--t)}
 .stat-card:hover{border-color:var(--border2)}
 .stat-card::before{content:'';position:absolute;inset:0;pointer-events:none}
-.stat-card.xp::before{background:linear-gradient(135deg,rgba(74,222,128,.07),transparent)}
-.stat-card.streak::before{background:linear-gradient(135deg,rgba(245,200,66,.07),transparent)}
-.stat-card.rank::before{background:linear-gradient(135deg,rgba(96,165,250,.07),transparent)}
-.stat-card.lessons::before{background:linear-gradient(135deg,rgba(167,139,250,.07),transparent)}
-.stat-card.hearts::before{background:linear-gradient(135deg,rgba(248,113,113,.07),transparent)}
-.stat-card.accuracy::before{background:linear-gradient(135deg,rgba(74,222,128,.07),transparent)}
-.stat-icon{font-size:18px;line-height:1}
-.stat-val{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1;letter-spacing:-.5px}
-.stat-card.xp .stat-val{color:var(--green)}
-.stat-card.streak .stat-val{color:var(--gold)}
-.stat-card.rank .stat-val{color:var(--blue)}
-.stat-card.lessons .stat-val{color:var(--purple)}
-.stat-card.hearts .stat-val{color:var(--rose)}
-.stat-card.accuracy .stat-val{color:var(--green)}
-.stat-lbl{font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:.03em}
+.stat-card.xp-card::before{background:linear-gradient(135deg,rgba(74,222,128,.08),transparent)}
+.stat-card.streak-card::before{background:linear-gradient(135deg,rgba(251,191,36,.08),transparent)}
+.stat-card.rank-card::before{background:linear-gradient(135deg,rgba(96,165,250,.08),transparent)}
+.stat-card.lessons-card::before{background:linear-gradient(135deg,rgba(167,139,250,.08),transparent)}
+.stat-card.hearts-card::before{background:linear-gradient(135deg,rgba(248,113,113,.08),transparent)}
+.stat-card.accuracy-card::before{background:linear-gradient(135deg,rgba(34,197,94,.08),transparent)}
+.stat-icon{font-size:20px;line-height:1}
+.stat-val{font-family:'Nunito',sans-serif;font-size:26px;font-weight:900;color:var(--text);letter-spacing:-.5px;line-height:1}
+.stat-card.xp-card .stat-val{color:var(--green)}
+.stat-card.streak-card .stat-val{color:var(--gold)}
+.stat-card.rank-card .stat-val{color:var(--blue)}
+.stat-card.lessons-card .stat-val{color:var(--purple)}
+.stat-card.hearts-card .stat-val{color:var(--rose)}
+.stat-label{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.03em}
 
-/* HSK PROGRESS */
-.hsk-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
-.hsk-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.hsk-card-title{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:var(--ink)}
-.hsk-card-pct{font-size:13px;font-weight:800;color:var(--green)}
-.hsk-bars{display:flex;flex-direction:column;gap:8px}
-.hsk-bar-row{display:flex;align-items:center;gap:8px}
-.hsk-bar-name{font-size:10px;font-weight:700;color:var(--ink3);width:42px;flex-shrink:0}
-.hsk-bar-track{flex:1;height:6px;background:var(--border);border-radius:999px;overflow:hidden}
-.hsk-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green2),var(--green));transition:width .8s cubic-bezier(.4,0,.2,1)}
-.hsk-bar-num{font-size:10px;font-weight:700;color:var(--ink2);width:22px;text-align:right;flex-shrink:0}
+/* ── LEVEL PROGRESS ── */
+.level-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px 16px;animation:fadeUp .4s ease .08s both}
+.level-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.level-card-title{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
+.level-card-pct{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--green)}
+.level-bars{display:flex;flex-direction:column;gap:8px}
+.level-bar-row{display:flex;align-items:center;gap:10px}
+.level-bar-name{font-size:11px;font-weight:700;color:var(--text-muted);width:44px;flex-shrink:0;font-family:'Nunito',sans-serif}
+.level-bar-track{flex:1;height:7px;background:var(--border);border-radius:999px;overflow:hidden}
+.level-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green-dark),var(--green));transition:width .8s cubic-bezier(.4,0,.2,1)}
+.level-bar-num{font-size:11px;font-weight:800;color:var(--text-mid);width:24px;text-align:right;font-family:'Nunito',sans-serif;flex-shrink:0}
 
-/* BADGES */
-.badges-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.badge-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:default}
-.badge-icon-wrap{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;transition:transform var(--t)}
-.badge-item:hover .badge-icon-wrap{transform:scale(1.08)}
-.badge-icon-wrap.earned{background:var(--card2);border:1.5px solid var(--border2)}
-.badge-icon-wrap.locked{background:var(--bg2);border:1.5px dashed var(--border);opacity:.35;filter:grayscale(1)}
-.badge-lock{position:absolute;bottom:1px;right:1px;font-size:9px}
-.badge-name{font-size:9px;font-weight:700;color:var(--ink3);text-align:center;line-height:1.3;font-family:'DM Sans',sans-serif}
-.badge-name.earned{color:var(--ink2)}
+/* ── BADGES ── */
+.badges-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;animation:fadeUp .4s ease .1s both}
+.badge-item{display:flex;flex-direction:column;align-items:center;gap:6px}
+.badge-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;transition:transform var(--t)}
+.badge-icon:hover{transform:scale(1.06)}
+.badge-icon.earned{background:var(--card2);border:1.5px solid var(--border2)}
+.badge-icon.locked{background:var(--bg2);border:1.5px dashed var(--border);opacity:.45;filter:grayscale(1)}
+.badge-lock{position:absolute;bottom:3px;right:3px;font-size:10px;line-height:1}
+.badge-name{font-size:10px;font-weight:700;color:var(--text-muted);text-align:center;line-height:1.3;font-family:'Nunito',sans-serif}
+.badge-name.earned{color:var(--text-mid)}
 
-/* ACTIVITY */
-.activity-list{display:flex;flex-direction:column;gap:7px}
-.activity-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;transition:border-color var(--t)}
-.activity-row:hover{border-color:var(--border2)}
-.activity-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.activity-icon.lesson{background:var(--green-muted);border:1px solid rgba(74,222,128,.18)}
-.activity-icon.streak{background:var(--gold-soft);border:1px solid rgba(245,200,66,.18)}
-.activity-icon.rank{background:var(--blue-soft);border:1px solid rgba(96,165,250,.18)}
-.activity-info{flex:1;min-width:0}
-.activity-title{font-size:12px;font-weight:700;color:var(--ink)}
-.activity-time{font-size:10px;color:var(--ink3);margin-top:1px}
-.activity-xp{font-size:11px;font-weight:800;color:var(--green);flex-shrink:0}
+/* ── HISTORY ── */
+.history-list{display:flex;flex-direction:column;gap:8px;animation:fadeUp .4s ease .12s both}
+.history-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color var(--t)}
+.history-row:hover{border-color:var(--border2)}
+.history-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.history-icon.lesson{background:var(--green-muted);border:1px solid rgba(74,222,128,.2)}
+.history-icon.streak{background:var(--gold-soft);border:1px solid rgba(251,191,36,.2)}
+.history-icon.rank{background:var(--blue-soft);border:1px solid rgba(96,165,250,.2)}
+.history-info{flex:1;min-width:0}
+.history-title{font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-time{font-size:11px;color:var(--text-muted);margin-top:1px}
+.history-xp{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--green);flex-shrink:0}
 
-/* SETTINGS */
-.settings-list{display:flex;flex-direction:column;gap:6px}
-.setting-row{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all var(--t)}
-.setting-row:hover{border-color:var(--border2);background:var(--card2)}
-.setting-row.danger:hover{border-color:rgba(248,113,113,.3);background:var(--rose-soft)}
-.setting-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-.si-green{background:var(--green-muted);border:1px solid rgba(74,222,128,.18)}
-.si-blue{background:var(--blue-soft);border:1px solid rgba(96,165,250,.18)}
-.si-gold{background:var(--gold-soft);border:1px solid rgba(245,200,66,.18)}
-.si-purple{background:var(--purple-soft);border:1px solid rgba(167,139,250,.18)}
-.si-rose{background:var(--rose-soft);border:1px solid rgba(248,113,113,.18)}
-.si-orange{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.18)}
-.si-gray{background:var(--card2);border:1px solid var(--border2)}
-.setting-text{flex:1;min-width:0}
-.setting-label{font-size:13px;font-weight:700;color:var(--ink)}
-.setting-sub{font-size:11px;color:var(--ink3);margin-top:1px}
+/* ── SETTINGS ── */
+.settings-list{display:flex;flex-direction:column;gap:2px;animation:fadeUp .4s ease .14s both}
+.setting-row{background:var(--card);border:1px solid transparent;border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background var(--t),border-color var(--t)}
+.setting-row:hover{background:var(--card2);border-color:var(--border)}
+.setting-row:first-child{border-radius:var(--radius-sm) var(--radius-sm) 4px 4px}
+.setting-row:last-child{border-radius:4px 4px var(--radius-sm) var(--radius-sm)}
+.setting-row + .setting-row{margin-top:2px}
+.setting-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.setting-icon.green{background:var(--green-muted);border:1px solid rgba(74,222,128,.2)}
+.setting-icon.blue{background:var(--blue-soft);border:1px solid rgba(96,165,250,.2)}
+.setting-icon.gold{background:var(--gold-soft);border:1px solid rgba(251,191,36,.2)}
+.setting-icon.rose{background:var(--rose-soft);border:1px solid rgba(248,113,113,.2)}
+.setting-icon.purple{background:var(--purple-soft);border:1px solid rgba(167,139,250,.2)}
+.setting-label{flex:1;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
+.setting-label small{display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-top:1px}
+.setting-arrow{color:var(--text-muted);font-size:16px}
 .setting-row.danger .setting-label{color:var(--rose)}
-.setting-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.setting-arrow{font-size:18px;color:var(--ink3)}
-.setting-badge{background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--ink2)}
-.setting-badge.soon{background:rgba(245,200,66,.1);border-color:rgba(245,200,66,.2);color:var(--gold)}
+.setting-row.danger:hover{border-color:rgba(248,113,113,.25);background:var(--rose-soft)}
 
-/* LANGUAGE PICKER ROW */
-.lang-options{display:flex;gap:6px;margin-top:8px}
-.lang-opt{flex:1;padding:8px 4px;border-radius:10px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all var(--t);text-align:center}
-.lang-opt:hover{border-color:var(--green);color:var(--green)}
-.lang-opt.active{background:var(--green-muted);border-color:rgba(74,222,128,.35);color:var(--green)}
-.lang-opt.soon{opacity:.45;cursor:not-allowed}
-.lang-opt.soon:hover{border-color:var(--border2);color:var(--ink2)}
+/* ── EDIT NAME MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity var(--t)}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-sheet{background:var(--card);border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:520px;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.modal-overlay.show .modal-sheet{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:0 auto 20px}
+.modal-title{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:var(--text);margin-bottom:16px;letter-spacing:-.3px}
+.modal-input{width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:14px 16px;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;color:var(--text);outline:none;transition:border-color var(--t);caret-color:var(--green)}
+.modal-input:focus{border-color:rgba(74,222,128,.5)}
+.modal-input::placeholder{color:var(--text-muted)}
+.modal-hint{font-size:11px;color:var(--text-muted);margin-top:6px;font-weight:600}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.btn-modal-cancel{flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:14px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text-mid);cursor:pointer;transition:all var(--t)}
+.btn-modal-cancel:hover{border-color:var(--border2);color:var(--text)}
+.btn-modal-save{flex:2;background:var(--green);border:none;border-radius:14px;padding:14px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:#0f1923;cursor:pointer;transition:all var(--t);box-shadow:0 4px 16px var(--green-glow)}
+.btn-modal-save:hover{box-shadow:0 6px 22px rgba(74,222,128,.38);transform:translateY(-1px)}
+.btn-modal-save:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-/* THEME TOGGLE */
-.theme-toggle-row{display:flex;gap:8px;margin-top:8px}
-.theme-opt{flex:1;padding:10px 8px;border-radius:11px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all var(--t);display:flex;align-items:center;justify-content:center;gap:6px}
-.theme-opt:hover{border-color:var(--border2);background:var(--card2)}
-.theme-opt.active{background:var(--green-muted);border-color:rgba(74,222,128,.35);color:var(--green)}
-
-/* MODALS */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:200;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
-.overlay.show{opacity:1;pointer-events:all}
-.sheet{background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
-.overlay.show .sheet{transform:translateY(0)}
-.sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:13px auto 0}
-.sheet-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border)}
-.sheet-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--ink)}
-.sheet-close{background:var(--card);border:1px solid var(--border);border-radius:50%;width:29px;height:29px;display:grid;place-items:center;cursor:pointer;font-size:13px;color:var(--ink2);transition:all var(--t)}
-.sheet-close:hover{background:var(--card2)}
-.sheet-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
-
-/* USERNAME EDIT */
-.name-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:12px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);outline:none;caret-color:var(--green);margin-bottom:4px;transition:border-color var(--t)}
-.name-input:focus{border-color:rgba(74,222,128,.4)}
-.name-hint{font-size:11px;color:var(--ink3);margin-bottom:14px}
-.name-hint.ok{color:var(--green)}.name-hint.bad{color:var(--rose)}
-.btn-save{width:100%;padding:13px;border-radius:12px;border:none;background:var(--green);color:#080f0b;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
-.btn-save:hover{background:var(--green2);transform:translateY(-1px)}
-.btn-save:disabled{opacity:.45;cursor:not-allowed;transform:none}
-
-/* SOCIAL LIST */
-.social-row-item{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:10px 12px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:border-color var(--t)}
-.social-row-item:hover{border-color:var(--border2)}
-.soc-av{width:36px;height:36px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0;font-family:'DM Sans',sans-serif}
-.soc-info{flex:1;min-width:0}
-.soc-name{font-size:13px;font-weight:700;color:var(--ink)}
-.soc-meta{font-size:10px;color:var(--ink3);margin-top:1px}
-
-/* FIND FRIENDS */
-.search-inp{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:11px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--ink);outline:none;caret-color:var(--green);transition:border-color var(--t)}
-.search-inp:focus{border-color:rgba(74,222,128,.4)}
-.search-inp::placeholder{color:var(--ink3);font-weight:400}
-.ff-row{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:10px 12px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:border-color var(--t)}
-.ff-row:hover{border-color:var(--border2)}
-.ff-av{width:36px;height:36px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0}
-.ff-info{flex:1;min-width:0}
-.ff-name{font-size:13px;font-weight:700;color:var(--ink)}
-.ff-meta{font-size:10px;color:var(--ink3);margin-top:1px}
-.btn-fl{border-radius:999px;padding:6px 13px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all var(--t);border:none;flex-shrink:0}
-.btn-fl.follow{background:var(--green);color:#080f0b}
-.btn-fl.following{background:var(--card2);border:1.5px solid var(--border2);color:var(--ink2)}
-.btn-fl.following:hover{border-color:var(--rose);color:var(--rose)}
-
-/* SIGN OUT CONFIRM */
-.so-card{background:var(--card);border:1px solid var(--border2);border-radius:24px;padding:28px 22px;max-width:320px;width:100%;text-align:center;margin:auto}
-.so-emoji{font-size:44px;display:block;margin-bottom:10px}
-.so-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink);margin-bottom:6px}
-.so-sub{font-size:13px;color:var(--ink2);margin-bottom:20px;line-height:1.6}
-.so-btns{display:flex;flex-direction:column;gap:8px}
-.btn-so-yes{width:100%;padding:13px;border-radius:12px;border:none;background:var(--rose);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
-.btn-so-yes:hover{opacity:.85}
-.btn-so-no{width:100%;padding:12px;border-radius:12px;background:transparent;border:1.5px solid var(--border2);color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all var(--t)}
-.btn-so-no:hover{border-color:var(--green);color:var(--green)}
-
-/* NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:rgba(8,15,11,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
-body.light .bottom-nav{background:rgba(240,244,242,.97)}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;padding:8px 4px;cursor:pointer;text-decoration:none;border-radius:12px;transition:background var(--t);-webkit-tap-highlight-color:transparent}
-.nav-item:hover{background:rgba(255,255,255,.04)}
-body.light .nav-item:hover{background:rgba(0,0,0,.04)}
-.nav-icon{font-size:20px;line-height:1}
-.nav-label{font-size:9px;font-weight:700;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase}
-.nav-item.active .nav-label{color:var(--green)}
-.nav-item.active .nav-icon{filter:drop-shadow(0 0 4px var(--green))}
-
-/* EMPTY / LOADING */
-.empty-msg{text-align:center;padding:28px;color:var(--ink3);font-size:12px;font-weight:600}
-.spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .8s linear infinite;margin:40px auto}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* TOAST */
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:9px 18px;font-size:12px;font-weight:700;color:var(--ink);opacity:0;transition:all .3s;pointer-events:none;z-index:400;white-space:nowrap}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ── SIGN OUT CONFIRM ── */
+.signout-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity var(--t)}
+.signout-overlay.show{opacity:1;pointer-events:all}
+.signout-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;max-width:320px;width:100%;text-align:center;transform:scale(.95);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.signout-overlay.show .signout-card{transform:scale(1)}
+.signout-icon{font-size:42px;margin-bottom:12px}
+.signout-title{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:var(--text);margin-bottom:8px}
+.signout-desc{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px}
+.signout-btns{display:flex;gap:10px}
+.btn-cancel-so{flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text-mid);cursor:pointer;transition:all var(--t)}
+.btn-cancel-so:hover{color:var(--text);border-color:var(--border2)}
+.btn-confirm-so{flex:1;background:var(--rose);border:none;border-radius:12px;padding:12px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:#fff;cursor:pointer;transition:all var(--t)}
+.btn-confirm-so:hover{opacity:.85;transform:translateY(-1px)}
+
+/* ── LOADING ── */
+.loading-screen{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .8s linear infinite}
+.loading-text{font-size:13px;color:var(--text-muted);font-family:'Nunito',sans-serif;font-weight:700}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SOCIAL / FOLLOWERS ── */
+.social-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px}
+.social-counts{display:flex;gap:0}
+.sc-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:8px 18px;border-radius:var(--radius-sm);transition:background var(--t);text-decoration:none}
+.sc-item:hover{background:var(--card2)}
+.sc-num{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:var(--text)}
+.sc-lbl{font-size:11px;font-weight:700;color:var(--text-muted)}
+.sc-divider{width:1px;background:var(--border);align-self:stretch}
+.btn-find-friends-p{display:flex;align-items:center;gap:6px;background:var(--green);border:none;border-radius:999px;padding:9px 16px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:#0f1923;cursor:pointer;transition:all var(--t);box-shadow:0 3px 12px rgba(74,222,128,.25)}
+.btn-find-friends-p:hover{box-shadow:0 5px 20px rgba(74,222,128,.35);transform:translateY(-1px)}
+
+/* ── SOCIAL LIST MODAL ── */
+.sl-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
+.sl-overlay.show{opacity:1;pointer-events:all}
+.sl-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:20px 0 0;flex:1;display:flex;flex-direction:column;margin-top:auto;max-height:85vh;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.sl-overlay.show .sl-sheet{transform:translateY(0)}
+.sl-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:0 auto 16px}
+.sl-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 16px;border-bottom:1px solid var(--border)}
+.sl-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--text)}
+.sl-close{background:var(--card);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted)}
+.sl-list{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+.sl-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color var(--t)}
+.sl-row:hover{border-color:var(--border2)}
+.sl-avatar{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.sl-info{flex:1;min-width:0}
+.sl-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
+.sl-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.sl-empty{text-align:center;padding:40px 24px;color:var(--text-muted);font-size:13px;font-weight:700}
+
+/* ── FIND FRIENDS MODAL (profile) ── */
+.ff-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
+.ff-overlay.show{opacity:1;pointer-events:all}
+.ff-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:20px 0 0;flex:1;display:flex;flex-direction:column;margin-top:auto;max-height:90vh;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.ff-overlay.show .ff-sheet{transform:translateY(0)}
+.ff-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:0 auto 16px}
+.ff-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 16px;border-bottom:1px solid var(--border)}
+.ff-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--text)}
+.ff-close-btn{background:var(--card);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted)}
+.ff-search{padding:14px 20px;border-bottom:1px solid var(--border)}
+.ff-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:14px;padding:12px 16px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;color:var(--text);outline:none;caret-color:var(--green);transition:border-color .2s}
+.ff-input:focus{border-color:rgba(74,222,128,.5)}
+.ff-input::placeholder{color:var(--text-muted)}
+.ff-list{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+.ff-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.ff-row:hover{border-color:var(--border2)}
+.ff-avatar{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.ff-info{flex:1;min-width:0}
+.ff-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
+.ff-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.btn-follow{border-radius:999px;padding:7px 16px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;cursor:pointer;transition:all var(--t);border:none;flex-shrink:0}
+.btn-follow.follow{background:var(--green);color:#0f1923;box-shadow:0 2px 10px rgba(74,222,128,.25)}
+.btn-follow.follow:hover{box-shadow:0 4px 16px rgba(74,222,128,.35);transform:translateY(-1px)}
+.btn-follow.following{background:var(--card2);border:1.5px solid var(--border2);color:var(--text-muted)}
+.btn-follow.following:hover{border-color:var(--rose);color:var(--rose)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  /* ── BOTTOM NAV ── */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:68px;background:rgba(13,23,32,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;padding:8px 4px;cursor:pointer;text-decoration:none;border-radius:12px;transition:background .2s;-webkit-tap-highlight-color:transparent;position:relative}
+  .nav-item:hover{background:rgba(255,255,255,.04)}
+  .nav-icon{font-size:21px;line-height:1;transition:transform .16s}
+  .nav-item:hover .nav-icon{transform:translateY(-2px)}
+  .nav-label{font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:800;color:var(--text-muted);letter-spacing:.2px}
+  .nav-item.active .nav-label{color:var(--green)}
+  .nav-item.active .nav-icon{filter:drop-shadow(0 0 5px var(--green))}
+  .nav-item.active::after{content:'';position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--green)}
+
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header class="header">
-  <div class="header-title">👤 <em>Profile</em></div>
+  <div class="header-spacer"></div>
+  <div class="header-title">👤 Profile</div>
+  <div class="header-spacer"></div>
 </header>
 
+<!-- PAGE -->
 <div class="page" id="page">
-  <div class="spinner"></div>
-</div>
-
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-  <a class="nav-item" href="/app/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
-  <a class="nav-item" href="/app/practice.html"><span class="nav-icon">⚡</span><span class="nav-label">Practice</span></a>
-  <a class="nav-item" href="/app/leaderboard.html"><span class="nav-icon">🏆</span><span class="nav-label">Ranks</span></a>
-  <a class="nav-item active"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
-</nav>
-
-<!-- USERNAME EDIT MODAL -->
-<div class="overlay" id="name-overlay" onclick="if(event.target===this)closeModal('name-overlay')">
-  <div class="sheet" style="max-height:50vh">
-    <div class="sheet-handle"></div>
-    <div class="sheet-hdr">
-      <div class="sheet-title">Edit Username</div>
-      <div class="sheet-close" onclick="closeModal('name-overlay')">✕</div>
-    </div>
-    <div class="sheet-body">
-      <input class="name-input" id="name-input" type="text" maxlength="20" placeholder="Enter new username..." autocomplete="off" spellcheck="false" oninput="checkNameInput(this.value)" onkeydown="if(event.key==='Enter')saveName()"/>
-      <div class="name-hint" id="name-hint">2–20 characters</div>
-      <button class="btn-save" id="btn-save-name" onclick="saveName()" disabled>Save</button>
-    </div>
+  <div class="loading-screen" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading profile…</div>
   </div>
 </div>
 
-<!-- SOCIAL LIST MODAL (followers / following) -->
-<div class="overlay" id="social-overlay" onclick="if(event.target===this)closeModal('social-overlay')">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-hdr">
-      <div class="sheet-title" id="social-sheet-title">Followers</div>
-      <div class="sheet-close" onclick="closeModal('social-overlay')">✕</div>
+<!-- EDIT NAME MODAL -->
+<div class="modal-overlay" id="name-modal" onclick="handleModalBgClick(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Change Username</div>
+    <input class="modal-input" id="name-input" type="text" maxlength="20" placeholder="Enter your username…" autocomplete="off" spellcheck="false"/>
+    <div class="modal-hint">2–20 characters · visible on leaderboard</div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeNameModal()">Cancel</button>
+      <button class="btn-modal-save"   id="btn-save-name" onclick="saveName()">Save</button>
     </div>
-    <div class="sheet-body" id="social-sheet-body"></div>
-  </div>
-</div>
-
-<!-- FIND FRIENDS MODAL -->
-<div class="overlay" id="ff-overlay" onclick="if(event.target===this)closeModal('ff-overlay')">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-hdr">
-      <div class="sheet-title">Find Friends</div>
-      <div class="sheet-close" onclick="closeModal('ff-overlay')">✕</div>
-    </div>
-    <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
-      <input class="search-inp" id="ff-search" type="text" placeholder="Search by username..." autocomplete="off" spellcheck="false" oninput="clearTimeout(_fft);_fft=setTimeout(()=>renderFF(this.value),240)"/>
-    </div>
-    <div class="sheet-body" id="ff-body"></div>
   </div>
 </div>
 
 <!-- SIGN OUT CONFIRM -->
-<div class="overlay" id="so-overlay" onclick="if(event.target===this)closeModal('so-overlay')" style="justify-content:center;align-items:center">
-  <div class="so-card">
-    <span class="so-emoji">🐼</span>
-    <div class="so-title">Sign out?</div>
-    <div class="so-sub">Your progress is saved. You can sign back in anytime.</div>
-    <div class="so-btns">
-      <button class="btn-so-yes" onclick="confirmSignOut()">Yes, sign out</button>
-      <button class="btn-so-no" onclick="closeModal('so-overlay')">Cancel</button>
+<div class="signout-overlay" id="so-overlay" onclick="handleSOBgClick(event)">
+  <div class="signout-card">
+    <div class="signout-icon">🚪</div>
+    <div class="signout-title">Sign Out?</div>
+    <div class="signout-desc">You'll need to sign back in to continue learning. Your progress is saved.</div>
+    <div class="signout-btns">
+      <button class="btn-cancel-so" onclick="closeSignOut()">Cancel</button>
+      <button class="btn-confirm-so" onclick="confirmSignOut()">Sign Out</button>
     </div>
   </div>
 </div>
@@ -322,550 +292,574 @@ body.light .nav-item:hover{background:rgba(0,0,0,.04)}
 
 <script>
 const sb = window._sb;
-let _uid = null, _userData = null, _username = null;
-let _lbRank = null, _lbXP = 0;
-let _followingIds = new Set();
-let _allUsersCache = [];
-let _fft = null;
 
-function key(n) { return n + '_' + _uid; }
+// ── State
+let userId   = null;
+let userData = null;
+let username = null;
+let lbData   = null;
+let lbRank   = null;
+
+// ── Key helper (matches dashboard)
+function key(name) { return `${name}_${userId}`; }
 
 // ── Toast
-let _tt;
-function showToast(msg) {
+let toastTimer = null;
+function showToast(msg, ok = true) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('show'), 2000);
+  t.textContent = msg;
+  t.style.borderColor = ok ? 'rgba(74,222,128,.3)' : 'rgba(248,113,113,.3)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// ── Modal
-function openModal(id) { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-// ── Theme (persisted)
-function applyTheme(theme) {
-  document.body.classList.toggle('light', theme === 'light');
-  localStorage.setItem('theme', theme);
-  document.querySelectorAll('.theme-opt').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+// ── Name modal
+function openNameModal() {
+  const inp = document.getElementById('name-input');
+  inp.value = username || '';
+  document.getElementById('name-modal').classList.add('show');
+  setTimeout(() => inp.focus(), 350);
 }
-function setTheme(theme) {
-  applyTheme(theme);
-  showToast(theme === 'light' ? '☀️ Light theme' : '🌙 Dark theme');
-}
+function closeNameModal() { document.getElementById('name-modal').classList.remove('show'); }
+function handleModalBgClick(e) { if (e.target === document.getElementById('name-modal')) closeNameModal(); }
 
-// ── Language (stub — save preference only)
-function setLanguage(lang) {
-  localStorage.setItem('app_lang', lang);
-  document.querySelectorAll('.lang-opt:not(.soon)').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-  if (lang !== 'en') {
-    showToast('Coming soon in ' + (lang === 'ru' ? 'Russian' : 'Turkmen') + '!');
-  } else {
-    showToast('Language set to English');
+async function saveName() {
+  const inp = document.getElementById('name-input');
+  const val = inp.value.trim();
+  if (val.length < 2) { showToast('Username must be at least 2 characters', false); return; }
+  if (val.length > 20) { showToast('Username must be 20 characters or less', false); return; }
+
+  const btn = document.getElementById('btn-save-name');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    // Save to Supabase leaderboard
+    const { error } = await sb.from('leaderboard').update({ username: val }).eq('user_id', userId);
+    if (error) throw error;
+
+    username = val;
+    localStorage.setItem(key('username'), val);
+
+    // Update avatar and name display
+    document.getElementById('profile-name').textContent = val;
+    document.getElementById('avatar-initials').textContent = val.slice(0,2).toUpperCase();
+
+    closeNameModal();
+    showToast('✅ Username updated!');
+  } catch(e) {
+    showToast('Could not save — try again', false);
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save';
   }
 }
 
-// ── BADGES
+// ── Sign out
+function openSignOut()          { document.getElementById('so-overlay').classList.add('show'); }
+function closeSignOut()         { document.getElementById('so-overlay').classList.remove('show'); }
+function handleSOBgClick(e)     { if (e.target === document.getElementById('so-overlay')) closeSignOut(); }
+async function confirmSignOut() {
+  await sb.auth.signOut();
+  window.location.replace('/app/index.html');
+}
+
+// ── Badges definition
 const BADGES = [
-  { icon:'🎓', name:'First Step',    check: s => s.lessons >= 1 },
-  { icon:'🔥', name:'On Fire',       check: s => s.streak >= 3 },
-  { icon:'⚡', name:'Unstoppable',   check: s => s.streak >= 7 },
-  { icon:'💯', name:'Century',       check: s => s.xp >= 100 },
-  { icon:'🏅', name:'Gold Rush',     check: s => s.xp >= 500 },
-  { icon:'📚', name:'Bookworm',      check: s => s.lessons >= 10 },
-  { icon:'🎯', name:'Dedicated',     check: s => s.lessons >= 30 },
-  { icon:'🏆', name:'Podium',        check: s => s.rank > 0 && s.rank <= 3 },
-  { icon:'🀄', name:'HSK 2',         check: s => s.level >= 2 },
-  { icon:'🌟', name:'Intermediate',  check: s => s.level >= 3 },
-  { icon:'💎', name:'Perfectionist', check: s => s.accuracy >= 95 && s.lessons >= 5 },
-  { icon:'👑', name:'Champion',      check: s => s.streak >= 30 },
+  { id:'first_lesson', icon:'🎓', name:'First Step',   desc:'Complete your first lesson',      check: (s) => s.lessons >= 1 },
+  { id:'streak_3',     icon:'🔥', name:'On Fire',      desc:'3-day streak',                    check: (s) => s.streak >= 3 },
+  { id:'streak_7',     icon:'⚡', name:'Unstoppable',  desc:'7-day streak',                    check: (s) => s.streak >= 7 },
+  { id:'xp_100',       icon:'💯', name:'Century',      desc:'Earn 100 XP',                     check: (s) => s.xp >= 100 },
+  { id:'xp_500',       icon:'🏅', name:'Gold Rush',    desc:'Earn 500 XP',                     check: (s) => s.xp >= 500 },
+  { id:'lessons_10',   icon:'📚', name:'Bookworm',     desc:'Complete 10 lessons',             check: (s) => s.lessons >= 10 },
+  { id:'lessons_30',   icon:'🎯', name:'Dedicated',    desc:'Complete 30 lessons',             check: (s) => s.lessons >= 30 },
+  { id:'top3',         icon:'🏆', name:'Podium',       desc:'Reach top 3 on leaderboard',      check: (s) => s.rank > 0 && s.rank <= 3 },
+  { id:'hsk2',         icon:'🀄', name:'HSK 2 Hero',   desc:'Unlock HSK 2',                    check: (s) => s.level >= 2 },
+  { id:'hsk3',         icon:'🌟', name:'Intermediate', desc:'Unlock HSK 3',                    check: (s) => s.level >= 3 },
+  { id:'perfect',      icon:'💎', name:'Perfectionist', desc:'Complete a lesson with 100% accuracy', check: (s) => s.hasPerfect },
+  { id:'streak_30',    icon:'👑', name:'Champion',     desc:'30-day streak',                   check: (s) => s.streak >= 30 },
 ];
 
-// ── MAIN RENDER
-function renderProfile(stats) {
-  const page = document.getElementById('page');
-  page.innerHTML = '';
-
-  const lvlNames = ['','HSK 1 · Beginner','HSK 2 · Elementary','HSK 3 · Intermediate','HSK 4 · Upper-Int.','HSK 5 · Advanced','HSK 6 · Mastery'];
-  const initials = (_username||'??').replace(/[^\x00-\x7F]/g,'').slice(0,2).toUpperCase() || '?';
-
-  // ── AVATAR CARD
-  const av = document.createElement('div');
-  av.className = 'avatar-card';
-  const avCircle = document.createElement('div');
-  avCircle.className = 'av-circle';
-  avCircle.style.position = 'relative';
-  avCircle.textContent = initials;
-  avCircle.onclick = () => openNameModal();
-  const avBadge = document.createElement('div');
-  avBadge.className = 'btn-edit-av';
-  avBadge.textContent = '✏️';
-  avCircle.appendChild(avBadge);
-
-  const avInfo = document.createElement('div');
-  avInfo.className = 'av-info';
-  avInfo.innerHTML =
-    '<div class="av-name" id="av-name">' + (_username||'Learner') + '</div>' +
-    '<div class="av-email">' + (_userData?.email||'') + '</div>' +
-    '<div class="av-level">' + (lvlNames[stats.level]||'HSK 1 · Beginner') + '</div>';
-
-  const editBtn = document.createElement('button');
-  editBtn.className = 'btn-edit-name';
-  editBtn.textContent = '✏️ Edit';
-  editBtn.onclick = () => openNameModal();
-
-  av.appendChild(avCircle);
-  av.appendChild(avInfo);
-  av.appendChild(editBtn);
-  page.appendChild(av);
-
-  // ── SOCIAL ROW
-  const socRow = document.createElement('div');
-  socRow.className = 'social-row';
-  socRow.innerHTML =
-    '<div class="sc-counts">' +
-      '<div class="sc-item" id="sc-following-btn"><div class="sc-num" id="sc-following">—</div><div class="sc-lbl">Following</div></div>' +
-      '<div class="sc-divider"></div>' +
-      '<div class="sc-item" id="sc-followers-btn"><div class="sc-num" id="sc-followers">—</div><div class="sc-lbl">Followers</div></div>' +
-    '</div>' +
-    '<button class="btn-find-friends" id="btn-ff">👥 Find Friends</button>';
-  page.appendChild(socRow);
-  document.getElementById('sc-following-btn').onclick = () => openSocialList('following');
-  document.getElementById('sc-followers-btn').onclick = () => openSocialList('followers');
-  document.getElementById('btn-ff').onclick = () => openFindFriends();
-  loadSocialCounts();
-
-  // ── STATS
-  const sLbl = document.createElement('div');
-  sLbl.className = 'sec-lbl'; sLbl.textContent = 'Your Stats';
-  page.appendChild(sLbl);
-
+function renderBadges(stats) {
   const grid = document.createElement('div');
-  grid.className = 'stats-grid';
-  const statItems = [
-    { cls:'xp',       icon:'⚡', val: stats.xp,                           lbl:'Total XP' },
-    { cls:'streak',   icon:'🔥', val: stats.streak,                       lbl:'Day Streak' },
-    { cls:'rank',     icon:'🏆', val: _lbRank ? '#'+_lbRank : '—',        lbl:'Global Rank' },
-    { cls:'lessons',  icon:'📖', val: stats.lessons,                      lbl:'Lessons Done' },
-    { cls:'hearts',   icon:'❤️', val: stats.hearts,                       lbl:'Hearts Left' },
-    { cls:'accuracy', icon:'🎯', val: stats.accuracy + '%',               lbl:'Accuracy' },
-  ];
-  statItems.forEach(s => {
-    const c = document.createElement('div');
-    c.className = 'stat-card ' + s.cls;
-    c.innerHTML = '<div class="stat-icon">' + s.icon + '</div><div class="stat-val">' + s.val + '</div><div class="stat-lbl">' + s.lbl + '</div>';
-    grid.appendChild(c);
-  });
-  page.appendChild(grid);
-
-  // ── HSK PROGRESS
-  const pLbl = document.createElement('div');
-  pLbl.className = 'sec-lbl'; pLbl.textContent = 'HSK Progress';
-  page.appendChild(pLbl);
-
-  const TOTAL = 30;
-  const curLesson = Number(localStorage.getItem(key('user_lesson'))||1);
-  const curLevel  = stats.level;
-  const hskLevels = [1,2,3,4,5,6].map(l => ({
-    name:'HSK '+l,
-    done: curLevel > l ? TOTAL : curLevel===l ? Math.min(curLesson-1, TOTAL) : 0
-  }));
-  const totalDone = hskLevels.reduce((a,b)=>a+b.done,0);
-  const overallPct = Math.round((totalDone/(TOTAL*6))*100);
-
-  const hskCard = document.createElement('div');
-  hskCard.className = 'hsk-card';
-  hskCard.innerHTML = '<div class="hsk-card-top"><div class="hsk-card-title">Overall Completion</div><div class="hsk-card-pct">' + overallPct + '%</div></div>';
-  const bars = document.createElement('div');
-  bars.className = 'hsk-bars';
-  hskLevels.forEach(l => {
-    const pct = Math.round((l.done/TOTAL)*100);
-    const row = document.createElement('div');
-    row.className = 'hsk-bar-row';
-    row.innerHTML =
-      '<div class="hsk-bar-name">' + l.name + '</div>' +
-      '<div class="hsk-bar-track"><div class="hsk-bar-fill" style="width:' + pct + '%"></div></div>' +
-      '<div class="hsk-bar-num">' + l.done + '</div>';
-    bars.appendChild(row);
-  });
-  hskCard.appendChild(bars);
-  page.appendChild(hskCard);
-
-  // ── BADGES
-  const bLbl = document.createElement('div');
-  bLbl.className = 'sec-lbl'; bLbl.textContent = 'Badges';
-  page.appendChild(bLbl);
-
-  const bgrid = document.createElement('div');
-  bgrid.className = 'badges-grid';
+  grid.className = 'badges-grid';
   BADGES.forEach(b => {
     const earned = b.check(stats);
     const item = document.createElement('div');
     item.className = 'badge-item';
-    item.title = b.name;
-    const wrap = document.createElement('div');
-    wrap.className = 'badge-icon-wrap ' + (earned?'earned':'locked');
-    wrap.textContent = b.icon;
-    if (!earned) {
-      const lk = document.createElement('span');
-      lk.className = 'badge-lock'; lk.textContent = '🔒';
-      wrap.appendChild(lk);
-    }
-    const nm = document.createElement('div');
-    nm.className = 'badge-name ' + (earned?'earned':'');
-    nm.textContent = b.name;
-    item.appendChild(wrap); item.appendChild(nm);
-    bgrid.appendChild(item);
+    item.title = b.desc;
+    item.innerHTML = `
+      <div class="badge-icon ${earned?'earned':'locked'}">
+        ${b.icon}
+        ${!earned ? '<span class="badge-lock">🔒</span>' : ''}
+      </div>
+      <div class="badge-name ${earned?'earned':''}">${b.name}</div>`;
+    grid.appendChild(item);
   });
-  page.appendChild(bgrid);
+  return grid;
+}
 
-  // ── RECENT ACTIVITY
-  const aLbl = document.createElement('div');
-  aLbl.className = 'sec-lbl'; aLbl.textContent = 'Recent Activity';
-  page.appendChild(aLbl);
+// ── History (from localStorage)
+function buildHistory(uid) {
+  const completed = JSON.parse(localStorage.getItem(`completed_lessons_${uid}`) || '[]');
+  const streak    = Number(localStorage.getItem(`streak_${uid}`) || 0);
+  const xp        = Number(localStorage.getItem(`xp_${uid}`) || 0);
 
-  const completed = JSON.parse(localStorage.getItem(key('completed_lessons'))||'[]');
-  const actItems = [];
-  completed.slice(-4).reverse().forEach((lid, i) => {
-    actItems.push({ type:'lesson', emoji:'📖', title:'Lesson ' + lid + ' completed', time: i===0?'Recently':i+1+' lessons ago', xp:'+10 XP' });
-  });
-  if (stats.streak >= 1) actItems.push({ type:'streak', emoji:'🔥', title:stats.streak+'-day streak active', time:'Keep it up!', xp:'' });
-  if (_lbRank) actItems.push({ type:'rank', emoji:'🏆', title:'Ranked #'+_lbRank+' globally', time:'Current rank', xp:'' });
+  const items = [];
+  const now   = new Date();
 
-  if (actItems.length === 0) {
-    const emp = document.createElement('div');
-    emp.className = 'empty-msg'; emp.textContent = 'Complete a lesson to see activity here!';
-    page.appendChild(emp);
-  } else {
-    const alist = document.createElement('div');
-    alist.className = 'activity-list';
-    actItems.slice(0,5).forEach(a => {
-      const row = document.createElement('div');
-      row.className = 'activity-row';
-      row.innerHTML =
-        '<div class="activity-icon ' + a.type + '">' + a.emoji + '</div>' +
-        '<div class="activity-info"><div class="activity-title">' + a.title + '</div><div class="activity-time">' + a.time + '</div></div>' +
-        (a.xp ? '<div class="activity-xp">' + a.xp + '</div>' : '');
-      alist.appendChild(row);
+  // Show last 5 completed lessons
+  const shown = completed.slice(-5).reverse();
+  shown.forEach((lessonId, i) => {
+    items.push({
+      icon: 'lesson',
+      emoji: '📖',
+      title: `Lesson ${lessonId} completed`,
+      time: i === 0 ? 'Recently' : `${i + 1} lessons ago`,
+      xp: '+10 XP'
     });
-    page.appendChild(alist);
+  });
+
+  if (streak >= 1) items.push({ icon:'streak', emoji:'🔥', title:`${streak}-day streak active`, time:'Keep it up!', xp: '' });
+  if (lbRank)     items.push({ icon:'rank',   emoji:'🏆', title:`Ranked #${lbRank} on leaderboard`, time:'Current rank', xp: '' });
+
+  return items.slice(0, 6);
+}
+
+// ── Main render
+function renderProfile(stats) {
+  const page = document.getElementById('page');
+  page.innerHTML = '';
+
+  const lvlNames = ['','HSK 1 · Beginner','HSK 2 · Elementary','HSK 3 · Intermediate','HSK 4 · Upper-Intermediate','HSK 5 · Advanced','HSK 6 · Mastery'];
+
+  // ── AVATAR CARD
+  const avatarCard = document.createElement('div');
+  avatarCard.className = 'avatar-card';
+  const initials = (username || 'NN').slice(0,2).toUpperCase();
+  avatarCard.innerHTML = `
+    <div class="avatar-circle" onclick="openNameModal()">
+      <span id="avatar-initials">${initials}</span>
+      <div class="avatar-edit-badge">✏️</div>
+    </div>
+    <div class="avatar-info">
+      <div class="avatar-name" id="profile-name">${username || 'Learner'}</div>
+      <div class="avatar-email" id="profile-email">${userData?.email || ''}</div>
+      <div class="avatar-level">${lvlNames[stats.level] || 'HSK 1 · Beginner'}</div>
+    </div>
+    <button class="btn-edit-name" onclick="openNameModal()">
+      ✏️ Edit
+    </button>`;
+  page.appendChild(avatarCard);
+
+  // ── SOCIAL ROW (followers/following + find friends)
+  const socialRow = document.createElement('div');
+  socialRow.className = 'social-row';
+  socialRow.innerHTML = `
+    <div class="social-counts">
+      <div class="sc-item" onclick="openSocialList('following')">
+        <div class="sc-num" id="sc-following">—</div>
+        <div class="sc-lbl">Following</div>
+      </div>
+      <div class="sc-divider"></div>
+      <div class="sc-item" onclick="openSocialList('followers')">
+        <div class="sc-num" id="sc-followers">—</div>
+        <div class="sc-lbl">Followers</div>
+      </div>
+    </div>
+    <button class="btn-find-friends-p" onclick="openFindFriends()">👥 Find Friends</button>`;
+  page.appendChild(socialRow);
+  loadSocialCounts();
+
+  // ── STATS
+  const slabel = document.createElement('div');
+  slabel.className = 'section-label';
+  slabel.textContent = 'Your Stats';
+  page.appendChild(slabel);
+
+  const grid = document.createElement('div');
+  grid.className = 'stats-grid';
+  const statItems = [
+    { cls:'xp-card',       icon:'⚡', val: stats.xp,      label:'Total XP'      },
+    { cls:'streak-card',   icon:'🔥', val: stats.streak,  label:'Day Streak'    },
+    { cls:'rank-card',     icon:'🏆', val: lbRank ? '#'+lbRank : '—', label:'Leaderboard Rank' },
+    { cls:'lessons-card',  icon:'📖', val: stats.lessons, label:'Lessons Done'  },
+    { cls:'hearts-card',   icon:'❤️', val: stats.hearts,  label:'Hearts Left'   },
+    { cls:'accuracy-card', icon:'🎯', val: stats.accuracy+'%', label:'Avg Accuracy' },
+  ];
+  statItems.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'stat-card ' + s.cls;
+    card.innerHTML = `<div class="stat-icon">${s.icon}</div><div class="stat-val">${s.val}</div><div class="stat-label">${s.label}</div>`;
+    grid.appendChild(card);
+  });
+  page.appendChild(grid);
+
+  // ── LEVEL PROGRESS
+  const lpLabel = document.createElement('div');
+  lpLabel.className = 'section-label';
+  lpLabel.textContent = 'HSK Progress';
+  page.appendChild(lpLabel);
+
+  const TOTAL_LESSONS_PER_LEVEL = 30;
+  const currentLesson = Number(localStorage.getItem(key('user_lesson')) || 1);
+  const currentLevel  = stats.level;
+
+  const lvCard = document.createElement('div');
+  lvCard.className = 'level-card';
+  const lvls = [
+    { name:'HSK 1', lessons: currentLevel > 1 ? TOTAL_LESSONS_PER_LEVEL : Math.min(currentLesson - 1, TOTAL_LESSONS_PER_LEVEL) },
+    { name:'HSK 2', lessons: currentLevel > 2 ? TOTAL_LESSONS_PER_LEVEL : currentLevel === 2 ? Math.min(currentLesson - 1, TOTAL_LESSONS_PER_LEVEL) : 0 },
+    { name:'HSK 3', lessons: currentLevel > 3 ? TOTAL_LESSONS_PER_LEVEL : currentLevel === 3 ? Math.min(currentLesson - 1, TOTAL_LESSONS_PER_LEVEL) : 0 },
+    { name:'HSK 4', lessons: currentLevel > 4 ? TOTAL_LESSONS_PER_LEVEL : currentLevel === 4 ? Math.min(currentLesson - 1, TOTAL_LESSONS_PER_LEVEL) : 0 },
+    { name:'HSK 5', lessons: currentLevel > 5 ? TOTAL_LESSONS_PER_LEVEL : currentLevel === 5 ? Math.min(currentLesson - 1, TOTAL_LESSONS_PER_LEVEL) : 0 },
+    { name:'HSK 6', lessons: currentLevel === 6 ? Math.min(currentLesson - 1, TOTAL_LESSONS_PER_LEVEL) : 0 },
+  ];
+  const totalDone = lvls.reduce((a,b) => a + b.lessons, 0);
+  const totalAll  = TOTAL_LESSONS_PER_LEVEL * 6;
+  const overallPct = Math.round((totalDone / totalAll) * 100);
+
+  lvCard.innerHTML = `
+    <div class="level-card-top">
+      <div class="level-card-title">Overall Completion</div>
+      <div class="level-card-pct">${overallPct}%</div>
+    </div>
+    <div class="level-bars">
+      ${lvls.map(l => {
+        const pct = Math.round((l.lessons / TOTAL_LESSONS_PER_LEVEL) * 100);
+        return `
+          <div class="level-bar-row">
+            <div class="level-bar-name">${l.name}</div>
+            <div class="level-bar-track"><div class="level-bar-fill" style="width:${pct}%"></div></div>
+            <div class="level-bar-num">${l.lessons}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+  page.appendChild(lvCard);
+
+  // ── BADGES
+  const blabel = document.createElement('div');
+  blabel.className = 'section-label';
+  blabel.textContent = 'Badges';
+  page.appendChild(blabel);
+  page.appendChild(renderBadges(stats));
+
+  // ── LEARNING HISTORY
+  const hlabel = document.createElement('div');
+  hlabel.className = 'section-label';
+  hlabel.textContent = 'Recent Activity';
+  page.appendChild(hlabel);
+
+  const histItems = buildHistory(userId);
+  if (histItems.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;padding:20px;color:var(--text-muted);font-size:13px;font-weight:700';
+    empty.textContent = 'Complete a lesson to see your activity here!';
+    page.appendChild(empty);
+  } else {
+    const hlist = document.createElement('div');
+    hlist.className = 'history-list';
+    histItems.forEach(h => {
+      const row = document.createElement('div');
+      row.className = 'history-row';
+      row.innerHTML = `
+        <div class="history-icon ${h.icon}">${h.emoji}</div>
+        <div class="history-info">
+          <div class="history-title">${h.title}</div>
+          <div class="history-time">${h.time}</div>
+        </div>
+        ${h.xp ? `<div class="history-xp">${h.xp}</div>` : ''}`;
+      hlist.appendChild(row);
+    });
+    page.appendChild(hlist);
   }
 
   // ── SETTINGS
-  const setLbl = document.createElement('div');
-  setLbl.className = 'sec-lbl'; setLbl.textContent = 'Settings';
-  page.appendChild(setLbl);
+  const setlabel = document.createElement('div');
+  setlabel.className = 'section-label';
+  setlabel.textContent = 'Settings';
+  page.appendChild(setlabel);
 
-  const sList = document.createElement('div');
-  sList.className = 'settings-list';
-
-  // Username
-  addSettingRow(sList, '✏️', 'si-green', 'Change Username', 'Update your display name', () => openNameModal());
-
-  // Language
-  const langRow = createSettingExpandable('🌐', 'si-blue', 'App Language', 'English · More coming soon');
-  const langOpts = document.createElement('div');
-  langOpts.className = 'lang-options';
-  const curLang = localStorage.getItem('app_lang') || 'en';
-  [
-    { code:'en', label:'🇬🇧 English', soon:false },
-    { code:'ru', label:'🇷🇺 Русский', soon:true },
-    { code:'tk', label:'🇹🇲 Türkmen', soon:true },
-  ].forEach(l => {
-    const btn = document.createElement('button');
-    btn.className = 'lang-opt' + (l.soon?' soon':'') + (curLang===l.code?' active':'');
-    btn.dataset.lang = l.code;
-    btn.textContent = l.label;
-    if (!l.soon) btn.addEventListener('click', () => setLanguage(l.code));
-    else btn.title = 'Coming soon';
-    langOpts.appendChild(btn);
+  const settingsList = document.createElement('div');
+  settingsList.className = 'settings-list';
+  const settings = [
+    { icon:'green', emoji:'✏️', label:'Change Username',     sub:'Update your display name',       action: openNameModal },
+    { icon:'blue',  emoji:'🔔', label:'Notifications',       sub:'Manage reminders',               action: () => showToast('Coming soon!') },
+    { icon:'gold',  emoji:'🌐', label:'App Language',        sub:'English',                         action: () => showToast('Coming soon!') },
+    { icon:'purple',emoji:'🎯', label:'Daily Goal',          sub:'3 lessons per day',               action: () => showToast('Coming soon!') },
+    { icon:'rose',  emoji:'🔑', label:'Change Password',     sub:'Update via email link',           action: sendPasswordReset },
+    { icon:'',      emoji:'🚪', label:'Sign Out',            sub:'',                                action: openSignOut, danger: true },
+  ];
+  settings.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'setting-row' + (s.danger ? ' danger' : '');
+    row.onclick = s.action;
+    row.innerHTML = `
+      <div class="setting-icon ${s.icon}">${s.emoji}</div>
+      <div class="setting-label">${s.label}${s.sub ? `<small>${s.sub}</small>` : ''}</div>
+      <div class="setting-arrow">›</div>`;
+    settingsList.appendChild(row);
   });
-  langRow.appendChild(langOpts);
-  sList.appendChild(langRow);
+  page.appendChild(settingsList);
 
-  // Theme
-  const themeRow = createSettingExpandable('🎨', 'si-purple', 'App Theme', 'Dark / Light');
-  const themeToggle = document.createElement('div');
-  themeToggle.className = 'theme-toggle-row';
-  const curTheme = localStorage.getItem('theme') || 'dark';
-  [
-    { id:'dark',  label:'🌙 Dark' },
-    { id:'light', label:'☀️ Light' },
-  ].forEach(th => {
-    const btn = document.createElement('button');
-    btn.className = 'theme-opt' + (curTheme===th.id?' active':'');
-    btn.dataset.theme = th.id;
-    btn.textContent = th.label;
-    btn.addEventListener('click', () => setTheme(th.id));
-    themeToggle.appendChild(btn);
-  });
-  themeRow.appendChild(themeToggle);
-  sList.appendChild(themeRow);
-
-  // Daily goal
-  addSettingRow(sList, '🎯', 'si-gold', 'Daily Goal', '5 lessons per day', () => showToast('Coming soon!'));
-
-  // Notifications
-  addSettingRow(sList, '🔔', 'si-orange', 'Notifications', 'Streak reminders', () => showToast('Coming soon!'));
-
-  // Change password
-  addSettingRow(sList, '🔑', 'si-gray', 'Change Password', 'Send reset email', () => sendPasswordReset());
-
-  // Sign out
-  const soRow = document.createElement('div');
-  soRow.className = 'setting-row danger';
-  soRow.onclick = () => openModal('so-overlay');
-  soRow.innerHTML =
-    '<div class="setting-icon si-rose">🚪</div>' +
-    '<div class="setting-text"><div class="setting-label">Sign Out</div></div>' +
-    '<div class="setting-right"><div class="setting-arrow">›</div></div>';
-  sList.appendChild(soRow);
-
-  page.appendChild(sList);
-
-  // Version
+  // Version tag
   const ver = document.createElement('div');
-  ver.style.cssText = 'text-align:center;font-size:11px;color:var(--ink3);padding:8px;font-weight:600';
-  ver.textContent = '🐼 汉路 Hànlù v1.0';
+  ver.style.cssText = 'text-align:center;font-size:11px;color:var(--text-muted);padding:8px;font-weight:600';
+  ver.textContent = 'Maobai v1.0 · Made with 🐼';
   page.appendChild(ver);
 }
 
-function addSettingRow(parent, emoji, iconCls, label, sub, action) {
-  const row = document.createElement('div');
-  row.className = 'setting-row';
-  row.onclick = action;
-  row.innerHTML =
-    '<div class="setting-icon ' + iconCls + '">' + emoji + '</div>' +
-    '<div class="setting-text"><div class="setting-label">' + label + '</div>' +
-    (sub?'<div class="setting-sub">'+sub+'</div>':'') + '</div>' +
-    '<div class="setting-right"><div class="setting-arrow">›</div></div>';
-  parent.appendChild(row);
-  return row;
-}
-
-function createSettingExpandable(emoji, iconCls, label, sub) {
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:0;transition:border-color var(--t)';
-  const top = document.createElement('div');
-  top.style.cssText = 'display:flex;align-items:center;gap:12px';
-  top.innerHTML =
-    '<div class="setting-icon ' + iconCls + '">' + emoji + '</div>' +
-    '<div class="setting-text"><div class="setting-label">' + label + '</div>' +
-    (sub?'<div class="setting-sub">'+sub+'</div>':'')+'</div>';
-  wrap.appendChild(top);
-  return wrap;
-}
-
-// ── USERNAME MODAL
-let _nameTimer;
-function openNameModal() {
-  const inp = document.getElementById('name-input');
-  inp.value = _username || '';
-  checkNameInput(inp.value);
-  openModal('name-overlay');
-  setTimeout(() => inp.focus(), 350);
-}
-function checkNameInput(val) {
-  const v = val.trim();
-  const hint = document.getElementById('name-hint');
-  const btn  = document.getElementById('btn-save-name');
-  if (v.length < 2) { hint.className='name-hint bad'; hint.textContent='Too short — at least 2 characters'; btn.disabled=true; return; }
-  if (v.length > 20) { hint.className='name-hint bad'; hint.textContent='Too long — max 20 characters'; btn.disabled=true; return; }
-  hint.className='name-hint ok'; hint.textContent='Looks good!';
-  btn.disabled = false;
-}
-async function saveName() {
-  const val = document.getElementById('name-input').value.trim();
-  if (val.length < 2 || val.length > 20) return;
-  const btn = document.getElementById('btn-save-name');
-  btn.disabled = true; btn.textContent = 'Saving...';
+async function sendPasswordReset() {
+  if (!userData?.email) return;
   try {
-    await sb.from('leaderboard').upsert({ user_id:_uid, username:val }, { onConflict:'user_id' });
-    localStorage.setItem('username_'+_uid, val);
-    localStorage.setItem('un_set_'+_uid, '1');
-    _username = val;
-    const nameEl = document.getElementById('av-name');
-    if (nameEl) nameEl.textContent = val;
-    closeModal('name-overlay');
-    showToast('✅ Username updated!');
+    await sb.auth.resetPasswordForEmail(userData.email);
+    showToast('✅ Password reset email sent!');
   } catch(e) {
-    localStorage.setItem('username_'+_uid, val);
-    _username = val;
-    closeModal('name-overlay');
-    showToast('✅ Username saved!');
+    showToast('Could not send email', false);
   }
-  btn.disabled = false; btn.textContent = 'Save';
 }
 
-// ── SOCIAL COUNTS
+
+// ══ SOCIAL / FOLLOWERS ══════════════════════════════════
+let followingIds = new Set();
+let allUsersCache = [];
+let ffSearchTimer = null;
+
 async function loadSocialCounts() {
-  if (!_uid) return;
+  if (!userId) return;
   try {
-    const [{ count:fc }, { count:ing }] = await Promise.all([
-      sb.from('follows').select('*',{count:'exact',head:true}).eq('following_id',_uid),
-      sb.from('follows').select('*',{count:'exact',head:true}).eq('follower_id',_uid),
+    const [{ count: fc }, { count: ing }] = await Promise.all([
+      sb.from('follows').select('*',{count:'exact',head:true}).eq('following_id', userId),
+      sb.from('follows').select('*',{count:'exact',head:true}).eq('follower_id', userId),
     ]);
-    const fe = document.getElementById('sc-followers');
-    const ie = document.getElementById('sc-following');
-    if (fe) fe.textContent = fc || 0;
-    if (ie) ie.textContent = ing || 0;
+    const elF = document.getElementById('sc-followers');
+    const elI = document.getElementById('sc-following');
+    if (elF) elF.textContent = fc || 0;
+    if (elI) elI.textContent = ing || 0;
   } catch(e) {}
 }
 
-// ── SOCIAL LIST (followers / following)
 async function openSocialList(type) {
-  const title = document.getElementById('social-sheet-title');
-  const body  = document.getElementById('social-sheet-body');
-  title.textContent = type === 'followers' ? 'Followers' : 'Following';
-  body.innerHTML = '<div class="spinner"></div>';
-  openModal('social-overlay');
+  const overlay = document.getElementById('sl-overlay');
+  const title   = document.getElementById('sl-title');
+  const list    = document.getElementById('sl-list');
+  if (!overlay) return;
+
+  title.textContent = type === 'followers' ? '👥 Followers' : '👣 Following';
+  list.innerHTML = '<div class="sl-empty">Loading…</div>';
+  overlay.classList.add('show');
+
   try {
     let ids = [];
     if (type === 'followers') {
-      const {data} = await sb.from('follows').select('follower_id').eq('following_id',_uid);
-      ids = (data||[]).map(r=>r.follower_id);
+      const { data } = await sb.from('follows').select('follower_id').eq('following_id', userId);
+      ids = (data||[]).map(r => r.follower_id);
     } else {
-      const {data} = await sb.from('follows').select('following_id').eq('follower_id',_uid);
-      ids = (data||[]).map(r=>r.following_id);
+      const { data } = await sb.from('follows').select('following_id').eq('follower_id', userId);
+      ids = (data||[]).map(r => r.following_id);
     }
-    if (!ids.length) {
-      body.innerHTML = '<div class="empty-msg">' + (type==='followers'?'No followers yet':'Not following anyone yet') + '</div>';
+
+    if (ids.length === 0) {
+      list.innerHTML = `<div class="sl-empty">${type === 'followers' ? 'No followers yet' : 'Not following anyone yet'}<br/><span style="font-size:12px;opacity:.7">Find friends to follow!</span></div>`;
       return;
     }
-    const {data:users} = await sb.from('leaderboard').select('user_id,username,xp').in('user_id',ids).order('xp',{ascending:false});
-    body.innerHTML = '';
+
+    const { data: users } = await sb.from('leaderboard').select('user_id, username, xp').in('user_id', ids).order('xp', {ascending:false});
+    list.innerHTML = '';
     (users||[]).forEach(u => {
-      const n = u.username || ('Learner '+u.user_id.slice(0,6).toUpperCase());
-      const init = /[\u4e00-\u9fff]/.test(n) ? '?' : n.slice(0,2).toUpperCase();
+      const n = u.username || ('Learner ' + u.user_id.slice(0,6).toUpperCase());
       const row = document.createElement('div');
-      row.className = 'social-row-item';
-      row.onclick = () => { closeModal('social-overlay'); window.location.href='/app/public_profile.html?uid='+encodeURIComponent(u.user_id)+'&from='+encodeURIComponent('/app/profile.html'); };
-      row.innerHTML =
-        '<div class="soc-av">'+init+'</div>' +
-        '<div class="soc-info"><div class="soc-name">'+n+'</div><div class="soc-meta">⚡ '+(u.xp||0)+' XP</div></div>';
-      body.appendChild(row);
+      row.className = 'sl-row';
+      row.innerHTML = `
+        <div class="sl-avatar">${n.slice(0,2).toUpperCase()}</div>
+        <div class="sl-info">
+          <div class="sl-name">${n}</div>
+          <div class="sl-meta">⚡ ${u.xp||0} XP</div>
+        </div>`;
+      list.appendChild(row);
     });
-  } catch(e) { body.innerHTML = '<div class="empty-msg">Could not load</div>'; }
+  } catch(e) {
+    list.innerHTML = '<div class="sl-empty">Could not load list.</div>';
+  }
 }
 
-// ── FIND FRIENDS
+function closeSocialList() {
+  document.getElementById('sl-overlay')?.classList.remove('show');
+}
+
+// ── FIND FRIENDS MODAL
 async function openFindFriends() {
-  const body = document.getElementById('ff-body');
-  body.innerHTML = '<div class="spinner"></div>';
-  openModal('ff-overlay');
-  setTimeout(() => document.getElementById('ff-search')?.focus(), 350);
-  if (_allUsersCache.length === 0) {
+  const overlay = document.getElementById('ff-overlay');
+  if (!overlay) return;
+  overlay.classList.add('show');
+  setTimeout(() => document.getElementById('ff-search-input')?.focus(), 350);
+
+  if (allUsersCache.length === 0) {
     try {
-      const {data} = await sb.from('leaderboard').select('user_id,username,xp').order('xp',{ascending:false});
-      _allUsersCache = (data||[]).filter(u=>u.user_id!==_uid);
-      const {data:foll} = await sb.from('follows').select('following_id').eq('follower_id',_uid);
-      _followingIds = new Set((foll||[]).map(f=>f.following_id));
+      const { data } = await sb.from('leaderboard').select('user_id, username, xp').order('xp', {ascending:false});
+      allUsersCache = (data||[]).filter(u => u.user_id !== userId);
+      const { data: foll } = await sb.from('follows').select('following_id').eq('follower_id', userId);
+      followingIds = new Set((foll||[]).map(f => f.following_id));
     } catch(e) {}
   }
-  renderFF('');
+  renderFFResults('');
 }
-function renderFF(q) {
-  const body = document.getElementById('ff-body');
-  if (!body) return;
-  body.innerHTML = '';
-  const qr = q.toLowerCase().trim();
-  const res = qr ? _allUsersCache.filter(u=>(u.username||'').toLowerCase().includes(qr)) : _allUsersCache.slice(0,20);
-  if (!res.length) { body.innerHTML = '<div class="empty-msg">No users found</div>'; return; }
-  res.forEach(u => {
-    const isF = _followingIds.has(u.user_id);
-    const n   = u.username || ('Learner '+u.user_id.slice(0,6).toUpperCase());
-    const init = /[\u4e00-\u9fff]/.test(n)?'?':n.slice(0,2).toUpperCase();
+
+function closeFindFriends() {
+  document.getElementById('ff-overlay')?.classList.remove('show');
+}
+
+function renderFFResults(query) {
+  const list = document.getElementById('ff-results');
+  if (!list) return;
+  list.innerHTML = '';
+  const q = query.toLowerCase().trim();
+  const results = q
+    ? allUsersCache.filter(u => (u.username||'').toLowerCase().includes(q) || ('learner '+u.user_id.slice(0,6)).includes(q))
+    : allUsersCache.slice(0, 20);
+
+  if (results.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;font-weight:700">No users found</div>';
+    return;
+  }
+
+  results.forEach(u => {
+    const isFollowing = followingIds.has(u.user_id);
+    const name = u.username || ('Learner ' + u.user_id.slice(0,6).toUpperCase());
     const row = document.createElement('div');
     row.className = 'ff-row';
-    row.onclick = e => { if (!e.target.classList.contains('btn-fl')) { closeModal('ff-overlay'); window.location.href='/app/public_profile.html?uid='+encodeURIComponent(u.user_id)+'&from='+encodeURIComponent('/app/profile.html'); } };
-    const av = document.createElement('div'); av.className='ff-av'; av.textContent=init;
-    const info = document.createElement('div'); info.className='ff-info';
-    info.innerHTML='<div class="ff-name">'+n+'</div><div class="ff-meta">⚡ '+(u.xp||0)+' XP</div>';
-    const fb = document.createElement('button');
-    fb.className='btn-fl '+(isF?'following':'follow');
-    fb.textContent=isF?'Following':'Follow';
-    fb.addEventListener('click', function(){ toggleFollow(u.user_id,this); });
-    row.appendChild(av); row.appendChild(info); row.appendChild(fb);
-    body.appendChild(row);
+    row.innerHTML = `
+      <div class="ff-avatar">${name.slice(0,2).toUpperCase()}</div>
+      <div class="ff-info">
+        <div class="ff-name">${name}</div>
+        <div class="ff-meta">⚡ ${u.xp||0} XP</div>
+      </div>
+      <button class="btn-follow ${isFollowing?'following':'follow'}"
+        onclick="toggleFollow('${u.user_id}', this)">${isFollowing?'Following':'Follow'}</button>`;
+    list.appendChild(row);
   });
 }
-async function toggleFollow(tid,btn) {
-  if (!_uid) return;
-  const isF = _followingIds.has(tid);
+
+async function toggleFollow(targetId, btn) {
+  if (!userId) return;
+  const isFollowing = followingIds.has(targetId);
   btn.disabled = true;
   try {
-    if (isF) {
-      await sb.from('follows').delete().eq('follower_id',_uid).eq('following_id',tid);
-      _followingIds.delete(tid); btn.textContent='Follow'; btn.className='btn-fl follow'; showToast('Unfollowed');
+    if (isFollowing) {
+      await sb.from('follows').delete().eq('follower_id', userId).eq('following_id', targetId);
+      followingIds.delete(targetId);
+      btn.textContent = 'Follow'; btn.className = 'btn-follow follow';
     } else {
-      await sb.from('follows').insert({follower_id:_uid,following_id:tid});
-      _followingIds.add(tid); btn.textContent='Following'; btn.className='btn-fl following'; showToast('Following!');
+      await sb.from('follows').insert({ follower_id: userId, following_id: targetId });
+      followingIds.add(targetId);
+      btn.textContent = 'Following'; btn.className = 'btn-follow following';
     }
     loadSocialCounts();
-  } catch(e) { showToast('Error — try again'); }
+  } catch(e) { console.error('Follow error:', e); }
   btn.disabled = false;
-}
-
-// ── PASSWORD RESET
-async function sendPasswordReset() {
-  if (!_userData?.email) { showToast('No email found'); return; }
-  try {
-    await sb.auth.resetPasswordForEmail(_userData.email);
-    showToast('Password reset email sent!');
-  } catch(e) { showToast('Could not send email'); }
-}
-
-// ── SIGN OUT
-async function confirmSignOut() {
-  try { await sb.auth.signOut(); } catch(e) {}
-  window.location.replace('/app/login.html');
 }
 
 // ── INIT
 async function init() {
-  // Apply saved theme immediately
-  applyTheme(localStorage.getItem('theme') || 'dark');
-
   try {
-    const {data:sess} = await sb.auth.getSession();
-    const user = sess?.session?.user;
-    if (!user) { window.location.replace('/app/login.html'); return; }
-    _uid = user.id; _userData = user;
+    const { data: sessionData } = await sb.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (!user) { window.location.replace('/app/index.html'); return; }
 
-    // Get username + leaderboard data
-    const {data:lbRow} = await sb.from('leaderboard').select('xp,username').eq('user_id',_uid).maybeSingle();
-    const {data:allUsers} = await sb.from('leaderboard').select('user_id,xp').order('xp',{ascending:false});
+    userId   = user.id;
+    userData = user;
 
+    // Get username — leaderboard first, then localStorage, then metadata
+    const { data: lbRow } = await sb.from('leaderboard').select('xp, username').eq('user_id', userId).maybeSingle();
+    lbData = lbRow;
+
+    // Get rank
+    const { data: allUsers } = await sb.from('leaderboard').select('user_id, xp').order('xp', { ascending: false });
     if (allUsers) {
-      const idx = allUsers.findIndex(u=>u.user_id===_uid);
-      _lbRank = idx >= 0 ? idx+1 : null;
+      const idx = allUsers.findIndex(u => u.user_id === userId);
+      lbRank = idx >= 0 ? idx + 1 : null;
     }
-    _lbXP = lbRow?.xp || 0;
-    _username = lbRow?.username
-      || localStorage.getItem('username_'+_uid)
+
+    username = lbRow?.username
+      || localStorage.getItem(key('username'))
       || user.user_metadata?.full_name
+      || user.user_metadata?.name
       || user.email?.split('@')[0]
       || 'Learner';
 
     // Build stats from localStorage
-    const xp       = Number(localStorage.getItem(key('xp'))    || _lbXP || 0);
-    const streak   = Number(localStorage.getItem(key('streak')) || 0);
-    const hearts   = Number(localStorage.getItem(key('hearts')) || 5);
+    const xp       = Number(localStorage.getItem(key('xp'))      || lbRow?.xp || 0);
+    const streak   = Number(localStorage.getItem(key('streak'))   || 0);
+    const hearts   = Number(localStorage.getItem(key('hearts'))   || 5);
     const level    = Number(localStorage.getItem(key('user_level')) || 1);
-    const completed= JSON.parse(localStorage.getItem(key('completed_lessons'))||'[]');
+    const completed= JSON.parse(localStorage.getItem(key('completed_lessons')) || '[]');
     const lessons  = completed.length;
-    const mistakes = JSON.parse(localStorage.getItem(key('mistakes'))||'[]');
-    const totalQ   = Math.max(lessons * 8, 1);
-    const accuracy = Math.max(0, Math.round(((totalQ - mistakes.length) / totalQ) * 100));
+    const mistakes = JSON.parse(localStorage.getItem(key('mistakes')) || '[]');
+    const totalQ   = lessons * 8; // rough estimate
+    const accuracy = totalQ > 0 ? Math.max(0, Math.round(((totalQ - mistakes.length) / totalQ) * 100)) : 100;
+    const hasPerfect = false; // could track this later
 
-    renderProfile({ xp, streak, hearts, level, lessons, accuracy, rank:_lbRank||0 });
+    const stats = { xp, streak, hearts, level, lessons, accuracy, hasPerfect, rank: lbRank || 0 };
+
+    renderProfile(stats);
 
   } catch(e) {
-    console.error('Profile error:', e);
-    document.getElementById('page').innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--rose);font-size:14px">Could not load profile.<br/><a href="/app/dashboard.html" style="color:var(--green)">← Back</a></div>';
+    console.error('Profile init error:', e);
+    document.getElementById('page').innerHTML = '<div style="text-align:center;padding:60px 24px;color:var(--text-muted);font-size:14px">Could not load profile. <a href="/app/dashboard.html" style="color:var(--green)">← Go back</a></div>';
   }
 }
 
 init();
 </script>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="/app/dashboard.html">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Home</span>
+  </a>
+  <a class="nav-item" href="/app/dashboard.html">
+    <span class="nav-icon">✅</span>
+    <span class="nav-label">Tasks</span>
+  </a>
+  <a class="nav-item" href="/app/leaderboard.html">
+    <span class="nav-icon">🏆</span>
+    <span class="nav-label">Leaderboard</span>
+  </a>
+  <a class="nav-item active" href="#">
+    <span class="nav-icon">👤</span>
+    <span class="nav-label">Profile</span>
+  </a>
+</nav>
+
+
+<!-- SOCIAL LIST MODAL (followers/following) -->
+<div class="sl-overlay" id="sl-overlay" onclick="if(event.target===this)closeSocialList()">
+  <div class="sl-sheet">
+    <div class="sl-handle"></div>
+    <div class="sl-header">
+      <div class="sl-title" id="sl-title">Followers</div>
+      <div class="sl-close" onclick="closeSocialList()">✕</div>
+    </div>
+    <div class="sl-list" id="sl-list"></div>
+  </div>
+</div>
+
+<!-- FIND FRIENDS MODAL -->
+<div class="ff-overlay" id="ff-overlay" onclick="if(event.target===this)closeFindFriends()">
+  <div class="ff-sheet">
+    <div class="ff-handle"></div>
+    <div class="ff-header">
+      <div class="ff-title">👥 Find Friends</div>
+      <div class="ff-close-btn" onclick="closeFindFriends()">✕</div>
+    </div>
+    <div class="ff-search">
+      <input class="ff-input" id="ff-search-input" type="text" placeholder="Search by username…"
+        autocomplete="off" spellcheck="false"
+        oninput="clearTimeout(ffSearchTimer);ffSearchTimer=setTimeout(()=>renderFFResults(this.value),250)"/>
+    </div>
+    <div class="ff-list" id="ff-results"></div>
+  </div>
+</div>
+
 </body>
 </html>
