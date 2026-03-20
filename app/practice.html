@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>汉路 Hànlù — Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window._sb = window.supabase.createClient(
+  'https://cuiznbvvlqtwcoocehnd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+);
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080f0b;--bg2:#0c1610;--card:#111e16;--card2:#162218;
+  --border:rgba(74,222,128,.12);--border2:rgba(74,222,128,.25);
+  --green:#3ddb7a;--green2:#2ab862;--green-muted:rgba(61,219,122,.10);
+  --gold:#f5c842;--gold-soft:rgba(245,200,66,.10);
+  --blue:#60a5fa;--blue-soft:rgba(96,165,250,.10);
+  --rose:#f87171;--rose-soft:rgba(248,113,113,.10);
+  --purple:#a78bfa;--purple-soft:rgba(167,139,250,.10);
+  --orange:#fb923c;
+  --ink:#e8f2ee;--ink2:#9ab8aa;--ink3:#4a6b5a;
+  --nav-h:68px;--t:.22s cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+16px)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(74,222,128,.2);border-radius:3px}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:60;height:64px;background:rgba(8,15,11,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.header-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink)}
+.header-title em{color:var(--green);font-style:normal}
+
+/* SCREENS */
+.screen{display:none}.screen.active{display:block}
+
+/* HOME SCREEN */
+.home-inner{max-width:520px;margin:0 auto;padding:20px 16px 32px;display:flex;flex-direction:column;gap:14px}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);padding:0 2px}
+
+/* MODE CARDS */
+.mode-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px 16px;cursor:pointer;transition:all var(--t);position:relative;overflow:hidden;display:flex;align-items:center;gap:14px}
+.mode-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.mode-card::before{content:'';position:absolute;inset:0;pointer-events:none;transition:opacity var(--t);opacity:0}
+.mode-card:hover::before{opacity:1}
+.mc-speed::before{background:linear-gradient(135deg,rgba(245,200,66,.07),transparent)}
+.mc-review::before{background:linear-gradient(135deg,rgba(248,113,113,.07),transparent)}
+.mc-listen::before{background:linear-gradient(135deg,rgba(96,165,250,.07),transparent)}
+.mc-flash::before{background:linear-gradient(135deg,rgba(74,222,128,.07),transparent)}
+.mode-card.locked{opacity:.5;cursor:not-allowed}
+.mode-card.locked:hover{transform:none;border-color:var(--border)}
+.mode-icon{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.mc-speed .mode-icon{background:var(--gold-soft);border:1px solid rgba(245,200,66,.2)}
+.mc-review .mode-icon{background:var(--rose-soft);border:1px solid rgba(248,113,113,.2)}
+.mc-listen .mode-icon{background:var(--blue-soft);border:1px solid rgba(96,165,250,.2)}
+.mc-flash .mode-icon{background:var(--green-muted);border:1px solid rgba(74,222,128,.2)}
+.mode-info{flex:1;min-width:0}
+.mode-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.mode-desc{font-size:11px;color:var(--ink2);line-height:1.5}
+.mode-badge{background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:2px 8px;font-size:9px;font-weight:700;color:var(--ink3);margin-top:5px;display:inline-block}
+.mode-badge.active-badge{background:rgba(245,200,66,.1);border-color:rgba(245,200,66,.2);color:var(--gold)}
+.mode-arrow{font-size:20px;color:var(--ink3);flex-shrink:0}
+
+/* STATS ROW */
+.stats-row{display:flex;gap:8px}
+.stats-mini{flex:1;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:all var(--t)}
+.stats-mini:hover{border-color:var(--border2)}
+.sm-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:700}
+.sm-lbl{font-size:9px;font-weight:700;color:var(--ink3);text-align:center}
+.stats-mini.speed-stat .sm-val{color:var(--gold)}
+.stats-mini.review-stat .sm-val{color:var(--rose)}
+.stats-mini.accuracy-stat .sm-val{color:var(--green)}
+
+/* SPEED SCREEN */
+.speed-inner{max-width:520px;margin:0 auto;width:100%}
+.speed-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px}
+.btn-exit{background:var(--card);border:1px solid var(--border);border-radius:999px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all var(--t)}
+.btn-exit:hover{border-color:var(--border2);color:var(--ink)}
+.speed-info{display:flex;align-items:center;gap:8px}
+.speed-q-count{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:var(--ink2)}
+.speed-score{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--gold)}
+
+/* SPEED TIMER BAR */
+.speed-bar-wrap{height:6px;background:var(--border);margin:0 16px 12px;border-radius:999px;overflow:hidden}
+.speed-bar{height:100%;background:var(--green);border-radius:999px;transition:width .08s linear,background .3s}
+.speed-bar.warning{background:var(--gold)}
+.speed-bar.danger{background:var(--rose)}
+.speed-counter{text-align:right;padding:0 16px;font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:10px}
+
+/* SPEED QUESTION */
+.speed-area{padding:0 16px;display:flex;flex-direction:column;gap:14px}
+.sq-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.sq-label.listen{color:var(--blue)}.sq-label.read{color:var(--green)}.sq-label.write{color:var(--purple)}
+.sq-question{font-size:clamp(16px,4.5vw,20px);font-weight:600;color:var(--ink);line-height:1.5}
+.sq-hanzi{font-family:'Noto Sans SC',sans-serif;font-size:clamp(36px,10vw,52px);font-weight:700;color:var(--green);display:block;text-align:center;margin:8px 0;text-shadow:0 0 20px rgba(61,219,122,.2)}
+.sq-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sq-opt{background:var(--card);border:2px solid var(--border);border-radius:13px;padding:13px 10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;transition:all var(--t);text-align:center}
+.sq-opt:hover:not(:disabled){border-color:rgba(74,222,128,.4);background:var(--card2);transform:translateY(-1px)}
+.sq-opt.correct{border-color:var(--green);background:rgba(61,219,122,.1);color:var(--green)}
+.sq-opt.wrong{border-color:var(--rose);background:rgba(248,113,113,.08);color:var(--rose)}
+.sq-opt:disabled{cursor:not-allowed}
+.sq-feedback{border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;opacity:0;transition:opacity .2s}
+.sq-feedback.show{opacity:1}
+.sq-feedback.ok{background:rgba(61,219,122,.1);border:1px solid rgba(61,219,122,.25);color:var(--green)}
+.sq-feedback.err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--rose)}
+
+/* SPEED RESULT */
+.speed-result{max-width:520px;margin:0 auto;padding:32px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.sr-emoji{font-size:64px;animation:pop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.sr-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--ink)}
+.sr-sub{font-size:14px;color:var(--ink2)}
+.sr-score{background:linear-gradient(135deg,var(--gold),#d97706);color:#1a0e00;font-size:20px;font-weight:800;border-radius:999px;padding:10px 28px;box-shadow:0 4px 20px rgba(245,200,66,.25)}
+.sr-stats{display:flex;gap:10px;width:100%}
+.sr-stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.sr-stat-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--ink)}
+.sr-stat-lbl{font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+.sr-actions{display:flex;flex-direction:column;gap:8px;width:100%}
+.btn-primary{width:100%;padding:14px;border-radius:13px;border:none;background:linear-gradient(135deg,var(--green),var(--green2));color:#080f0b;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all var(--t);box-shadow:0 4px 14px rgba(61,219,122,.22)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(61,219,122,.32)}
+.btn-secondary{width:100%;padding:13px;border-radius:13px;background:transparent;border:1.5px solid var(--border2);color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all var(--t)}
+.btn-secondary:hover{border-color:var(--green);color:var(--green)}
+.xp-earned{background:var(--green-muted);border:1px solid rgba(74,222,128,.2);border-radius:999px;padding:7px 20px;font-size:14px;font-weight:800;color:var(--green)}
+
+/* REVIEW SCREEN */
+.review-inner{max-width:520px;margin:0 auto;padding:16px 16px 0;display:flex;flex-direction:column;gap:12px}
+.review-header{display:flex;align-items:center;justify-content:space-between}
+.review-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink)}
+.review-count{font-size:12px;color:var(--ink3);font-weight:600}
+.word-card-review{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px 18px;text-align:center;cursor:pointer;user-select:none;transition:all var(--t);position:relative;overflow:hidden}
+.word-card-review:hover{border-color:var(--border2)}
+.word-card-review::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(61,219,122,.06),transparent 65%);pointer-events:none}
+.wcr-hanzi{font-family:'Noto Sans SC',sans-serif;font-size:clamp(48px,13vw,68px);font-weight:700;color:var(--ink);text-shadow:0 0 28px rgba(61,219,122,.15);margin-bottom:8px}
+.wcr-pinyin{font-size:17px;color:var(--green);font-weight:500;letter-spacing:.03em}
+.wcr-meaning{font-size:14px;color:var(--ink2);margin-top:4px}
+.wcr-tap{font-size:11px;color:var(--ink3);margin-top:12px;font-weight:500}
+.wcr-hidden{filter:blur(6px);user-select:none;pointer-events:none}
+.wcr-example{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin-top:14px;text-align:left}
+.wcr-ex-zh{font-family:'Noto Sans SC',sans-serif;font-size:13px;color:var(--ink);margin-bottom:2px}
+.wcr-ex-en{font-size:11px;color:var(--ink3);font-style:italic}
+.review-btns{display:flex;gap:8px}
+.btn-know{flex:1;padding:13px;border-radius:13px;border:none;background:rgba(61,219,122,.12);border:1.5px solid rgba(61,219,122,.3);color:var(--green);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
+.btn-know:hover{background:rgba(61,219,122,.2)}
+.btn-dontknow{flex:1;padding:13px;border-radius:13px;background:rgba(248,113,113,.08);border:1.5px solid rgba(248,113,113,.2);color:var(--rose);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
+.btn-dontknow:hover{background:rgba(248,113,113,.15)}
+.progress-bar-wrap{height:5px;background:var(--border);border-radius:999px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:999px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.srs-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:9px;font-weight:700;margin-top:8px}
+.srs-new{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:var(--blue)}
+.srs-due{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--rose)}
+.srs-learned{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--green)}
+
+/* AUDIO BTN */
+.btn-audio{background:rgba(61,219,122,.1);border:1px solid rgba(61,219,122,.22);border-radius:50%;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);transition:all var(--t);vertical-align:middle;margin-left:6px}
+.btn-audio:hover{background:rgba(61,219,122,.2);transform:scale(1.1)}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:56px 20px;color:var(--ink2)}
+.empty-emoji{font-size:48px;display:block;margin-bottom:12px}
+.empty-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:20px}
+
+/* NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:rgba(8,15,11,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;padding:8px 4px;cursor:pointer;text-decoration:none;border-radius:12px;transition:background var(--t);-webkit-tap-highlight-color:transparent}
+.nav-item:hover{background:rgba(255,255,255,.04)}
+.nav-icon{font-size:20px;line-height:1}
+.nav-label{font-size:9px;font-weight:700;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase}
+.nav-item.active .nav-label{color:var(--green)}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 4px var(--green))}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:9px 18px;font-size:12px;font-weight:700;color:var(--ink);opacity:0;transition:all .3s;pointer-events:none;z-index:300;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-title" id="header-title">⚡ <em>Practice</em></div>
+</header>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="home-inner">
+
+    <div class="stats-row" style="animation:fadeUp .3s ease both">
+      <div class="stats-mini speed-stat" onclick="startSpeed()">
+        <div class="sm-val" id="stat-best">—</div>
+        <div class="sm-lbl">Best Speed Score</div>
+      </div>
+      <div class="stats-mini review-stat">
+        <div class="sm-val" id="stat-due">0</div>
+        <div class="sm-lbl">Words Due</div>
+      </div>
+      <div class="stats-mini accuracy-stat">
+        <div class="sm-val" id="stat-acc">—%</div>
+        <div class="sm-lbl">Accuracy</div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Practice Modes</div>
+
+    <div class="mode-card mc-speed" onclick="startSpeed()" style="animation:fadeUp .35s ease .05s both">
+      <div class="mode-icon">⚡</div>
+      <div class="mode-info">
+        <div class="mode-title">Speed Challenge</div>
+        <div class="mode-desc">20 questions · 8 seconds each · earn 2× XP</div>
+        <div class="mode-badge active-badge" id="speed-badge">Play</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+
+    <div class="mode-card mc-review" id="review-card-btn" onclick="startReview()" style="animation:fadeUp .35s ease .08s both">
+      <div class="mode-icon">🔁</div>
+      <div class="mode-info">
+        <div class="mode-title">Mistake Review</div>
+        <div class="mode-desc">SRS flashcards — words you got wrong come first</div>
+        <div class="mode-badge" id="review-badge">Loading...</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+
+    <div class="mode-card mc-listen" onclick="startListening()" style="animation:fadeUp .35s ease .11s both">
+      <div class="mode-icon">🎧</div>
+      <div class="mode-info">
+        <div class="mode-title">Listening Practice</div>
+        <div class="mode-desc">Hear the word, pick the meaning. Train your ear.</div>
+        <div class="mode-badge active-badge">Play</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+
+    <div class="mode-card mc-flash" onclick="startFlashcards()" style="animation:fadeUp .35s ease .14s both">
+      <div class="mode-icon">🃏</div>
+      <div class="mode-info">
+        <div class="mode-title">Flashcards</div>
+        <div class="mode-desc">Tap to reveal · mark known or unknown · full SRS</div>
+        <div class="mode-badge active-badge">Play</div>
+      </div>
+      <div class="mode-arrow">›</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SPEED SCREEN -->
+<div class="screen" id="screen-speed">
+  <div class="speed-inner">
+    <div class="speed-header">
+      <button class="btn-exit" onclick="exitMode()">✕ Exit</button>
+      <div class="speed-info">
+        <div class="speed-q-count" id="sp-q-count">1 / 20</div>
+        <div class="speed-score" id="sp-score">0 ✓</div>
+      </div>
+    </div>
+    <div class="speed-bar-wrap"><div class="speed-bar" id="sp-bar" style="width:100%"></div></div>
+    <div class="speed-counter" id="sp-counter">8s</div>
+    <div class="speed-area" id="sp-area"></div>
+  </div>
+</div>
+
+<!-- SPEED RESULT -->
+<div class="screen" id="screen-speed-result">
+  <div class="speed-result" id="speed-result-inner"></div>
+</div>
+
+<!-- REVIEW SCREEN -->
+<div class="screen" id="screen-review">
+  <div class="review-inner" id="review-inner"></div>
+</div>
+
+<!-- NAV -->
+<nav class="bottom-nav">
+  <a class="nav-item" href="/app/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+  <a class="nav-item active"><span class="nav-icon">⚡</span><span class="nav-label">Practice</span></a>
+  <a class="nav-item" href="/app/leaderboard.html"><span class="nav-icon">🏆</span><span class="nav-label">Ranks</span></a>
+  <a class="nav-item" href="/app/profile.html"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const sb = window._sb;
+let _uid = null;
+
+function key(n) { return n + '_' + _uid; }
+
+// ── Toast
+let _tt;
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ── Screen nav
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  const titles = { home:'⚡ Practice', speed:'⚡ Speed Challenge', 'speed-result':'⚡ Results', review:'🔁 Review' };
+  document.getElementById('header-title').innerHTML = (titles[id]||'⚡ Practice').replace('⚡','⚡ <em>').replace('Practice','Practice</em>').replace('Speed Challenge','Speed Challenge</em>').replace('Results','Results</em>').replace('Review','Review</em>');
+}
+
+// ── Audio
+let _zhVoice = null;
+function loadVoice() {
+  const voices = window.speechSynthesis?.getVoices()||[];
+  _zhVoice = voices.find(v=>v.lang.startsWith('zh'))||null;
+}
+if (window.speechSynthesis) { loadVoice(); window.speechSynthesis.addEventListener('voiceschanged',loadVoice); }
+function speak(text, rate=0.85) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='zh-CN'; u.rate=rate; u.pitch=1;
+  if (_zhVoice) u.voice=_zhVoice;
+  window.speechSynthesis.speak(u);
+}
+
+// ── HSK WORD DATA (HSK 1 words for practice — subset for quick loading)
+const PRACTICE_WORDS = [
+  {id:'1-1',zh:'你好',py:'nǐ hǎo',en:"Hello"},
+  {id:'1-2',zh:'谢谢',py:'xiè xie',en:"Thank you"},
+  {id:'1-3',zh:'我',py:'wǒ',en:"I / me"},
+  {id:'1-4',zh:'你',py:'nǐ',en:"you"},
+  {id:'1-5',zh:'是',py:'shì',en:"to be"},
+  {id:'1-6',zh:'不',py:'bù',en:"no / not"},
+  {id:'1-7',zh:'好',py:'hǎo',en:"good"},
+  {id:'1-8',zh:'大',py:'dà',en:"big"},
+  {id:'1-9',zh:'小',py:'xiǎo',en:"small"},
+  {id:'1-10',zh:'人',py:'rén',en:"person"},
+  {id:'1-11',zh:'今天',py:'jīntiān',en:"today"},
+  {id:'1-12',zh:'明天',py:'míngtiān',en:"tomorrow"},
+  {id:'1-13',zh:'朋友',py:'péngyǒu',en:"friend"},
+  {id:'1-14',zh:'学生',py:'xuésheng',en:"student"},
+  {id:'1-15',zh:'老师',py:'lǎoshī',en:"teacher"},
+  {id:'1-16',zh:'水',py:'shuǐ',en:"water"},
+  {id:'1-17',zh:'吃',py:'chī',en:"to eat"},
+  {id:'1-18',zh:'喝',py:'hē',en:"to drink"},
+  {id:'1-19',zh:'去',py:'qù',en:"to go"},
+  {id:'1-20',zh:'来',py:'lái',en:"to come"},
+  {id:'1-21',zh:'看',py:'kàn',en:"to look / watch"},
+  {id:'1-22',zh:'说',py:'shuō',en:"to speak"},
+  {id:'1-23',zh:'听',py:'tīng',en:"to listen"},
+  {id:'1-24',zh:'写',py:'xiě',en:"to write"},
+  {id:'1-25',zh:'买',py:'mǎi',en:"to buy"},
+  {id:'1-26',zh:'有',py:'yǒu',en:"to have"},
+  {id:'1-27',zh:'在',py:'zài',en:"at / in"},
+  {id:'1-28',zh:'喜欢',py:'xǐhuān',en:"to like"},
+  {id:'1-29',zh:'中国',py:'zhōngguó',en:"China"},
+  {id:'1-30',zh:'北京',py:'Běijīng',en:"Beijing"},
+  {id:'1-31',zh:'时间',py:'shíjiān',en:"time"},
+  {id:'1-32',zh:'钱',py:'qián',en:"money"},
+  {id:'1-33',zh:'家',py:'jiā',en:"home"},
+  {id:'1-34',zh:'书',py:'shū',en:"book"},
+  {id:'1-35',zh:'手机',py:'shǒujī',en:"phone"},
+  {id:'1-36',zh:'爸爸',py:'bàba',en:"father"},
+  {id:'1-37',zh:'妈妈',py:'māma',en:"mother"},
+  {id:'1-38',zh:'高兴',py:'gāoxìng',en:"happy"},
+  {id:'1-39',zh:'累',py:'lèi',en:"tired"},
+  {id:'1-40',zh:'再见',py:'zàijiàn',en:"goodbye"},
+];
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function getPool() {
+  if (!_uid) return PRACTICE_WORDS;
+  // Use SRS to prioritize due words
+  const srs = JSON.parse(localStorage.getItem(key('srs'))||'{}');
+  const now = Date.now();
+  const due     = PRACTICE_WORDS.filter(w => srs[w.id] && srs[w.id].nextReview <= now);
+  const notSeen = PRACTICE_WORDS.filter(w => !srs[w.id]);
+  const learned = PRACTICE_WORDS.filter(w => srs[w.id] && srs[w.id].nextReview > now);
+  return [...shuffle(due), ...shuffle(notSeen), ...shuffle(learned)];
+}
+
+// ══ SPEED CHALLENGE ══
+let _spTimer=null, _spTimeLeft=8, _spCurrent=0, _spScore=0, _spWrong=0, _spAnswered=false;
+const SP_TOTAL = 20;
+
+function startSpeed() {
+  _spCurrent=0; _spScore=0; _spWrong=0; _spAnswered=false;
+  _spPool = shuffle(getPool()).slice(0, SP_TOTAL);
+  showScreen('speed');
+  renderSpeedQ();
+}
+
+let _spPool = [];
+function renderSpeedQ() {
+  if (_spCurrent >= SP_TOTAL) { showSpeedResult(); return; }
+  _spAnswered = false;
+  clearInterval(_spTimer);
+
+  const w    = _spPool[_spCurrent];
+  const mode = Math.random() > 0.5 ? 'meaning' : 'hanzi';
+  const correct = mode==='meaning' ? w.en : w.zh;
+  const distractors = shuffle(PRACTICE_WORDS.filter(x=>x.id!==w.id)).slice(0,3);
+  const opts = shuffle([correct, ...distractors.map(d=>mode==='meaning'?d.en:d.zh)]);
+
+  document.getElementById('sp-q-count').textContent = (_spCurrent+1)+' / '+SP_TOTAL;
+  document.getElementById('sp-score').textContent   = _spScore+' ✓';
+
+  const area = document.getElementById('sp-area');
+  area.innerHTML = '';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'sq-label '+(mode==='meaning'?'read':'write');
+  lbl.textContent = mode==='meaning' ? '📖 What does this mean?' : '✍️ Choose the character';
+  area.appendChild(lbl);
+
+  if (mode==='meaning') {
+    const hz = document.createElement('div');
+    hz.className = 'sq-hanzi'; hz.textContent = w.zh;
+    area.appendChild(hz);
+    const ab = document.createElement('button');
+    ab.className='btn-audio'; ab.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+    ab.addEventListener('click', function(){ speak(w.zh); });
+    area.appendChild(ab);
+    speak(w.zh, 1.0);
+  } else {
+    const q = document.createElement('div');
+    q.className='sq-question'; q.textContent='How do you write "'+w.en+'" in Chinese?';
+    area.appendChild(q);
+  }
+
+  const grid = document.createElement('div');
+  grid.className='sq-opts';
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className='sq-opt';
+    if (mode==='hanzi') btn.style.fontFamily="'Noto Sans SC',sans-serif";
+    btn.textContent=opt;
+    btn.addEventListener('click', function(){ handleSpeedAnswer(opt, correct, this); });
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+
+  const fb = document.createElement('div');
+  fb.className='sq-feedback'; fb.id='sp-fb';
+  fb.innerHTML='<span class="fb-icon"></span><span></span>';
+  area.appendChild(fb);
+
+  // Timer
+  _spTimeLeft=8;
+  updateSpeedBar();
+  _spTimer = setInterval(()=>{
+    _spTimeLeft = Math.max(0, _spTimeLeft-0.1);
+    updateSpeedBar();
+    if (_spTimeLeft<=0) {
+      clearInterval(_spTimer);
+      if (!_spAnswered) {
+        _spAnswered=true; _spWrong++;
+        grid.querySelectorAll('.sq-opt').forEach(b=>{b.disabled=true; if(b.textContent===correct) b.classList.add('correct');});
+        showSpeedFeedback(false, correct);
+        setTimeout(()=>{ _spCurrent++; renderSpeedQ(); }, 900);
+      }
+    }
+  }, 100);
+}
+
+function updateSpeedBar() {
+  const bar = document.getElementById('sp-bar');
+  const cnt = document.getElementById('sp-counter');
+  if (!bar||!cnt) return;
+  const pct = (_spTimeLeft/8)*100;
+  bar.style.width=pct+'%';
+  bar.className='speed-bar'+(pct<40?' warning':'')+(pct<15?' danger':'');
+  cnt.textContent=Math.ceil(_spTimeLeft)+'s';
+}
+
+function handleSpeedAnswer(chosen, correct, btn) {
+  if (_spAnswered) return;
+  _spAnswered=true;
+  clearInterval(_spTimer);
+  const isOk = chosen===correct;
+  document.querySelectorAll('.sq-opt').forEach(b=>{b.disabled=true;});
+  btn.classList.add(isOk?'correct':'wrong');
+  if (!isOk) {
+    _spWrong++;
+    document.querySelectorAll('.sq-opt').forEach(b=>{if(b.textContent===correct) b.classList.add('correct');});
+  } else {
+    _spScore++;
+  }
+  showSpeedFeedback(isOk, correct);
+  setTimeout(()=>{ _spCurrent++; renderSpeedQ(); }, isOk?500:900);
+}
+
+function showSpeedFeedback(isOk, correct) {
+  const fb=document.getElementById('sp-fb');
+  if (!fb) return;
+  fb.className='sq-feedback show '+(isOk?'ok':'err');
+  fb.querySelector('.fb-icon').textContent=isOk?'✓':'✕';
+  fb.querySelector('span:last-child').textContent=isOk ? rand(['Great!','Perfect!','Correct!']) : 'Answer: '+correct;
+}
+
+function showSpeedResult() {
+  clearInterval(_spTimer);
+  const pct = Math.round((_spScore/SP_TOTAL)*100);
+  const earnedXP = _spScore * 2 + 10;
+
+  // Save best score
+  if (_uid) {
+    const best = Number(localStorage.getItem(key('speed_best'))||0);
+    if (_spScore > best) localStorage.setItem(key('speed_best'), _spScore);
+    // Save XP
+    const curXP = Number(localStorage.getItem(key('xp'))||0) + earnedXP;
+    localStorage.setItem(key('xp'), curXP);
+    saveXP(earnedXP);
+  }
+
+  const emoji = _spScore>=18?'🏆':_spScore>=14?'⚡':_spScore>=10?'🎯':'💪';
+  const title = _spScore>=18?'Perfect!':_spScore>=14?'Excellent!':_spScore>=10?'Good job!':'Keep going!';
+
+  showScreen('speed-result');
+  const el = document.getElementById('speed-result-inner');
+  el.innerHTML =
+    '<div class="sr-emoji">'+emoji+'</div>' +
+    '<div class="sr-title">'+title+'</div>' +
+    '<div class="sr-sub">Speed Challenge Complete</div>' +
+    '<div class="sr-score">'+_spScore+' / '+SP_TOTAL+' correct</div>' +
+    '<div class="xp-earned">+'+earnedXP+' XP earned</div>' +
+    '<div class="sr-stats">' +
+      '<div class="sr-stat"><div class="sr-stat-val">'+pct+'%</div><div class="sr-stat-lbl">Accuracy</div></div>' +
+      '<div class="sr-stat"><div class="sr-stat-val">'+_spScore+'</div><div class="sr-stat-lbl">Correct</div></div>' +
+      '<div class="sr-stat"><div class="sr-stat-val">'+_spWrong+'</div><div class="sr-stat-lbl">Wrong</div></div>' +
+    '</div>' +
+    '<div class="sr-actions">' +
+      '<button class="btn-primary" onclick="startSpeed()">⚡ Play Again</button>' +
+      '<button class="btn-secondary" onclick="exitMode()">← Back</button>' +
+    '</div>';
+}
+
+// ══ REVIEW (SRS FLASHCARDS) ══
+let _revPool=[], _revIdx=0, _revRevealed=false, _revCorrect=0;
+
+function startReview() {
+  if (!_uid) { showToast('Sign in to use review!'); return; }
+  const srs = JSON.parse(localStorage.getItem(key('srs'))||'{}');
+  const now = Date.now();
+
+  // Build review queue: due words first, then unseen, then learned
+  const due     = PRACTICE_WORDS.filter(w=>srs[w.id]&&srs[w.id].nextReview<=now);
+  const unseen  = PRACTICE_WORDS.filter(w=>!srs[w.id]);
+  const learned = PRACTICE_WORDS.filter(w=>srs[w.id]&&srs[w.id].nextReview>now).slice(0,5);
+
+  _revPool = [...shuffle(due), ...shuffle(unseen).slice(0,10), ...shuffle(learned)];
+  _revIdx=0; _revRevealed=false; _revCorrect=0;
+
+  if (_revPool.length===0) { showEmptyReview(); return; }
+  showScreen('review');
+  renderReviewCard();
+}
+
+function showEmptyReview() {
+  showScreen('review');
+  document.getElementById('review-inner').innerHTML =
+    '<div class="empty-state"><span class="empty-emoji">✅</span>' +
+    '<div class="empty-title">All caught up!</div>' +
+    '<div class="empty-sub">No words due for review right now.<br/>Come back after your next lesson!</div>' +
+    '<button class="btn-primary" onclick="exitMode()">← Back to Practice</button></div>';
+}
+
+function renderReviewCard() {
+  if (_revIdx >= _revPool.length) { showReviewDone(); return; }
+
+  const w   = _revPool[_revIdx];
+  const srs = JSON.parse(localStorage.getItem(key('srs'))||'{}');
+  const entry = srs[w.id];
+  const tag = !entry ? 'new' : entry.nextReview <= Date.now() ? 'due' : 'learned';
+
+  _revRevealed = false;
+  const inner = document.getElementById('review-inner');
+  inner.innerHTML = '';
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className='review-header';
+  hdr.innerHTML =
+    '<div class="review-title">Flashcards</div>' +
+    '<div class="review-count">'+(_revIdx+1)+' / '+_revPool.length+'</div>';
+  inner.appendChild(hdr);
+
+  // Progress
+  const prog = document.createElement('div');
+  prog.className='progress-bar-wrap';
+  const fill=document.createElement('div');
+  fill.className='progress-bar-fill';
+  fill.style.width=Math.round((_revIdx/_revPool.length)*100)+'%';
+  prog.appendChild(fill); inner.appendChild(prog);
+
+  // Card
+  const card = document.createElement('div');
+  card.className='word-card-review';
+  card.id='rev-card';
+
+  const hanzi=document.createElement('div'); hanzi.className='wcr-hanzi'; hanzi.textContent=w.zh;
+  const tap=document.createElement('div'); tap.className='wcr-tap'; tap.textContent='Tap to reveal meaning';
+  const pinyinEl=document.createElement('div'); pinyinEl.className='wcr-pinyin wcr-hidden'; pinyinEl.id='rev-pinyin'; pinyinEl.textContent=w.py;
+  const meaning=document.createElement('div'); meaning.className='wcr-meaning wcr-hidden'; meaning.id='rev-meaning'; meaning.textContent=w.en;
+
+  const srsTag=document.createElement('div');
+  srsTag.className='srs-tag srs-'+tag;
+  srsTag.textContent=tag==='new'?'New word':tag==='due'?'Due for review':'Already learned';
+
+  card.appendChild(hanzi);
+  card.appendChild(srsTag);
+  card.appendChild(pinyinEl);
+  card.appendChild(meaning);
+  card.appendChild(tap);
+
+  card.addEventListener('click', function() { revealCard(w); });
+  inner.appendChild(card);
+
+  // Audio button
+  const abRow = document.createElement('div');
+  abRow.style.cssText='text-align:center;margin-top:-4px';
+  const ab=document.createElement('button'); ab.className='btn-audio';
+  ab.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  ab.addEventListener('click', function(e){ e.stopPropagation(); speak(w.zh); });
+  abRow.appendChild(ab); inner.appendChild(abRow);
+
+  // Buttons (hidden until revealed)
+  const btns = document.createElement('div');
+  btns.className='review-btns'; btns.id='rev-btns'; btns.style.display='none';
+  const knowBtn=document.createElement('button'); knowBtn.className='btn-know'; knowBtn.textContent='✓ I knew it';
+  const dontBtn=document.createElement('button'); dontBtn.className='btn-dontknow'; dontBtn.textContent='✕ Not yet';
+  knowBtn.addEventListener('click', ()=>revScore(w,true));
+  dontBtn.addEventListener('click', ()=>revScore(w,false));
+  btns.appendChild(dontBtn); btns.appendChild(knowBtn);
+  inner.appendChild(btns);
+
+  speak(w.zh, 0.85);
+}
+
+function revealCard(w) {
+  if (_revRevealed) return;
+  _revRevealed=true;
+  document.querySelectorAll('.wcr-hidden').forEach(el=>{
+    el.classList.remove('wcr-hidden');
+    el.style.animation='fadeUp .3s ease both';
+  });
+  const tap=document.querySelector('.wcr-tap'); if(tap) tap.style.display='none';
+  const btns=document.getElementById('rev-btns'); if(btns) btns.style.display='flex';
+}
+
+function revScore(w, knew) {
+  // Update SRS
+  const srs = JSON.parse(localStorage.getItem(key('srs'))||'{}');
+  const entry = srs[w.id]||{score:0};
+  const intervals=[0,86400000,259200000,604800000,1209600000,2592000000];
+  entry.score = knew ? Math.min(5,entry.score+1) : Math.max(0,entry.score-1);
+  entry.nextReview = Date.now()+(intervals[entry.score]||0);
+  srs[w.id]=entry;
+  localStorage.setItem(key('srs'),JSON.stringify(srs));
+  if (knew) _revCorrect++;
+  _revIdx++;
+  renderReviewCard();
+}
+
+function showReviewDone() {
+  const inner=document.getElementById('review-inner');
+  const pct=_revPool.length>0?Math.round((_revCorrect/_revPool.length)*100):0;
+  inner.innerHTML =
+    '<div class="empty-state">' +
+    '<span class="empty-emoji">🎉</span>' +
+    '<div class="empty-title">Review complete!</div>' +
+    '<div class="empty-sub">'+_revCorrect+' of '+_revPool.length+' words known ('+pct+'%)</div>' +
+    '<button class="btn-primary" onclick="exitMode()">← Back to Practice</button>' +
+    '</div>';
+}
+
+// ══ LISTENING PRACTICE ══
+function startListening() {
+  // Same as speed but all listening questions
+  _spPool = shuffle(getPool()).slice(0, 20);
+  _spCurrent=0; _spScore=0; _spWrong=0; _spAnswered=false;
+  showScreen('speed');
+  document.getElementById('header-title').innerHTML='🎧 <em>Listening</em>';
+  renderListenQ();
+}
+
+function renderListenQ() {
+  if (_spCurrent >= 20) { showSpeedResult(); return; }
+  _spAnswered=false;
+  clearInterval(_spTimer);
+
+  const w=_spPool[_spCurrent];
+  const correct=w.en;
+  const distractors=shuffle(PRACTICE_WORDS.filter(x=>x.id!==w.id)).slice(0,3);
+  const opts=shuffle([correct,...distractors.map(d=>d.en)]);
+
+  document.getElementById('sp-q-count').textContent=(_spCurrent+1)+' / 20';
+  document.getElementById('sp-score').textContent=_spScore+' ✓';
+
+  const area=document.getElementById('sp-area');
+  area.innerHTML='';
+
+  const lbl=document.createElement('div'); lbl.className='sq-label listen'; lbl.textContent='🎧 What did you hear?';
+  area.appendChild(lbl);
+
+  // Big play button
+  const playBtn=document.createElement('button');
+  playBtn.style.cssText='width:100%;padding:18px;border-radius:14px;background:rgba(96,165,250,.1);border:1.5px solid rgba(96,165,250,.25);color:var(--blue);font-family:DM Sans,sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;margin-bottom:4px';
+  playBtn.innerHTML='<span style="font-size:22px">🔊</span> Tap to hear again';
+  playBtn.addEventListener('click',function(){ speak(w.zh,0.85); });
+  area.appendChild(playBtn);
+  speak(w.zh,0.85);
+
+  const grid=document.createElement('div'); grid.className='sq-opts';
+  opts.forEach(opt=>{
+    const btn=document.createElement('button'); btn.className='sq-opt'; btn.textContent=opt;
+    btn.addEventListener('click',function(){ handleSpeedAnswer(opt,correct,this); });
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+
+  const fb=document.createElement('div'); fb.className='sq-feedback'; fb.id='sp-fb';
+  fb.innerHTML='<span class="fb-icon"></span><span></span>';
+  area.appendChild(fb);
+
+  // Override timer to go to renderListenQ
+  _spTimeLeft=10;
+  updateSpeedBar();
+  _spTimer=setInterval(()=>{
+    _spTimeLeft=Math.max(0,_spTimeLeft-0.1); updateSpeedBar();
+    if (_spTimeLeft<=0) {
+      clearInterval(_spTimer);
+      if (!_spAnswered) {
+        _spAnswered=true; _spWrong++;
+        grid.querySelectorAll('.sq-opt').forEach(b=>{b.disabled=true; if(b.textContent===correct) b.classList.add('correct');});
+        showSpeedFeedback(false,correct);
+        setTimeout(()=>{ _spCurrent++; renderListenQ(); },900);
+      }
+    }
+  },100);
+
+  // Override button handlers to use renderListenQ
+  grid.querySelectorAll('.sq-opt').forEach(btn=>{
+    btn.replaceWith(btn.cloneNode(true));
+  });
+  grid.querySelectorAll('.sq-opt').forEach((btn,i)=>{
+    btn.addEventListener('click',function(){
+      if(_spAnswered) return;
+      _spAnswered=true; clearInterval(_spTimer);
+      const isOk=btn.textContent===correct;
+      grid.querySelectorAll('.sq-opt').forEach(b=>b.disabled=true);
+      btn.classList.add(isOk?'correct':'wrong');
+      if(!isOk){_spWrong++;grid.querySelectorAll('.sq-opt').forEach(b=>{if(b.textContent===correct)b.classList.add('correct');});}
+      else{_spScore++;}
+      showSpeedFeedback(isOk,correct);
+      setTimeout(()=>{_spCurrent++;renderListenQ();},isOk?500:900);
+    });
+  });
+}
+
+// ══ FLASHCARDS ══
+function startFlashcards() { startReview(); }
+
+// ══ EXIT ══
+function exitMode() {
+  clearInterval(_spTimer);
+  window.speechSynthesis?.cancel();
+  showScreen('home');
+  document.getElementById('header-title').innerHTML='⚡ <em>Practice</em>';
+  loadStats();
+}
+
+// ══ SAVE XP ══
+async function saveXP(earned) {
+  try {
+    if (!sb||!_uid) return;
+    const totalXP=Number(localStorage.getItem(key('xp'))||0);
+    const username=localStorage.getItem('username_'+_uid)||('Learner '+_uid.slice(0,6).toUpperCase());
+    const hskLevel=Number(localStorage.getItem(key('user_level'))||1);
+    await sb.from('leaderboard').upsert({user_id:_uid,xp:totalXP,username,hsk_level:hskLevel},{onConflict:'user_id'});
+  } catch(e){console.warn('saveXP:',e);}
+}
+
+// ══ LOAD HOME STATS ══
+function loadStats() {
+  if (!_uid) return;
+  const best=localStorage.getItem(key('speed_best'));
+  document.getElementById('stat-best').textContent=best?best+'/20':'—';
+
+  const srs=JSON.parse(localStorage.getItem(key('srs'))||'{}');
+  const due=Object.values(srs).filter(w=>w.nextReview<=Date.now()).length;
+  document.getElementById('stat-due').textContent=due;
+  document.getElementById('review-badge').textContent=due>0?due+' words due':'All caught up!';
+  if (due>0) document.getElementById('review-badge').className='mode-badge active-badge';
+
+  const completed=JSON.parse(localStorage.getItem(key('completed_lessons'))||'[]');
+  const mistakes=JSON.parse(localStorage.getItem(key('mistakes'))||'[]');
+  const totalQ=Math.max(completed.length*8,1);
+  const acc=Math.max(0,Math.round(((totalQ-mistakes.length)/totalQ)*100));
+  document.getElementById('stat-acc').textContent=acc+'%';
+
+  const best2=localStorage.getItem(key('speed_best'));
+  if(best2) document.getElementById('speed-badge').textContent='Best: '+best2+'/20';
+}
+
+// ══ INIT ══
+async function init() {
+  // Check URL params for direct mode launch
+  const p=new URLSearchParams(location.search);
+  const mode=p.get('mode');
+
+  try {
+    const {data}=await sb.auth.getSession();
+    const user=data?.session?.user;
+    if (user) { _uid=user.id; }
+  } catch(e){}
+
+  loadStats();
+
+  if (mode==='speed')  startSpeed();
+  else if (mode==='review') startReview();
+  else if (mode==='listen') startListening();
+}
+
+init();
+</script>
+</body>
+</html>
