@@ -894,46 +894,127 @@ function renderStep(idx) {
 // ── WORD CARD
 function renderWordCard(step) {
   const w = step.word;
-  stepArea.innerHTML = `
-    <div class="word-card">
-      <div class="wc-top">
-        <div class="wc-hanzi">${w.zh}</div>
-        <button class="btn-audio" onclick="speak('${w.zh}')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-        </button>
-      </div>
-      <div class="wc-pinyin">${w.py}</div>
-      <div class="wc-meaning">${w.en}</div>
-      ${w.ex ? `<div class="wc-example">
-        <div class="ex-label">Example</div>
-        <div class="ex-zh">${w.ex.zh} <button class="btn-audio" style="display:inline-flex;width:22px;height:22px" onclick="speak('${w.ex.zh}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button></div>
-        <div class="ex-py">${w.ex.py}</div>
-        <div class="ex-en">${w.ex.en}</div>
-      </div>` : ''}
-    </div>`;
+  const AUDIO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+
+  stepArea.innerHTML = '';
+
+  // Build card using DOM — NO inline onclick with Chinese strings
+  const card = document.createElement('div');
+  card.className = 'word-card';
+
+  // Top row: hanzi + audio button
+  const top = document.createElement('div');
+  top.className = 'wc-top';
+  const hanzi = document.createElement('div');
+  hanzi.className = 'wc-hanzi';
+  hanzi.textContent = w.zh;
+  const ab = document.createElement('button');
+  ab.className = 'btn-audio';
+  ab.innerHTML = AUDIO_SVG;
+  ab.addEventListener('click', function() { speak(w.zh); });
+  top.appendChild(hanzi);
+  top.appendChild(ab);
+  card.appendChild(top);
+
+  // Pinyin + meaning
+  const py = document.createElement('div');
+  py.className = 'wc-pinyin';
+  py.textContent = w.py;
+  card.appendChild(py);
+
+  const mn = document.createElement('div');
+  mn.className = 'wc-meaning';
+  mn.textContent = w.en;
+  card.appendChild(mn);
+
+  // Example sentence
+  if (w.ex) {
+    const ex = document.createElement('div');
+    ex.className = 'wc-example';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'ex-label';
+    lbl.textContent = 'Example';
+
+    const zhRow = document.createElement('div');
+    zhRow.className = 'ex-zh';
+    const zhTxt = document.createElement('span');
+    zhTxt.textContent = w.ex.zh + ' ';
+    const ab2 = document.createElement('button');
+    ab2.className = 'btn-audio';
+    ab2.style.cssText = 'display:inline-flex;width:22px;height:22px';
+    ab2.innerHTML = AUDIO_SVG;
+    ab2.addEventListener('click', function() { speak(w.ex.zh); });
+    zhRow.appendChild(zhTxt);
+    zhRow.appendChild(ab2);
+
+    const pyRow = document.createElement('div');
+    pyRow.className = 'ex-py';
+    pyRow.textContent = w.ex.py;
+
+    const enRow = document.createElement('div');
+    enRow.className = 'ex-en';
+    enRow.textContent = w.ex.en;
+
+    ex.appendChild(lbl);
+    ex.appendChild(zhRow);
+    ex.appendChild(pyRow);
+    ex.appendChild(enRow);
+    card.appendChild(ex);
+  }
+
+  stepArea.appendChild(card);
   speak(w.zh);
-  bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Got it →</button>`;
+  bottomArea.innerHTML = '<button class="btn-primary" onclick="nextStep()">Got it →</button>';
 }
 
 // ── GRAMMAR
 function renderGrammar(step) {
   const g = step.grammar;
-  stepArea.innerHTML = `
-    <div class="q-label read" style="margin-bottom:6px">📖 Grammar Pattern</div>
-    <div class="grammar-card">
-      <div class="gc-title">${g.title}</div>
-      <div class="gc-pattern">${g.pattern}</div>
-      <div class="gc-body">${g.explain}</div>
-      <div class="gc-examples">
-        ${g.examples.map(e => `<div class="gc-ex">
-          <div class="gc-ex-zh">${e.zh} <button class="btn-audio" style="display:inline-flex;width:20px;height:20px" onclick="speak('${e.zh}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button></div>
-          <div class="gc-ex-en">${e.en}</div>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Got it →</button>`;
-}
+  if (!g) { nextStep(); return; }
+  const AUDIO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
 
+  stepArea.innerHTML = '';
+  const ql = document.createElement('div');
+  ql.className = 'q-label read';
+  ql.style.marginBottom = '6px';
+  ql.textContent = 'Grammar Pattern';
+  stepArea.appendChild(ql);
+
+  const gc = document.createElement('div');
+  gc.className = 'grammar-card';
+  gc.innerHTML =
+    '<div class="gc-title">' + g.title + '</div>' +
+    '<div class="gc-pattern">' + g.pattern + '</div>' +
+    '<div class="gc-body">' + g.explain + '</div>';
+
+  const exWrap = document.createElement('div');
+  exWrap.className = 'gc-examples';
+  (g.examples || []).forEach(function(e) {
+    const row = document.createElement('div');
+    row.className = 'gc-ex';
+    const zhDiv = document.createElement('div');
+    zhDiv.className = 'gc-ex-zh';
+    const zhSpan = document.createElement('span');
+    zhSpan.textContent = e.zh + ' ';
+    const ab = document.createElement('button');
+    ab.className = 'btn-audio';
+    ab.style.cssText = 'display:inline-flex;width:20px;height:20px';
+    ab.innerHTML = AUDIO_SVG;
+    (function(zh) { ab.addEventListener('click', function() { speak(zh); }); })(e.zh);
+    zhDiv.appendChild(zhSpan);
+    zhDiv.appendChild(ab);
+    const enDiv = document.createElement('div');
+    enDiv.className = 'gc-ex-en';
+    enDiv.textContent = e.en;
+    row.appendChild(zhDiv);
+    row.appendChild(enDiv);
+    exWrap.appendChild(row);
+  });
+  gc.appendChild(exWrap);
+  stepArea.appendChild(gc);
+  bottomArea.innerHTML = '<button class="btn-primary" onclick="nextStep()">Got it →</button>';
+}
 // ── MCQ
 function renderMCQ(step, mode) {
   const w = step.word;
