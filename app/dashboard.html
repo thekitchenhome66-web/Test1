@@ -33,13 +33,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(74,222,128,.2);border-radius:3px}
 
 /* ══ HEADER ══ */
-.header{position:sticky;top:0;z-index:60;height:var(--header-h);background:rgba(8,15,11,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.header{position:sticky;top:0;z-index:60;height:var(--header-h);background:rgba(8,15,11,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;gap:8px;overflow:hidden}
 .logo{display:flex;align-items:center;gap:8px;text-decoration:none}
-.logo-panda{font-size:26px;line-height:1}
-.logo-name{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink)}
+.logo-panda{font-size:22px;line-height:1}
+.logo-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap}
 .logo-name em{color:var(--green);font-style:normal}
-.header-stats{display:flex;align-items:center;gap:5px}
-.stat-pill{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:var(--ink2);cursor:default;transition:all var(--t);white-space:nowrap}
+.header-stats{display:flex;align-items:center;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:1;min-width:0}.header-stats::-webkit-scrollbar{display:none}
+.stat-pill{display:flex;align-items:center;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:4px 7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:var(--ink2);cursor:default;transition:all var(--t);white-space:nowrap;flex-shrink:0}
 .stat-pill .v{color:var(--ink)}
 .stat-pill.xp .v{color:var(--green)}
 .stat-pill.fire .v{color:var(--gold)}
@@ -268,12 +268,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="stat-pill xp"><span>⚡</span><span class="v" id="stat-xp">0</span><span>XP</span></div>
     <div class="stat-pill hearts" onclick="showHeartsModal()"><span>❤️</span><span class="v" id="stat-hearts">5</span></div>
     <div class="stat-pill fire"><span>🔥</span><span class="v" id="stat-streak">0</span></div>
-    <div class="stat-pill" id="stat-energy-pill" style="gap:4px">
-      <span>⚡</span>
-      <div style="width:38px;height:5px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden">
-        <div id="dash-energy-fill" style="height:100%;background:#fbbf24;border-radius:999px;width:100%;transition:width .4s"></div>
-      </div>
-      <span class="v" id="dash-energy-count" style="color:#fbbf24">25</span>
+    <div class="stat-pill" id="stat-energy-pill">
+      <span>⚡</span><span class="v" id="dash-energy-count" style="color:#fbbf24">25</span>
     </div>
     <div class="stat-pill" style="cursor:pointer" onclick="showToast('💎 Diamond shop coming soon!')">
       <span>💎</span><span class="v" id="dash-diamond-count" style="color:#a78bfa">0</span>
@@ -462,6 +458,14 @@ const user = {
   get streak()  { return Number(localStorage.getItem(key('streak'))      || 0) },
   get dailyDone(){ return Number(localStorage.getItem(key('daily_done')) || 0) },
   get lessonsToday(){ return Number(localStorage.getItem(key('lessons_today')) || 0) },
+  get energy()  {
+    const saved = Number(localStorage.getItem(key('energy')));
+    const ts    = Number(localStorage.getItem(key('energy_ts')) || 0);
+    if (isNaN(saved) || saved < 0) return 25;
+    const refilled = Math.floor((Date.now() - ts) / (5 * 60 * 1000));
+    return Math.min(25, saved + refilled);
+  },
+  get diamonds(){ return Number(localStorage.getItem(key('diamonds')) || 0) },
 };
 
 /* ── HEART REGEN ── */
@@ -499,6 +503,12 @@ function renderStats() {
   document.getElementById('stat-xp').textContent     = user.xp;
   document.getElementById('stat-hearts').textContent = user.hearts;
   document.getElementById('stat-streak').textContent = user.streak;
+  // Energy
+  const ec = document.getElementById('dash-energy-count');
+  if (ec) ec.textContent = user.energy;
+  // Diamonds
+  const dc = document.getElementById('dash-diamond-count');
+  if (dc) dc.textContent = user.diamonds;
 }
 
 /* ── CONTINUE CARD ── */
