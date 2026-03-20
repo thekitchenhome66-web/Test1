@@ -489,27 +489,82 @@ function startTimer() {
 }
 
 // ── XP Battle bar builder
-function buildBattleBar(myXP, theirXP, theirName) {
+function buildBattleBar(myXP, theirXP, myName, theirName, label) {
   const total = (myXP + theirXP) || 1;
   const myPct = Math.round((myXP / total) * 100);
   const thPct = 100 - myPct;
   const myWins = myXP > theirXP;
   const tied   = myXP === theirXP;
-  const msg    = tied ? '⚖️ Tied — make your move!' : myWins ? '🔥 You\'re ahead — keep it up!' : '😤 ' + theirName + ' leads — time to grind!';
-  const cls    = tied ? 'tied' : myWins ? 'winning' : 'losing';
+  const diff   = Math.abs(myXP - theirXP);
+  const msg    = tied
+    ? '⚖️ Tied! First to earn XP wins!'
+    : myWins
+      ? '🔥 You lead by ' + diff + ' XP — hold it!'
+      : '😤 ' + theirName + ' leads by ' + diff + ' XP — grind!';
+  const cls = tied ? 'tied' : myWins ? 'winning' : 'losing';
 
   const el = document.createElement('div');
   el.className = 'battle-wrap';
   el.innerHTML =
-    '<div class="battle-title">⚔️ XP Battle — You vs #' + (allUsers.findIndex(u=>u.user_id===(_uid||''))-0) + ' above</div>' +
-    '<div class="battle-names"><span class="battle-you">You · ' + myXP + ' XP</span><span class="battle-them">' + theirName + ' · ' + theirXP + ' XP</span></div>' +
+    '<div class="battle-title">⚔️ ' + (label || 'Weekly Battle') + '</div>' +
+    '<div class="battle-names">' +
+      '<span class="battle-you">' + (myName||'You') + ' · ' + myXP + ' XP</span>' +
+      '<span class="battle-them">' + theirName + ' · ' + theirXP + ' XP</span>' +
+    '</div>' +
     '<div class="battle-bar">' +
-      '<div class="battle-blue" style="width:' + myPct + '%">' + (myPct>=15?'<span class="battle-pct">'+myPct+'%</span>':'') + '</div>' +
-      '<div class="battle-red"  style="width:' + thPct + '%">' + (thPct>=15?'<span class="battle-pct">'+thPct+'%</span>':'') + '</div>' +
+      '<div class="battle-blue" style="width:' + myPct + '%">' + (myPct>=12?'<span class="battle-pct">'+myPct+'%</span>':'') + '</div>' +
+      '<div class="battle-red"  style="width:' + thPct + '%">' + (thPct>=12?'<span class="battle-pct">'+thPct+'%</span>':'') + '</div>' +
     '</div>' +
     '<div class="battle-result ' + cls + '">' + msg + '</div>';
   return el;
 }
+
+// ── Get or set weekly opponent (persists all week, smart matching)
+function getWeeklyOpponent(users, myIdx) {
+  if (!_uid || users.length < 2) return null;
+
+  // Get current week key (Monday-based)
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  monday.setHours(0,0,0,0);
+  const weekKey = monday.toISOString().split('T')[0];
+
+  const storageKey = 'weekly_opp_' + _uid + '_' + weekKey;
+  const stored = localStorage.getItem(storageKey);
+
+  // If we have a stored opponent for this week, use them
+  if (stored) {
+    const opp = users.find(u => u.user_id === stored);
+    if (opp) return opp;
+  }
+
+  // Pick new opponent: closest XP, not yourself, not recent opponents
+  const recentKey = 'recent_opps_' + _uid;
+  const recent = JSON.parse(localStorage.getItem(recentKey) || '[]');
+
+  const myXP = users[myIdx]?.xp || 0;
+  const candidates = users
+    .filter((u, i) => i !== myIdx && !recent.includes(u.user_id))
+    .sort((a, b) => Math.abs((a.xp||0) - myXP) - Math.abs((b.xp||0) - myXP));
+
+  // If all are recent, reset and pick from all
+  const pool = candidates.length > 0 ? candidates : users.filter((u,i) => i !== myIdx);
+  if (!pool.length) return null;
+
+  const chosen = pool[0];
+
+  // Save for this week
+  localStorage.setItem(storageKey, chosen.user_id);
+
+  // Update recent opponents list (keep last 5)
+  const newRecent = [chosen.user_id, ...recent.filter(id => id !== chosen.user_id)].slice(0, 5);
+  localStorage.setItem(recentKey, JSON.stringify(newRecent));
+
+  return chosen;
+}
+
 
 // ══════════════════════════════════════════
 // WEEKLY VIEW
@@ -583,27 +638,43 @@ function renderWeekly(users) {
     }
     main.appendChild(youEl);
 
-    // ── XP Battle Bar (vs person directly above)
-    if (myData && myRank > 1) {
-      const above = users[myIdx - 1];
-      main.appendChild(buildBattleBar(myData.xp||0, above.xp||0, dName(above)));
+    // ── XP Battle Bar — always shows, smart weekly opponent
+    if (myData) {
+      const opp = getWeeklyOpponent(users, myIdx);
+      if (opp) {
+        const myName = dName(myData);
+        const isDefender = myRank === 1; // #1 defends vs challenger below
+        const label = isDefender
+          ? 'Weekly Defense — Defend #1!'
+          : 'Weekly Battle — Beat ' + dName(opp) + '!';
+        main.appendChild(buildBattleBar(myData.xp||0, opp.xp||0, myName, dName(opp), label));
+      }
 
-      // Next Target
-      const need = (above.xp||0) - (myData.xp||0) + 1;
-      const nt = document.createElement('div');
-      nt.className = 'next-target';
-      nt.innerHTML =
-        '<div class="nt-icon">🎯</div>' +
-        '<div class="nt-info"><div class="nt-label">Next Target</div>' +
-        '<div class="nt-text">Beat '+dName(above)+'</div>' +
-        '<div class="nt-sub">'+need+' XP needed · they have '+(above.xp||0)+' XP</div></div>' +
-        '<div class="nt-xp">+'+need+'</div>';
-      main.appendChild(nt);
-    } else if (myData && myRank === 1) {
-      const nt = document.createElement('div');
-      nt.className = 'next-target';
-      nt.innerHTML = '<div class="nt-icon">👑</div><div class="nt-info"><div class="nt-label">You\'re #1</div><div class="nt-text">Defend your throne this week!</div></div>';
-      main.appendChild(nt);
+      // Next target card
+      if (myRank === 1) {
+        const below = users[myIdx + 1];
+        const nt = document.createElement('div');
+        nt.className = 'next-target';
+        if (below) {
+          const gap = (myData.xp||0) - (below.xp||0);
+          nt.innerHTML = '<div class="nt-icon">👑</div><div class="nt-info"><div class="nt-label">#1 Champion</div><div class="nt-text">Defend your throne!</div><div class="nt-sub">' + dName(below) + ' is ' + gap + ' XP behind you</div></div>';
+        } else {
+          nt.innerHTML = '<div class="nt-icon">👑</div><div class="nt-info"><div class="nt-label">#1 Champion</div><div class="nt-text">Uncontested champion!</div></div>';
+        }
+        main.appendChild(nt);
+      } else if (myRank > 1) {
+        const above = users[myIdx - 1];
+        const need = (above.xp||0) - (myData.xp||0) + 1;
+        const nt = document.createElement('div');
+        nt.className = 'next-target';
+        nt.innerHTML =
+          '<div class="nt-icon">🎯</div>' +
+          '<div class="nt-info"><div class="nt-label">Next Target</div>' +
+          '<div class="nt-text">Beat '+dName(above)+'</div>' +
+          '<div class="nt-sub">'+need+' XP needed · they have '+(above.xp||0)+' XP</div></div>' +
+          '<div class="nt-xp">+'+need+'</div>';
+        main.appendChild(nt);
+      }
     }
   }
 
