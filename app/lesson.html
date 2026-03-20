@@ -257,6 +257,71 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 /* ── TOAST ── */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:700;color:var(--ink);opacity:0;transition:all .3s;pointer-events:none;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── ENERGY BAR */
+.energy-bar-wrap{display:flex;align-items:center;gap:6px;flex:1;max-width:140px}
+.energy-icon{font-size:14px;flex-shrink:0}
+.energy-track{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+.energy-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#f59e0b,#fbbf24);transition:width .4s cubic-bezier(.4,0,.2,1)}
+.energy-count{font-size:11px;font-weight:800;color:var(--gold);flex-shrink:0;min-width:32px;text-align:right}
+.diamond-pill{display:flex;align-items:center;gap:4px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2);border-radius:999px;padding:4px 9px;cursor:pointer;transition:all var(--t)}
+.diamond-pill:hover{background:rgba(167,139,250,.2)}
+.diamond-pill span:first-child{font-size:13px}
+.diamond-pill span:last-child{font-size:12px;font-weight:800;color:var(--purple)}
+
+/* ── ENERGY OUT OVERLAY */
+.energy-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(12px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.energy-overlay.show{display:flex}
+.eo-card{background:var(--card);border:1.5px solid var(--border2);border-radius:24px;padding:28px 22px;max-width:340px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:11px}
+.eo-icon{font-size:52px;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.eo-title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--ink)}
+.eo-sub{font-size:13px;color:var(--ink2);line-height:1.6;max-width:260px}
+.eo-bar-wrap{width:100%;height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;display:none}
+.eo-bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:999px;width:0%;transition:width .08s linear}
+.eo-bar-lbl{font-size:11px;font-weight:700;color:var(--ink3);min-height:16px}
+.btn-pro-trial{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all var(--t);box-shadow:0 4px 16px rgba(167,139,250,.3);display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-pro-trial:hover{transform:translateY(-1px)}
+.btn-eo-ad{width:100%;padding:13px;border-radius:13px;background:rgba(61,219,122,.1);border:1.5px solid rgba(61,219,122,.25);color:var(--green);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--t)}
+.btn-eo-ad:hover{background:rgba(61,219,122,.18)}
+.btn-eo-ad:disabled{opacity:.5;cursor:not-allowed}
+.btn-eo-diamonds{width:100%;padding:12px;border-radius:13px;background:rgba(167,139,250,.1);border:1.5px solid rgba(167,139,250,.2);color:var(--purple);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all var(--t)}
+.btn-eo-diamonds:hover{background:rgba(167,139,250,.2)}
+.btn-lose-pts{width:100%;padding:11px;border-radius:12px;background:transparent;border:1.5px solid rgba(248,113,113,.25);color:var(--rose);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all var(--t)}
+.btn-lose-pts:hover{background:rgba(248,113,113,.08)}
+.eo-diamond-prices{display:flex;gap:6px;width:100%}
+.eo-price-btn{flex:1;padding:10px 4px;border-radius:11px;background:var(--card2);border:1.5px solid var(--border2);text-align:center;cursor:pointer;transition:all var(--t)}
+.eo-price-btn:hover{border-color:var(--purple)}
+.eo-price-btn .ep-amount{font-size:12px;font-weight:800;color:var(--green)}
+.eo-price-btn .ep-cost{font-size:10px;color:var(--purple);font-weight:700}
+
+/* ── +1 ENERGY BONUS ANIMATION */
+.energy-bonus-anim{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:400;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0}
+.energy-bonus-anim.show{animation:energyPop 1.8s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes energyPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-60%) scale(1.1)}70%{opacity:1;transform:translate(-50%,-70%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(.9)}}
+.eba-icon{font-size:56px;filter:drop-shadow(0 0 20px rgba(251,191,36,.6))}
+.eba-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold);text-shadow:0 0 20px rgba(251,191,36,.5)}
+
+/* ── CHECK BUTTON */
+.btn-check{width:100%;padding:15px;border-radius:14px;border:none;background:var(--green);color:#080f0b;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all var(--t);box-shadow:0 4px 16px rgba(61,219,122,.22)}
+.btn-check:hover{background:var(--green2);transform:translateY(-1px)}
+.btn-check:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ── LISTENING SENTENCE */
+.listen-sentence-area{display:flex;flex-direction:column;gap:12px}
+.ls-play-btn{width:100%;padding:15px;border-radius:14px;background:rgba(96,165,250,.1);border:1.5px solid rgba(96,165,250,.25);color:var(--blue);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all var(--t)}
+.ls-play-btn:hover{background:rgba(96,165,250,.18)}
+.ls-build-area{background:var(--card);border:2px solid var(--border2);border-radius:14px;min-height:54px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;transition:border-color .2s}
+.ls-build-area.correct-border{border-color:var(--green)}
+.ls-build-area.wrong-border{border-color:var(--rose)}
+.ls-chip-placed{background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;padding:6px 10px;font-family:'Noto Sans SC',sans-serif;font-size:16px;color:var(--ink);cursor:pointer;transition:all .15s}
+.ls-chip-placed:hover{border-color:var(--rose);color:var(--rose)}
+.ls-placeholder{font-size:13px;color:var(--ink3);font-style:italic}
+.ls-word-bank{display:flex;flex-wrap:wrap;gap:7px}
+.ls-chip{background:var(--card);border:1.5px solid var(--border2);border-radius:9px;padding:8px 12px;font-family:'Noto Sans SC',sans-serif;font-size:16px;color:var(--ink);cursor:pointer;transition:all var(--t);user-select:none}
+.ls-chip:hover:not(.used){border-color:var(--blue);background:var(--card2);transform:translateY(-1px)}
+.ls-chip.used{opacity:.28;cursor:default}
+
 </style>
 </head>
 <body>
@@ -267,6 +332,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     </button>
     <div class="progress-wrap"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
     <div class="hearts-row" id="hearts-display"></div>
+    <div class="energy-bar-wrap">
+      <span class="energy-icon">⚡</span>
+      <div class="energy-track"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
+      <span class="energy-count" id="energy-count">25</span>
+    </div>
+    <div class="diamond-pill" id="diamond-pill" onclick="showDiamondShop()">
+      <span>💎</span><span id="diamond-count">0</span>
+    </div>
   </div>
   <div class="info-bar">
     <div class="info-tag" id="info-tag">HSK 1 · Lesson 1</div>
@@ -291,6 +364,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
       <button style="width:100%;padding:12px;border-radius:14px;background:transparent;border:1.5px solid var(--border2);color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer" onclick="window.location.href='/app/dashboard.html'">Back to Dashboard</button>
     </div>
   </div>
+</div>
+
+
+<!-- ENERGY OUT OVERLAY -->
+<div class="energy-overlay" id="energy-overlay">
+  <div class="eo-card">
+    <div class="eo-icon">⚡</div>
+    <div class="eo-title">Out of Energy!</div>
+    <div class="eo-sub">You need energy to keep going. Try Pro for unlimited energy, watch an ad for +5, or spend diamonds.</div>
+    <button class="btn-pro-trial" id="eo-pro-btn">🌟 Try Pro Free — 7 Days</button>
+    <div class="eo-bar-wrap" id="eo-bar-wrap"><div class="eo-bar-fill" id="eo-bar-fill"></div></div>
+    <div class="eo-bar-lbl" id="eo-bar-lbl"></div>
+    <button class="btn-eo-ad" id="eo-ad-btn">📺 Watch Ad (+5 Energy)</button>
+    <div style="font-size:11px;font-weight:700;color:var(--ink3)">Buy with Diamonds 💎</div>
+    <div class="eo-diamond-prices">
+      <div class="eo-price-btn" onclick="buyEnergyDiamonds(5,50)"><div class="ep-amount">+5 ⚡</div><div class="ep-cost">50💎</div></div>
+      <div class="eo-price-btn" onclick="buyEnergyDiamonds(25,200)"><div class="ep-amount">Full ⚡</div><div class="ep-cost">200💎</div></div>
+    </div>
+    <button class="btn-lose-pts" id="eo-quit-btn">✕ Lose all points &amp; quit</button>
+  </div>
+</div>
+
+<!-- ENERGY BONUS ANIMATION -->
+<div class="energy-bonus-anim" id="energy-bonus-anim">
+  <div class="eba-icon">⚡</div>
+  <div class="eba-text">+1 Energy Bonus!</div>
 </div>
 
 <!-- TOAST -->
@@ -1119,15 +1218,23 @@ let lesson      = null;
 let steps       = [];
 let currentStep = 0;
 let hearts      = 5;
+let energy      = 25;
+let diamonds    = 0;
 let xp          = 0;
 let sessionXP   = 0;
 let sessionMistakes = [];
+let retryQueue  = [];     // wrong answers added to end of lesson
 let answeredStep = false;
 let speedTimer  = null;
 let speedTimeLeft = 8;
 let matchState  = null;
 let wordBankState = null;
+let listenSentState = null;
 let checkpointScores = { listen: 0, listenTotal: 0, read: 0, readTotal: 0, write: 0, writeTotal: 0 };
+let nhAdTimer = null;
+let eoAdTimer = null;
+const MAX_ENERGY = 25;
+const ENERGY_REFILL_RATE_MS = 5 * 60 * 1000; // 1 energy per 5 minutes
 
 const stepArea   = document.getElementById('step-area');
 const bottomArea = document.getElementById('bottom-area');
@@ -1147,6 +1254,47 @@ function loadVoice() {
 if (window.speechSynthesis) {
   loadVoice();
   window.speechSynthesis.addEventListener('voiceschanged', loadVoice);
+}
+
+// ══════════════════════════════════════════════════════════
+// TING SOUNDS — Web Audio API
+// ══════════════════════════════════════════════════════════
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return _audioCtx;
+}
+
+function playTing(correct) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  // Unlock audio context on first user interaction
+  if (ctx.state === 'suspended') ctx.resume();
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  if (correct) {
+    // Bright happy ting: two rising notes
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.type = 'sine';
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } else {
+    // Sad low ting: descending
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.setValueAtTime(330, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.14, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.type = 'triangle';
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  }
 }
 
 function speak(text, rate = 0.85) {
@@ -1185,6 +1333,124 @@ function renderHearts() {
     s.textContent = '❤️';
     heartsEl.appendChild(s);
   }
+}
+
+// ── ENERGY & DIAMONDS
+function renderEnergy() {
+  const pct = Math.round((energy / MAX_ENERGY) * 100);
+  const fill = document.getElementById('energy-fill');
+  const count = document.getElementById('energy-count');
+  if (fill) fill.style.width = pct + '%';
+  if (count) count.textContent = energy + '/' + MAX_ENERGY;
+  if (_uid) {
+    localStorage.setItem(key('energy'), energy);
+    localStorage.setItem(key('energy_ts'), Date.now());
+  }
+}
+
+function renderDiamonds() {
+  const el = document.getElementById('diamond-count');
+  if (el) el.textContent = diamonds;
+  if (_uid) localStorage.setItem(key('diamonds'), diamonds);
+}
+
+function loadEnergy() {
+  if (!_uid) return;
+  const saved = Number(localStorage.getItem(key('energy')));
+  const ts    = Number(localStorage.getItem(key('energy_ts')) || 0);
+  if (!isNaN(saved) && saved >= 0) {
+    // Refill based on time elapsed
+    const elapsed = Date.now() - ts;
+    const refilled = Math.floor(elapsed / ENERGY_REFILL_RATE_MS);
+    energy = Math.min(MAX_ENERGY, saved + refilled);
+  } else {
+    energy = MAX_ENERGY;
+  }
+  diamonds = Number(localStorage.getItem(key('diamonds')) || 0);
+  renderEnergy();
+  renderDiamonds();
+  // Start refill timer
+  setInterval(() => {
+    if (energy < MAX_ENERGY) {
+      energy = Math.min(MAX_ENERGY, energy + 1);
+      renderEnergy();
+    }
+  }, ENERGY_REFILL_RATE_MS);
+}
+
+function consumeEnergy() {
+  if (energy <= 0) {
+    showEnergyOverlay();
+    return false;
+  }
+  energy = Math.max(0, energy - 1);
+  renderEnergy();
+  if (energy === 0) {
+    setTimeout(() => showEnergyOverlay(), 400);
+  }
+  return true;
+}
+
+function showEnergyOverlay() {
+  document.getElementById('energy-overlay').classList.add('show');
+}
+
+function hideEnergyOverlay() {
+  document.getElementById('energy-overlay').classList.remove('show');
+  clearInterval(eoAdTimer);
+  document.getElementById('eo-bar-wrap').style.display = 'none';
+  document.getElementById('eo-bar-lbl').textContent = '';
+  const adBtn = document.getElementById('eo-ad-btn');
+  if (adBtn) { adBtn.disabled = false; adBtn.textContent = '📺 Watch Ad (+5 Energy)'; }
+}
+
+function watchEnergyAd() {
+  const btn  = document.getElementById('eo-ad-btn');
+  const bar  = document.getElementById('eo-bar-wrap');
+  const fill = document.getElementById('eo-bar-fill');
+  const lbl  = document.getElementById('eo-bar-lbl');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Loading ad…';
+  bar.style.display = 'block';
+  fill.style.width = '0%';
+  let elapsed = 0;
+  clearInterval(eoAdTimer);
+  eoAdTimer = setInterval(() => {
+    elapsed += 80;
+    fill.style.width = Math.min(100, (elapsed / 5000) * 100) + '%';
+    if (elapsed >= 5000) {
+      clearInterval(eoAdTimer);
+      lbl.textContent = 'Done!';
+      energy = Math.min(MAX_ENERGY, energy + 5);
+      renderEnergy();
+      hideEnergyOverlay();
+      showToast('⚡ +5 Energy! Keep going!');
+    } else {
+      lbl.textContent = 'Ad playing… ' + Math.ceil((5000 - elapsed) / 1000) + 's';
+    }
+  }, 80);
+}
+
+function buyEnergyDiamonds(amount, cost) {
+  if (diamonds < cost) { showToast('Not enough diamonds! 💎'); return; }
+  diamonds -= cost;
+  energy = Math.min(MAX_ENERGY, energy + amount);
+  renderEnergy();
+  renderDiamonds();
+  hideEnergyOverlay();
+  showToast('⚡ +' + amount + ' Energy!');
+}
+
+function loseAllPointsAndQuit() {
+  if (!confirm('Quit and lose all XP from this lesson?')) return;
+  sessionXP = 0;
+  hideEnergyOverlay();
+  window.location.href = '/app/dashboard.html';
+}
+
+function showDiamondShop() {
+  showToast('💎 Diamond shop coming soon!');
 }
 
 function updateProgress() {
@@ -1261,10 +1527,11 @@ function buildSteps(plan) {
     newWords.forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
     s.push({ type:'match', words: newWords.slice(0,4) });
   } else if (posInBlock === 1) {
-    // LESSON 2: Reinforcement — review + TF + fill blank + pinyin
+    // LESSON 2: Reinforcement — TF + fill blank + translate order
     newWords.forEach(w => s.push({ type:'tf_sentence', word: w, pool: allWords }));
     newWords.forEach(w => s.push({ type:'mcq_hanzi', word: w, pool: allWords }));
     newWords.slice(0,3).forEach(w => s.push({ type:'fill_blank', word: w }));
+    newWords.slice(0,2).forEach(w => s.push({ type:'translate_order', word: w }));
     if (reviewWords.length > 0) pick(reviewWords, 2).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
     s.push({ type:'match', words: newWords.slice(0,4) });
   } else if (posInBlock === 2) {
@@ -1273,6 +1540,7 @@ function buildSteps(plan) {
     const extraWords = allWords.slice(extraStart, extraStart + 2);
     extraWords.forEach(w => s.push({ type:'word_card', word: w }));
     newWords.forEach(w => s.push({ type:'listen_tf', word: w }));
+    newWords.slice(0,2).forEach(w => s.push({ type:'listen_sentence', word: w }));
     newWords.slice(0,3).forEach(w => s.push({ type:'sentence_order', word: w }));
     if (reviewWords.length > 0) pick(reviewWords, 3).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
     s.push({ type:'match', words: [...newWords.slice(0,2), ...extraWords.slice(0,2)] });
@@ -1348,7 +1616,9 @@ function renderStep(idx) {
     case 'match':         renderMatch(step); break;
     case 'error_correction': renderErrorCorrection(step); break;
     case 'reading_passage':  renderReadingPassage(step); break;
-    case 'pinyin_type':   renderPinyinType(step); break;
+    case 'pinyin_type':      renderPinyinType(step); break;
+    case 'listen_sentence':  renderListenSentence(step); break;
+    case 'translate_order':  renderTranslateOrder(step); break;
     default: nextStep();
   }
 
@@ -1512,10 +1782,11 @@ function renderMCQ(step, mode) {
     const btn = document.createElement('button');
     btn.className = 'opt-btn';
     btn.innerHTML = mode === 'hanzi' ? `<span style="font-family:'Noto Sans SC',sans-serif;font-size:22px">${opt}</span>` : opt;
-    btn.onclick = () => {
+    btn.addEventListener('click', () => {
       if (answeredStep) return;
       answeredStep = true;
       clearInterval(speedTimer);
+      consumeEnergy();
       const isCorrect = opt === correct;
       grid.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
       btn.classList.add(isCorrect ? 'correct' : 'wrong');
@@ -1523,14 +1794,20 @@ function renderMCQ(step, mode) {
         grid.querySelectorAll('.opt-btn').forEach(b => { if (b.innerHTML.includes(correct) || b.textContent.trim() === correct) b.classList.add('correct'); });
         loseHeart();
         sessionMistakes.push({ word: w, type: mode });
+        addToRetry(step);
       } else {
         sessionXP += step.speed ? 2 : 1;
         updateSRS(w.id, true);
       }
       showFeedback(isCorrect, w);
       if (step.section) updateCheckpointScore(step.section, isCorrect);
-      bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
-    };
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn-primary';
+      nextBtn.textContent = isCorrect ? 'Continue →' : 'I understand →';
+      nextBtn.addEventListener('click', nextStep);
+      bottomArea.innerHTML = '';
+      bottomArea.appendChild(nextBtn);
+    });
     grid.appendChild(btn);
   });
 }
@@ -1599,11 +1876,13 @@ function handleTF(chosen, btn) {
   if (truBtn) truBtn.disabled = true;
   if (flsBtn) flsBtn.disabled = true;
   btn.classList.add(isCorrect ? "correct" : "wrong");
+  consumeEnergy();
   if (!isCorrect) {
     const correctBtn = (_tfCorrect === "对") ? truBtn : flsBtn;
     if (correctBtn) correctBtn.classList.add("correct");
     loseHeart();
     sessionMistakes.push({ word: step.word, type: "tf" });
+    addToRetry(step);
   } else {
     sessionXP += 1;
     updateSRS(step.word && step.word.id, true);
@@ -1616,8 +1895,10 @@ function handleTF(chosen, btn) {
     fb.querySelector(".fb-hint").textContent = _tfHint;
   }
   if (step.section) updateCheckpointScore(step.section, isCorrect);
-  bottomArea.innerHTML = '<button class="btn-primary" onclick="nextStep()">'
-    + (isCorrect ? "Continue →" : "I understand →") + "</button>";
+  const tfnb = document.createElement('button'); tfnb.className='btn-primary';
+  tfnb.textContent = isCorrect ? 'Continue →' : 'I understand →';
+  tfnb.addEventListener('click', nextStep);
+  bottomArea.innerHTML=''; bottomArea.appendChild(tfnb);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1643,9 +1924,10 @@ function renderFillBlank(step) {
     const btn = document.createElement('button');
     btn.className = 'opt-btn';
     btn.innerHTML = `<span style="font-family:'Noto Sans SC',sans-serif;font-size:20px">${opt}</span>`;
-    btn.onclick = () => {
+    btn.addEventListener('click', () => {
       if (answeredStep) return;
       answeredStep = true;
+      consumeEnergy();
       const isCorrect = opt === w.zh;
       grid.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
       btn.classList.add(isCorrect ? 'correct' : 'wrong');
@@ -1653,6 +1935,7 @@ function renderFillBlank(step) {
         grid.querySelectorAll('.opt-btn').forEach(b => { if (b.textContent.trim() === w.zh) b.classList.add('correct'); });
         loseHeart();
         sessionMistakes.push({ word: w, type:'fill_blank' });
+        addToRetry(step);
       } else {
         sessionXP += 2;
         const blank = document.querySelector('.fill-blank');
@@ -1661,8 +1944,11 @@ function renderFillBlank(step) {
       }
       showFeedback(isCorrect, w);
       if (step.section) updateCheckpointScore(step.section, isCorrect);
-      bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
-    };
+      const nb = document.createElement('button'); nb.className='btn-primary';
+      nb.textContent = isCorrect ? 'Continue →' : 'I understand →';
+      nb.addEventListener('click', nextStep);
+      bottomArea.innerHTML=''; bottomArea.appendChild(nb);
+    });
     grid.appendChild(btn);
   });
 }
@@ -1720,29 +2006,261 @@ function renderChips() {
       if (answeredStep || wordBankState.placed.includes(chunk)) return;
       wordBankState.placed.push(chunk);
       renderChips();
+      // Show Check button when all chips placed
       if (wordBankState.placed.length === wordBankState.shuffled.length) {
-        const built = wordBankState.placed.join('');
-        const isCorrect = built === wordBankState.answer;
-        answeredStep = true;
-        const step = steps[currentStep];
-        if (!isCorrect) {
-          loseHeart();
-          sessionMistakes.push({ word: step.word, type:'sentence_order' });
-          if (dispEl) dispEl.style.borderColor = 'var(--rose)';
-          setTimeout(() => { wordBankState.placed = []; answeredStep = false; renderChips(); if (dispEl) dispEl.style.borderColor = ''; }, 1200);
-          answeredStep = false;
-        } else {
-          sessionXP += 3;
-          if (dispEl) dispEl.style.borderColor = 'var(--green)';
-          updateSRS(step.word?.id, true);
-          showFeedback(true, step.word);
-          if (step.section) updateCheckpointScore(step.section, true);
-          bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">Continue →</button>`;
-        }
+        const ckBtn = document.createElement('button');
+        ckBtn.className = 'btn-check';
+        ckBtn.textContent = 'Check →';
+        ckBtn.addEventListener('click', checkSentenceOrder);
+        bottomArea.innerHTML = '';
+        bottomArea.appendChild(ckBtn);
+      } else {
+        bottomArea.innerHTML = '';
       }
     };
     chipsEl.appendChild(chip);
   });
+}
+
+function checkSentenceOrder() {
+  if (answeredStep) return;
+  if (!wordBankState || wordBankState.placed.length !== wordBankState.shuffled.length) return;
+  answeredStep = true;
+  consumeEnergy();
+  const built = wordBankState.placed.join('');
+  const isCorrect = built === wordBankState.answer;
+  const step = steps[currentStep];
+  const dispEl = document.getElementById('sentence-display');
+  if (!isCorrect) {
+    loseHeart();
+    sessionMistakes.push({ word: step.word, type:'sentence_order' });
+    addToRetry(step);
+    if (dispEl) dispEl.classList.add('wrong-border');
+    showFeedback(false, step.word, 'Wrong order', wordBankState.answer);
+    setTimeout(() => {
+      wordBankState.placed = [];
+      answeredStep = false;
+      if (dispEl) dispEl.classList.remove('wrong-border');
+      renderChips();
+      bottomArea.innerHTML = '';
+    }, 1200);
+    answeredStep = false;
+  } else {
+    sessionXP += 3;
+    if (dispEl) { dispEl.classList.add('correct-border'); }
+    updateSRS(step.word?.id, true);
+    showFeedback(true, step.word);
+    if (step.section) updateCheckpointScore(step.section, true);
+    const nb = document.createElement('button'); nb.className='btn-primary';
+    nb.textContent='Continue →'; nb.addEventListener('click', nextStep);
+    bottomArea.innerHTML=''; bottomArea.appendChild(nb);
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// LISTENING SENTENCE — hear sentence, tap words to rebuild
+// ══════════════════════════════════════════════════════════
+function renderListenSentence(step) {
+  const w = step.word;
+  const ex = w.ex;
+  if (!ex || !ex.zh) { nextStep(); return; }
+
+  // Split sentence into individual Chinese words/chars (split at spaces or every 2-3 chars)
+  const raw = ex.zh.replace(/[。！？，]/g,'').trim();
+  // Create word tokens: prefer splitting by natural breaks
+  let tokens = [];
+  // Try to split into 3-5 meaningful chunks
+  const allWords = HSK[lesson.plan.levelNum]?.words || [];
+  // Find words from this level that appear in the sentence
+  const foundWords = allWords.filter(wd => raw.includes(wd.zh) && wd.zh.length >= 2)
+    .sort((a,b) => b.zh.length - a.zh.length);
+  let remaining = raw;
+  const usedTokens = [];
+  foundWords.forEach(fw => {
+    if (remaining.includes(fw.zh)) {
+      remaining = remaining.replace(fw.zh, '|' + fw.zh + '|');
+      usedTokens.push(fw.zh);
+    }
+  });
+  tokens = remaining.split('|').filter(t => t.trim().length > 0);
+  if (tokens.length < 3) {
+    // Fallback: split every 2 chars
+    tokens = [];
+    for (let i=0; i<raw.length; i+=2) tokens.push(raw.slice(i,i+2));
+  }
+  tokens = tokens.filter(t=>t.length>0);
+  const shuffled = shuffle([...tokens]);
+  listenSentState = { tokens, shuffled, placed: [], answer: tokens.join('') };
+
+  stepArea.innerHTML = '';
+  const lbl = document.createElement('div'); lbl.className='q-label listen'; lbl.textContent='🎧 Build what you hear';
+  stepArea.appendChild(lbl);
+
+  // Play button
+  const playBtn = document.createElement('button');
+  playBtn.className = 'ls-play-btn';
+  playBtn.innerHTML = '<span style="font-size:20px">🔊</span> Tap to hear the sentence';
+  playBtn.addEventListener('click', () => speak(ex.zh, 0.8));
+  stepArea.appendChild(playBtn);
+
+  // Build area
+  const buildArea = document.createElement('div');
+  buildArea.className = 'ls-build-area'; buildArea.id = 'ls-build';
+  const placeholder = document.createElement('div');
+  placeholder.className = 'ls-placeholder'; placeholder.id = 'ls-ph'; placeholder.textContent = 'Tap words below to build the sentence';
+  buildArea.appendChild(placeholder);
+  stepArea.appendChild(buildArea);
+
+  // Word bank
+  const bank = document.createElement('div'); bank.className = 'ls-word-bank'; bank.id = 'ls-bank';
+  stepArea.appendChild(bank);
+
+  // Feedback
+  const fb = document.createElement('div'); fb.className='feedback'; fb.id='feedback';
+  fb.innerHTML='<div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div>';
+  stepArea.appendChild(fb);
+
+  speak(ex.zh, 0.85);
+  renderListenSentChips();
+}
+
+function renderListenSentChips() {
+  const buildArea = document.getElementById('ls-build');
+  const bank      = document.getElementById('ls-bank');
+  const ph        = document.getElementById('ls-ph');
+  if (!buildArea || !bank || !listenSentState) return;
+
+  // Update build area
+  if (ph) ph.style.display = listenSentState.placed.length ? 'none' : 'block';
+  // Remove old placed chips
+  buildArea.querySelectorAll('.ls-chip-placed').forEach(e=>e.remove());
+  listenSentState.placed.forEach((tok, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'ls-chip-placed';
+    chip.textContent = tok;
+    chip.title = 'Tap to remove';
+    chip.addEventListener('click', () => {
+      listenSentState.placed.splice(idx,1);
+      renderListenSentChips();
+      bottomArea.innerHTML = '';
+    });
+    buildArea.appendChild(chip);
+  });
+
+  // Rebuild bank
+  bank.innerHTML = '';
+  listenSentState.shuffled.forEach(tok => {
+    const chip = document.createElement('div');
+    chip.className = 'ls-chip' + (listenSentState.placed.includes(tok) ? ' used' : '');
+    chip.textContent = tok;
+    chip.addEventListener('click', () => {
+      if (answeredStep) return;
+      // Allow same token twice if it appears twice (use count check)
+      const usedCount = listenSentState.placed.filter(t=>t===tok).length;
+      const totalCount = listenSentState.shuffled.filter(t=>t===tok).length;
+      if (usedCount >= totalCount) return;
+      listenSentState.placed.push(tok);
+      renderListenSentChips();
+      if (listenSentState.placed.length === listenSentState.shuffled.length) {
+        const ckBtn = document.createElement('button');
+        ckBtn.className = 'btn-check'; ckBtn.textContent = 'Check →';
+        ckBtn.addEventListener('click', checkListenSentence);
+        bottomArea.innerHTML = ''; bottomArea.appendChild(ckBtn);
+      }
+    });
+    bank.appendChild(chip);
+  });
+}
+
+function checkListenSentence() {
+  if (answeredStep || !listenSentState) return;
+  answeredStep = true;
+  consumeEnergy();
+  const built = listenSentState.placed.join('');
+  const isCorrect = built === listenSentState.answer;
+  const step = steps[currentStep];
+  const buildArea = document.getElementById('ls-build');
+  if (isCorrect) {
+    if (buildArea) buildArea.classList.add('correct-border');
+    sessionXP += 3; updateSRS(step.word?.id, true);
+    showFeedback(true, step.word);
+    if (step.section) updateCheckpointScore(step.section, true);
+    const nb = document.createElement('button'); nb.className='btn-primary';
+    nb.textContent='Continue →'; nb.addEventListener('click', nextStep);
+    bottomArea.innerHTML=''; bottomArea.appendChild(nb);
+  } else {
+    loseHeart();
+    sessionMistakes.push({ word: step.word, type:'listen_sentence' });
+    addToRetry(step);
+    if (buildArea) buildArea.classList.add('wrong-border');
+    showFeedback(false, step.word, 'Not quite', listenSentState.answer);
+    setTimeout(() => {
+      listenSentState.placed = [];
+      answeredStep = false;
+      if (buildArea) { buildArea.classList.remove('wrong-border'); }
+      renderListenSentChips();
+      bottomArea.innerHTML = '';
+    }, 1200);
+    answeredStep = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// TRANSLATE ORDER — see English, build Chinese translation
+// ══════════════════════════════════════════════════════════
+function renderTranslateOrder(step) {
+  const w = step.word;
+  const ex = w.ex;
+  if (!ex || !ex.zh) { nextStep(); return; }
+
+  // Same tokenization as listen_sentence
+  const raw = ex.zh.replace(/[。！？，]/g,'').trim();
+  const allWords = HSK[lesson.plan.levelNum]?.words || [];
+  const foundWords = allWords.filter(wd => raw.includes(wd.zh) && wd.zh.length >= 2)
+    .sort((a,b) => b.zh.length - a.zh.length);
+  let remaining = raw;
+  foundWords.forEach(fw => {
+    if (remaining.includes(fw.zh)) remaining = remaining.replace(fw.zh, '|' + fw.zh + '|');
+  });
+  let tokens = remaining.split('|').filter(t=>t.trim().length>0);
+  if (tokens.length < 3) {
+    tokens = [];
+    for (let i=0; i<raw.length; i+=2) tokens.push(raw.slice(i,i+2));
+  }
+  tokens = tokens.filter(t=>t.length>0);
+  const shuffled = shuffle([...tokens]);
+  listenSentState = { tokens, shuffled, placed: [], answer: tokens.join('') };
+
+  stepArea.innerHTML = '';
+  const lbl = document.createElement('div'); lbl.className='q-label write'; lbl.textContent='✍️ Translate into Chinese';
+  stepArea.appendChild(lbl);
+
+  // Show English
+  const engDiv = document.createElement('div');
+  engDiv.style.cssText = 'font-size:17px;font-weight:600;color:var(--ink);text-align:center;padding:12px 0 4px;line-height:1.5';
+  engDiv.textContent = '"' + ex.en + '"';
+  stepArea.appendChild(engDiv);
+
+  // Build area
+  const buildArea = document.createElement('div');
+  buildArea.className = 'ls-build-area'; buildArea.id = 'ls-build';
+  const placeholder = document.createElement('div');
+  placeholder.className = 'ls-placeholder'; placeholder.id = 'ls-ph'; placeholder.textContent = 'Tap Chinese words to translate';
+  buildArea.appendChild(placeholder);
+  stepArea.appendChild(buildArea);
+
+  // Word bank
+  const bank = document.createElement('div'); bank.className = 'ls-word-bank'; bank.id = 'ls-bank';
+  stepArea.appendChild(bank);
+
+  // Feedback
+  const fb = document.createElement('div'); fb.className='feedback'; fb.id='feedback';
+  fb.innerHTML='<div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div>';
+  stepArea.appendChild(fb);
+
+  speak(ex.zh, 0.85);
+  renderListenSentChips(); // reuse same chip renderer
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1876,16 +2394,21 @@ function renderReadingPassage(step) {
       const isCorrect = opt === w.en;
       grid.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
       btn.classList.add(isCorrect ? 'correct' : 'wrong');
+      consumeEnergy();
       if (!isCorrect) {
         grid.querySelectorAll('.opt-btn').forEach(b => { if (b.textContent === w.en) b.classList.add('correct'); });
         loseHeart();
         sessionMistakes.push({ word: w, type:'reading' });
+        addToRetry(step);
       } else {
         sessionXP += 2; updateSRS(w.id, true);
       }
       showFeedback(isCorrect, w);
       if (step.section) updateCheckpointScore(step.section, isCorrect);
-      bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
+      const rpnb = document.createElement('button'); rpnb.className='btn-primary';
+      rpnb.textContent = isCorrect ? 'Continue →' : 'I understand →';
+      rpnb.addEventListener('click', nextStep);
+      bottomArea.innerHTML=''; bottomArea.appendChild(rpnb);
     };
     grid.appendChild(btn);
   });
@@ -1926,15 +2449,20 @@ function checkPinyin() {
   answeredStep = true;
   input.classList.add(isCorrect ? 'ok' : 'err');
   input.disabled = true;
+  consumeEnergy();
   if (!isCorrect) {
     loseHeart();
     sessionMistakes.push({ word: w, type:'pinyin' });
+    addToRetry(steps[currentStep]);
   } else {
     sessionXP += 2; updateSRS(w.id, true);
   }
   showFeedback(isCorrect, w, isCorrect ? null : ('Correct: ' + w.py));
   if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
-  bottomArea.innerHTML = `<button class="btn-primary" onclick="nextStep()">${isCorrect ? 'Continue →' : 'I understand →'}</button>`;
+  const pynb = document.createElement('button'); pynb.className='btn-primary';
+  pynb.textContent = isCorrect ? 'Continue →' : 'I understand →';
+  pynb.addEventListener('click', nextStep);
+  bottomArea.innerHTML=''; bottomArea.appendChild(pynb);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1973,6 +2501,7 @@ function startSpeedTimer() {
 // FEEDBACK
 // ══════════════════════════════════════════════════════════
 function showFeedback(isOk, word, overrideMsg, hint) {
+  playTing(isOk);
   const fb = document.getElementById('feedback');
   if (!fb) return;
   const positives = ['Great!','Perfect!','Excellent!','Correct!','Well done!'];
@@ -2015,12 +2544,24 @@ function updateSRS(wordId, correct) {
 function nextStep() {
   clearInterval(speedTimer);
   currentStep++;
+  // If we've finished original steps, add any retry items to the end once
+  if (currentStep >= steps.length && retryQueue.length > 0) {
+    steps.push(...retryQueue);
+    retryQueue = [];
+  }
   if (currentStep >= steps.length) { showComplete(); return; }
   stepArea.className = 'step-area';
   setTimeout(() => {
     stepArea.className = 'step-area step-in';
     renderStep(currentStep);
   }, 60);
+}
+
+// Add a step to retry queue (wrong answer → added to end)
+function addToRetry(step) {
+  // Don't add speed or word_card/grammar steps to retry
+  if (step.speed || step.type === 'word_card' || step.type === 'grammar') return;
+  retryQueue.push({...step, isRetry: true});
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2065,6 +2606,27 @@ async function showComplete() {
       localStorage.setItem(key('streak_day'), streakToday);
     }
     await saveXP(earnedXP);
+
+    // Diamonds reward
+    const diamondsEarned = isCP ? 10 : isSpeed ? 5 : 3;
+    diamonds += diamondsEarned;
+    renderDiamonds();
+  }
+
+  // Perfect lesson bonus energy
+  const isPerfect = sessionMistakes.length === 0 && steps.length >= 5;
+  if (isPerfect) {
+    energy = Math.min(MAX_ENERGY, energy + 1);
+    renderEnergy();
+    // Show energy bonus animation
+    setTimeout(() => {
+      const anim = document.getElementById('energy-bonus-anim');
+      if (anim) {
+        anim.classList.add('show');
+        playTing(true);
+        setTimeout(() => anim.classList.remove('show'), 1800);
+      }
+    }, 600);
   }
 
   // Checkpoint ring
@@ -2098,6 +2660,10 @@ async function showComplete() {
       <div class="complete-sub">${plan.name} · HSK ${plan.levelNum}</div>
       ${ringHtml}
       <div class="xp-pill" id="xp-pill">+${earnedXP} XP</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        ${isPerfect ? '<div style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;color:var(--gold)">⚡ +1 Energy Bonus!</div>' : ''}
+        <div style="background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;color:var(--purple)">💎 +${isCP?10:isSpeed?5:3} Diamonds</div>
+      </div>
       <div class="complete-stats">
         <div class="stat-box"><div class="sv">${steps.length}</div><div class="sl">Steps</div></div>
         <div class="stat-box"><div class="sv">${sessionMistakes.length}</div><div class="sl">Errors</div></div>
@@ -2164,7 +2730,6 @@ async function saveXP(earned) {
 // ══════════════════════════════════════════════════════════
 // NO HEARTS AD
 // ══════════════════════════════════════════════════════════
-let nhAdTimer = null;
 function watchAdForHeart() {
   const btn = document.getElementById('nh-watch-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
@@ -2214,6 +2779,7 @@ async function init() {
     xp     = Number(localStorage.getItem(key('xp')) || 0);
     if (isNaN(hearts) || hearts < 0) hearts = 5;
     renderHearts();
+    loadEnergy();
 
     const levelNum  = Number(params.get('level')  || localStorage.getItem(key('user_level'))  || 1);
     const lessonNum = Number(params.get('lesson') || localStorage.getItem(key('user_lesson')) || 1);
@@ -2234,6 +2800,14 @@ async function init() {
         window.location.href = '/app/dashboard.html';
       }
     };
+
+    // Wire energy overlay buttons
+    const eoAdBtn = document.getElementById('eo-ad-btn');
+    if (eoAdBtn) eoAdBtn.addEventListener('click', watchEnergyAd);
+    const eoProBtn = document.getElementById('eo-pro-btn');
+    if (eoProBtn) eoProBtn.addEventListener('click', () => showToast('Pro subscription coming soon! 🌟'));
+    const eoQuitBtn = document.getElementById('eo-quit-btn');
+    if (eoQuitBtn) eoQuitBtn.addEventListener('click', loseAllPointsAndQuit);
 
     if (hearts <= 0) {
       document.getElementById('nh-overlay').classList.add('show');
