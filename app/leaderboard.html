@@ -424,6 +424,22 @@ function dName(u) {
   return 'Learner ' + (u.user_id||'???').slice(0,6).toUpperCase();
 }
 
+// Safe initials — never show Chinese characters in avatar circles
+function getInitials(u, rank) {
+  const name = dName(u);
+  // Check if name contains Chinese characters
+  const hasChinese = /[一-鿿]/.test(name);
+  if (hasChinese) {
+    // Use rank number or first ASCII letter fallback
+    if (rank) return '#' + rank;
+    // Try to find any ASCII letter
+    const ascii = name.replace(/[^ -]/g, '').trim();
+    if (ascii.length >= 1) return ascii.slice(0,2).toUpperCase();
+    return '学'; // single char fallback — at least readable
+  }
+  return name.slice(0,2).toUpperCase();
+}
+
 // ── Open profile
 function openProfile(uid) {
   if (!uid) return;
@@ -612,7 +628,7 @@ function renderWeekly(users) {
       const medals = ['','🥇','🥈','🥉'];
       slot.innerHTML =
         '<div class="p-bar"></div>' +
-        '<div class="p-avatar">'+(s.r===1?'<div class="p-crown">👑</div>':'')+dName(s.u).slice(0,2).toUpperCase()+'</div>' +
+        '<div class="p-avatar">'+(s.r===1?'<div class="p-crown">👑</div>':'')+getInitials(s.u, s.r)+'</div>' +
         '<div class="p-name">'+dName(s.u)+(isMe?' 👤':'')+'</div>' +
         '<div class="p-xp">⚡ '+(s.u.xp||0)+'</div>' +
         '<div class="p-medal">'+medals[s.r]+'</div>';
@@ -649,7 +665,7 @@ function renderWeekly(users) {
       const rc = rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
       row.innerHTML =
         '<div class="lb-rank '+rc+'">#'+rank+'</div>' +
-        '<div class="lb-av">'+dName(u).slice(0,2).toUpperCase()+'</div>' +
+        '<div class="lb-av">'+getInitials(u,rank)+'</div>' +
         '<div class="lb-info">' +
           '<div class="lb-name">'+dName(u)+(isMe?'<span class="you-chip">YOU</span>':'')+'</div>' +
           '<div class="lb-sub">'+(rank<=10?'⚡ Top 10':'📚 Studying')+(isDanger&&!isMe?' · Danger zone':'')+'</div>' +
@@ -713,7 +729,7 @@ function renderGlobal() {
     const rankTxt = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
     row.innerHTML =
       '<div class="lb-rank '+rankCls+'">'+rankTxt+'</div>' +
-      '<div class="lb-av">'+dName(u).slice(0,2).toUpperCase()+'</div>' +
+      '<div class="lb-av">'+getInitials(u,rank)+'</div>' +
       '<div class="lb-info"><div class="lb-name">'+dName(u)+(isMe?'<span class="you-chip">YOU</span>':'')+'</div>' +
       '<div class="lb-sub">'+(rank===1?'👑 Champion':rank<=3?'🔥 Top 3':rank<=10?'⚡ Top 10':'📚 Studying')+'</div></div>' +
       '<div class="lb-right"><div class="lb-xp">⚡ '+(u.xp||0)+'</div></div>';
@@ -798,7 +814,7 @@ async function loadFriends() {
       const medals=['','🥇','🥈','🥉'];
       row.innerHTML =
         '<div class="fr-rank">'+(rank<=3?medals[rank]:'#'+rank)+'</div>' +
-        '<div class="fr-av">'+dName(u).slice(0,2).toUpperCase()+'</div>' +
+        '<div class="fr-av">'+getInitials(u,rank)+'</div>' +
         '<div class="fr-info"><div class="fr-name">'+dName(u)+(isMe?' 👤':'')+(isNear?'<span class="nearby-badge">📍 Nearby</span>':'')+'</div>' +
         '<div class="fr-sub">'+(rank===1?'👑 Champion':rank<=3?'🔥 Top 3':'📚 Studying')+(isMe?' · You':'')+'</div></div>' +
         '<div class="fr-xp">⚡ '+(u.xp||0)+'</div>';
@@ -967,7 +983,7 @@ function renderInvBoard(board, main) {
     const medals=['','🥇','🥈','🥉'];
     row.innerHTML=
       '<div class="inv-rank">'+(rank<=3?medals[rank]:'#'+rank)+'</div>'+
-      '<div class="inv-av">'+(u.username||'??').slice(0,2).toUpperCase()+'</div>'+
+      '<div class="inv-av">'+(/[\u4e00-\u9fff]/.test(u.username||'')? '#'+(i+1) : (u.username||'??').slice(0,2).toUpperCase())+'</div>'+
       '<div class="inv-info"><div class="inv-name">'+(u.username||'Learner')+(isMe?' 👤':'')+'</div>'+
       '<div class="inv-sub">⚡ '+(u.xp||0)+' XP</div></div>'+
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">'+
@@ -1024,7 +1040,7 @@ function renderFF(q) {
     const row=document.createElement('div');
     row.className='ff-row';
     row.onclick=e=>{if(!e.target.classList.contains('btn-fl'))openProfile(u.user_id);};
-    const av=document.createElement('div');av.className='ff-av';av.textContent=name.slice(0,2).toUpperCase();
+    const av=document.createElement('div');av.className='ff-av';av.textContent=/[\u4e00-\u9fff]/.test(name)?'👤':name.slice(0,2).toUpperCase();
     const info=document.createElement('div');info.className='ff-info';
     info.innerHTML='<div class="ff-name">'+name+'</div><div class="ff-meta">⚡ '+(u.xp||0)+' XP</div>';
     const fb=document.createElement('button');
@@ -1185,6 +1201,30 @@ async function init() {
 }
 
 init();
+
+// Re-fetch leaderboard data when user returns to this tab
+// (fixes stale data after completing a lesson)
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    // Reset loaded flags so all tabs refresh
+    globalDone  = false;
+    friendsDone = false;
+    invitesDone = false;
+    // Re-fetch main data and re-render active tab
+    sb.from('leaderboard').select('user_id,xp,username').order('xp',{ascending:false}).then(({data}) => {
+      if (!data) return;
+      allUsers = data;
+      if (_uid && _username) {
+        const me = allUsers.find(u=>u.user_id===_uid);
+        if (me && (!me.username||me.username==='Learner')) me.username=_username;
+      }
+      if (activeTab === 'weekly')  renderWeekly(allUsers);
+      if (activeTab === 'global')  renderGlobal();
+      if (activeTab === 'friends') loadFriends();
+      if (activeTab === 'invites') loadInvites();
+    }).catch(()=>{});
+  }
+});
 </script>
 </body>
 </html>
