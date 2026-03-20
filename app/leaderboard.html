@@ -427,17 +427,11 @@ function dName(u) {
 // Safe initials — never show Chinese characters in avatar circles
 function getInitials(u, rank) {
   const name = dName(u);
-  // Check if name contains Chinese characters
-  const hasChinese = /[一-鿿]/.test(name);
-  if (hasChinese) {
-    // Use rank number or first ASCII letter fallback
-    if (rank) return '#' + rank;
-    // Try to find any ASCII letter
-    const ascii = name.replace(/[^ -]/g, '').trim();
-    if (ascii.length >= 1) return ascii.slice(0,2).toUpperCase();
-    return '学'; // single char fallback — at least readable
+  // If name has Chinese characters, show rank number instead
+  if (/[一-鿿]/.test(name)) {
+    return rank ? '#' + rank : '?';
   }
-  return name.slice(0,2).toUpperCase();
+  return name.slice(0, 2).toUpperCase() || '?';
 }
 
 // ── Open profile
