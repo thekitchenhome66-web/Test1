@@ -616,33 +616,126 @@ const HSK = {
   {title:'被 Passive', pattern:'S + 被 + Agent + Verb', explain:'被 marks the passive voice. The subject receives the action rather than doing it.', examples:[{zh:'书被他拿走了。',en:'The book was taken by him.'},{zh:'我被老师批评了。',en:'I was criticized by the teacher.'},{zh:'手机被我弄丢了。',en:'The phone was lost by me.'}]},
 ]},
 3:{words:[
-  {id:'3-1',zh:'分析',py:'fēnxī',en:'to analyze',ex:{zh:'我们需要分析这个问题。',py:'Wǒmen xūyào fēnxī zhège wèntí.',en:'We need to analyze this problem.'}},
-  {id:'3-2',zh:'负责',py:'fùzé',en:'responsible',ex:{zh:'他非常负责任。',py:'Tā fēicháng fùzérèn.',en:'He is very responsible.'}},
-  {id:'3-3',zh:'态度',py:'tàidù',en:'attitude',ex:{zh:'学习态度很重要。',py:'Xuéxí tàidù hěn zhòngyào.',en:'Study attitude is very important.'}},
-  {id:'3-4',zh:'文化',py:'wénhuà',en:'culture',ex:{zh:'中国文化很丰富。',py:'Zhōngguó wénhuà hěn fēngfù.',en:'Chinese culture is very rich.'}},
-  {id:'3-5',zh:'历史',py:'lìshǐ',en:'history',ex:{zh:'中国有很长的历史。',py:'Zhōngguó yǒu hěn cháng de lìshǐ.',en:'China has a very long history.'}},
+  {id:'3-1',zh:'按照',py:'ànzhào',en:"according to",ex:{zh:'请按照顺序排队。',py:'Qǐng ànzhào shùnxù páiduì.',en:"Please line up in order."}},
+  {id:'3-2',zh:'把',py:'bǎ',en:"disposal marker",ex:{zh:'请把书放在桌子上。',py:'Qǐng bǎ shū fàng zài zhuōzi shàng.',en:"Please put the book on the table."}},
+  {id:'3-3',zh:'班',py:'bān',en:"class / shift",ex:{zh:'我们班有三十个学生。',py:'Wǒmen bān yǒu sānshí gè xuésheng.',en:"Our class has thirty students."}},
+  {id:'3-4',zh:'搬',py:'bān',en:"to move objects",ex:{zh:'帮我搬一下这个箱子。',py:'Bāng wǒ bān yīxià zhège xiāngzi.',en:"Help me move this box."}},
+  {id:'3-5',zh:'办法',py:'bànfǎ',en:"method / way",ex:{zh:'我们需要找到解决办法。',py:'Wǒmen xūyào zhǎodào jiějué bànfǎ.',en:"We need to find a solution."}},
+  {id:'3-6',zh:'办公室',py:'bàngōngshì',en:"office",ex:{zh:'他在办公室工作。',py:'Tā zài bàngōngshì gōngzuò.',en:"He works in an office."}},
+  {id:'3-7',zh:'保护',py:'bǎohù',en:"to protect",ex:{zh:'我们要保护环境。',py:'Wǒmen yào bǎohù huánjìng.',en:"We must protect the environment."}},
+  {id:'3-8',zh:'比较',py:'bǐjiào',en:"to compare / relatively",ex:{zh:'这个比较好。',py:'Zhège bǐjiào hǎo.',en:"This one is relatively better."}},
+  {id:'3-9',zh:'变化',py:'biànhuà',en:"change / to change",ex:{zh:'天气变化很快。',py:'Tiānqì biànhuà hěn kuài.',en:"The weather changes quickly."}},
+  {id:'3-10',zh:'别人',py:'biéren',en:"other people",ex:{zh:'不要总是依赖别人。',py:'Bùyào zǒngshì yīlài biéren.',en:"Do not always rely on others."}},
+  {id:'3-11',zh:'冰箱',py:'bīngxiāng',en:"refrigerator",ex:{zh:'冰箱里有很多食物。',py:'Bīngxiāng lǐ yǒu hěn duō shíwù.',en:"There is a lot of food in the fridge."}},
+  {id:'3-12',zh:'才',py:'cái',en:"only then / just",ex:{zh:'他昨天才回来。',py:'Tā zuótiān cái huílai.',en:"He only came back yesterday."}},
+  {id:'3-13',zh:'参加',py:'cānjiā',en:"to participate",ex:{zh:'我想参加这次比赛。',py:'Wǒ xiǎng cānjiā zhè cì bǐsài.',en:"I want to join this competition."}},
+  {id:'3-14',zh:'超市',py:'chāoshì',en:"supermarket",ex:{zh:'我要去超市买东西。',py:'Wǒ yào qù chāoshì mǎi dōngxi.',en:"I need to go to the supermarket."}},
+  {id:'3-15',zh:'成功',py:'chénggōng',en:"to succeed / success",ex:{zh:'努力学习才能成功。',py:'Nǔlì xuéxí cái néng chénggōng.',en:"You must study hard to succeed."}},
+  {id:'3-16',zh:'成为',py:'chéngwéi',en:"to become",ex:{zh:'他想成为一名医生。',py:'Tā xiǎng chéngwéi yī míng yīshēng.',en:"He wants to become a doctor."}},
+  {id:'3-17',zh:'城市',py:'chéngshì',en:"city",ex:{zh:'北京是一个大城市。',py:'Běijīng shì yīgè dà chéngshì.',en:"Beijing is a big city."}},
+  {id:'3-18',zh:'迟到',py:'chídào',en:"to be late",ex:{zh:'对不起，我迟到了。',py:'Duìbuqǐ, wǒ chídào le.',en:"Sorry, I am late."}},
+  {id:'3-19',zh:'除了',py:'chúle',en:"except / besides",ex:{zh:'除了他，大家都来了。',py:'Chúle tā, dàjiā dōu lái le.',en:"Everyone came except him."}},
+  {id:'3-20',zh:'词典',py:'cídiǎn',en:"dictionary",ex:{zh:'我需要一本词典。',py:'Wǒ xūyào yī běn cídiǎn.',en:"I need a dictionary."}},
+  {id:'3-21',zh:'从来',py:'cónglái',en:"always / never with neg.",ex:{zh:'我从来不迟到。',py:'Wǒ cónglái bù chídào.',en:"I never arrive late."}},
+  {id:'3-22',zh:'大概',py:'dàgài',en:"approximately / probably",ex:{zh:'他大概三十岁。',py:'Tā dàgài sānshí suì.',en:"He is probably thirty years old."}},
+  {id:'3-23',zh:'当',py:'dāng',en:"to serve as / when",ex:{zh:'他想当老师。',py:'Tā xiǎng dāng lǎoshī.',en:"He wants to be a teacher."}},
+  {id:'3-24',zh:'灯',py:'dēng',en:"lamp / light",ex:{zh:'请把灯打开。',py:'Qǐng bǎ dēng dǎkāi.',en:"Please turn on the light."}},
+  {id:'3-25',zh:'地方',py:'dìfang',en:"place / region",ex:{zh:'这是一个美丽的地方。',py:'Zhè shì yīgè měilì de dìfang.',en:"This is a beautiful place."}},
+  {id:'3-26',zh:'地图',py:'dìtú',en:"map",ex:{zh:'你有这个城市的地图吗？',py:'Nǐ yǒu zhège chéngshì de dìtú ma?',en:"Do you have a map of this city?"}},
+  {id:'3-27',zh:'电梯',py:'diàntī',en:"elevator",ex:{zh:'电梯在哪里？',py:'Diàntī zài nǎlǐ?',en:"Where is the elevator?"}},
+  {id:'3-28',zh:'而且',py:'érqiě',en:"furthermore / and also",ex:{zh:'他聪明而且勤奋。',py:'Tā cōngming érqiě qínfèn.',en:"He is smart and also hardworking."}},
+  {id:'3-29',zh:'发现',py:'fāxiàn',en:"to discover / to find",ex:{zh:'他发现了一个问题。',py:'Tā fāxiànle yīgè wèntí.',en:"He discovered a problem."}},
+  {id:'3-30',zh:'方便',py:'fāngbiàn',en:"convenient",ex:{zh:'住在这里很方便。',py:'Zhù zài zhèlǐ hěn fāngbiàn.',en:"Living here is very convenient."}},
+  {id:'3-31',zh:'复习',py:'fùxí',en:"to review / to revise",ex:{zh:'考试前要好好复习。',py:'Kǎoshì qián yào hǎohǎo fùxí.',en:"Review well before the exam."}},
+  {id:'3-32',zh:'附近',py:'fùjìn',en:"nearby",ex:{zh:'附近有没有超市？',py:'Fùjìn yǒu méiyǒu chāoshì?',en:"Is there a supermarket nearby?"}},
+  {id:'3-33',zh:'感觉',py:'gǎnjué',en:"feeling / to feel",ex:{zh:'我感觉很累。',py:'Wǒ gǎnjué hěn lèi.',en:"I feel very tired."}},
+  {id:'3-34',zh:'刚才',py:'gāngcái',en:"just now",ex:{zh:'刚才他打电话来了。',py:'Gāngcái tā dǎ diànhuà lái le.',en:"He just called a moment ago."}},
+  {id:'3-35',zh:'更',py:'gèng',en:"even more",ex:{zh:'今天比昨天更冷。',py:'Jīntiān bǐ zuótiān gèng lěng.',en:"Today is even colder than yesterday."}},
+  {id:'3-36',zh:'故事',py:'gùshi',en:"story",ex:{zh:'他讲了一个有趣的故事。',py:'Tā jiǎngle yīgè yǒuqù de gùshi.',en:"He told an interesting story."}},
+  {id:'3-37',zh:'关键',py:'guānjiàn',en:"key / crucial",ex:{zh:'坚持是成功的关键。',py:'Jiānchí shì chénggōng de guānjiàn.',en:"Persistence is the key to success."}},
+  {id:'3-38',zh:'害怕',py:'hàipà',en:"to be afraid",ex:{zh:'她害怕蜘蛛。',py:'Tā hàipà zhīzhū.',en:"She is afraid of spiders."}},
+  {id:'3-39',zh:'好像',py:'hǎoxiàng',en:"to seem / as if",ex:{zh:'他好像不高兴。',py:'Tā hǎoxiàng bù gāoxìng.',en:"He seems unhappy."}},
+  {id:'3-40',zh:'合适',py:'héshì',en:"suitable / appropriate",ex:{zh:'这件衣服很合适。',py:'Zhè jiàn yīfu hěn héshì.',en:"This clothing is very suitable."}},
+  {id:'3-41',zh:'后来',py:'hòulái',en:"later / afterwards",ex:{zh:'后来他明白了。',py:'Hòulái tā míngbai le.',en:"Later he understood."}},
+  {id:'3-42',zh:'互联网',py:'hùliánwǎng',en:"the internet",ex:{zh:'互联网改变了我们的生活。',py:'Hùliánwǎng gǎibiànle wǒmen de shēnghuó.',en:"The internet has changed our lives."}},
+  {id:'3-43',zh:'护照',py:'hùzhào',en:"passport",ex:{zh:'出国需要护照。',py:'Chū guó xūyào hùzhào.',en:"You need a passport to go abroad."}},
+  {id:'3-44',zh:'环境',py:'huánjìng',en:"environment",ex:{zh:'保护环境很重要。',py:'Bǎohù huánjìng hěn zhòngyào.',en:"Protecting the environment is important."}},
+  {id:'3-45',zh:'活动',py:'huódòng',en:"activity / event",ex:{zh:'学校组织了很多活动。',py:'Xuéxiào zǔzhīle hěn duō huódòng.',en:"The school organized many activities."}},
+  {id:'3-46',zh:'机会',py:'jīhuì',en:"opportunity / chance",ex:{zh:'不要错过这个机会。',py:'Bùyào cuòguò zhège jīhuì.',en:"Do not miss this opportunity."}},
+  {id:'3-47',zh:'几乎',py:'jīhū',en:"almost / nearly",ex:{zh:'他几乎每天都跑步。',py:'Tā jīhū měitiān dōu pǎobù.',en:"He runs almost every day."}},
+  {id:'3-48',zh:'计划',py:'jìhuà',en:"plan / to plan",ex:{zh:'你有什么计划？',py:'Nǐ yǒu shénme jìhuà?',en:"What plans do you have?"}},
+  {id:'3-49',zh:'记得',py:'jìde',en:"to remember",ex:{zh:'你还记得我吗？',py:'Nǐ hái jìde wǒ ma?',en:"Do you still remember me?"}},
+  {id:'3-50',zh:'结果',py:'jiéguǒ',en:"result / outcome",ex:{zh:'考试结果怎么样？',py:'Kǎoshì jiéguǒ zěnmeyàng?',en:"How were the exam results?"}},
+  {id:'3-51',zh:'借',py:'jiè',en:"to borrow / to lend",ex:{zh:'我可以借你的笔吗？',py:'Wǒ kěyǐ jiè nǐ de bǐ ma?',en:"Can I borrow your pen?"}},
+  {id:'3-52',zh:'进行',py:'jìnxíng',en:"to carry out",ex:{zh:'会议正在进行中。',py:'Huìyì zhèngzài jìnxíng zhōng.',en:"The meeting is in progress."}},
+  {id:'3-53',zh:'经过',py:'jīngguò',en:"to pass / via",ex:{zh:'他经过了很多困难。',py:'Tā jīngguòle hěn duō kùnnan.',en:"He went through many difficulties."}},
+  {id:'3-54',zh:'空气',py:'kōngqì',en:"air",ex:{zh:'这里的空气很清新。',py:'Zhèlǐ de kōngqì hěn qīngxīn.',en:"The air here is very fresh."}},
+  {id:'3-55',zh:'离开',py:'líkāi',en:"to leave / to depart",ex:{zh:'他明天离开北京。',py:'Tā míngtiān líkāi Běijīng.',en:"He leaves Beijing tomorrow."}},
+  {id:'3-56',zh:'礼物',py:'lǐwù',en:"gift / present",ex:{zh:'他送给我一份礼物。',py:'Tā sòng gěi wǒ yī fèn lǐwù.',en:"He gave me a gift."}},
+  {id:'3-57',zh:'联系',py:'liánxì',en:"to contact",ex:{zh:'保持联系！',py:'Bǎochí liánxì!',en:"Keep in touch!"}},
+  {id:'3-58',zh:'了解',py:'liǎojiě',en:"to understand / to know about",ex:{zh:'我想了解更多。',py:'Wǒ xiǎng liǎojiě gèng duō.',en:"I want to know more."}},
+  {id:'3-59',zh:'流利',py:'liúlì',en:"fluent",ex:{zh:'她说中文很流利。',py:'Tā shuō Zhōngwén hěn liúlì.',en:"She speaks Chinese fluently."}},
+  {id:'3-60',zh:'满意',py:'mǎnyì',en:"satisfied",ex:{zh:'我对这个结果很满意。',py:'Wǒ duì zhège jiéguǒ hěn mǎnyì.',en:"I am very satisfied with this result."}},
+  {id:'3-61',zh:'明显',py:'míngxiǎn',en:"obvious / clear",ex:{zh:'这个问题很明显。',py:'Zhège wèntí hěn míngxiǎn.',en:"This problem is very obvious."}},
+  {id:'3-62',zh:'目的',py:'mùdì',en:"purpose / goal",ex:{zh:'你学习的目的是什么？',py:'Nǐ xuéxí de mùdì shì shénme?',en:"What is your purpose for studying?"}},
+  {id:'3-63',zh:'年龄',py:'niánlíng',en:"age",ex:{zh:'你的年龄是多少？',py:'Nǐ de niánlíng shì duōshao?',en:"How old are you?"}},
+  {id:'3-64',zh:'普通话',py:'pǔtōnghuà',en:"Mandarin Chinese",ex:{zh:'他的普通话说得很好。',py:'Tā de pǔtōnghuà shuō de hěn hǎo.',en:"He speaks Mandarin very well."}},
+  {id:'3-65',zh:'其他',py:'qítā',en:"other / else",ex:{zh:'还有其他问题吗？',py:'Hái yǒu qítā wèntí ma?',en:"Are there any other questions?"}},
+  {id:'3-66',zh:'认识',py:'rènshi',en:"to know / to recognize",ex:{zh:'很高兴认识你。',py:'Hěn gāoxìng rènshi nǐ.',en:"Nice to meet you."}},
+  {id:'3-67',zh:'如果',py:'rúguǒ',en:"if / in case",ex:{zh:'如果明天下雨，我们就不去了。',py:'Rúguǒ míngtiān xià yǔ, wǒmen jiù bù qù le.',en:"If it rains tomorrow, we will not go."}},
+  {id:'3-68',zh:'散步',py:'sànbù',en:"to take a walk",ex:{zh:'我喜欢饭后散步。',py:'Wǒ xǐhuān fàn hòu sànbù.',en:"I like to take a walk after meals."}},
+  {id:'3-69',zh:'上网',py:'shàngwǎng',en:"to go online",ex:{zh:'他每天都上网。',py:'Tā měitiān dōu shàngwǎng.',en:"He goes online every day."}},
+  {id:'3-70',zh:'生气',py:'shēngqì',en:"to be angry",ex:{zh:'妈妈生气了。',py:'Māma shēngqì le.',en:"Mom is angry."}},
+  {id:'3-71',zh:'世界',py:'shìjiè',en:"world",ex:{zh:'世界很大。',py:'Shìjiè hěn dà.',en:"The world is very big."}},
+  {id:'3-72',zh:'速度',py:'sùdù',en:"speed",ex:{zh:'火车的速度很快。',py:'Huǒchē de sùdù hěn kuài.',en:"The train speed is very fast."}},
+  {id:'3-73',zh:'所以',py:'suǒyǐ',en:"therefore / so",ex:{zh:'我很累，所以早点睡。',py:'Wǒ hěn lèi, suǒyǐ zǎo diǎn shuì.',en:"I am tired so I will sleep early."}},
+  {id:'3-74',zh:'太阳',py:'tàiyáng',en:"sun",ex:{zh:'今天太阳很好。',py:'Jīntiān tàiyáng hěn hǎo.',en:"The sun is bright today."}},
+  {id:'3-75',zh:'特别',py:'tèbié',en:"special / especially",ex:{zh:'他特别喜欢音乐。',py:'Tā tèbié xǐhuān yīnyuè.',en:"He especially likes music."}},
+  {id:'3-76',zh:'提高',py:'tígāo',en:"to improve / to raise",ex:{zh:'我想提高我的中文水平。',py:'Wǒ xiǎng tígāo wǒ de Zhōngwén shuǐpíng.',en:"I want to improve my Chinese level."}},
+  {id:'3-77',zh:'同意',py:'tóngyì',en:"to agree",ex:{zh:'我同意你的看法。',py:'Wǒ tóngyì nǐ de kànfǎ.',en:"I agree with your view."}},
+  {id:'3-78',zh:'图书馆',py:'túshūguǎn',en:"library",ex:{zh:'我去图书馆借书。',py:'Wǒ qù túshūguǎn jiè shū.',en:"I go to the library to borrow books."}},
+  {id:'3-79',zh:'突然',py:'tūrán',en:"suddenly",ex:{zh:'他突然站起来了。',py:'Tā tūrán zhàn qǐlai le.',en:"He suddenly stood up."}},
+  {id:'3-80',zh:'完成',py:'wánchéng',en:"to complete / to finish",ex:{zh:'他完成了任务。',py:'Tā wánchéngle rènwù.',en:"He completed the task."}},
+  {id:'3-81',zh:'网站',py:'wǎngzhàn',en:"website",ex:{zh:'请访问我们的网站。',py:'Qǐng fǎngwèn wǒmen de wǎngzhàn.',en:"Please visit our website."}},
+  {id:'3-82',zh:'为了',py:'wèile',en:"in order to / for",ex:{zh:'为了健康，要多运动。',py:'Wèile jiànkāng, yào duō yùndòng.',en:"For health, you should exercise more."}},
+  {id:'3-83',zh:'文章',py:'wénzhāng',en:"article / essay",ex:{zh:'他写了一篇文章。',py:'Tā xiěle yī piān wénzhāng.',en:"He wrote an article."}},
+  {id:'3-84',zh:'西',py:'xī',en:"west",ex:{zh:'太阳从西边落下。',py:'Tàiyáng cóng xī biān luòxia.',en:"The sun sets in the west."}},
+  {id:'3-85',zh:'相同',py:'xiāngtóng',en:"same / identical",ex:{zh:'我们的看法相同。',py:'Wǒmen de kànfǎ xiāngtóng.',en:"Our views are the same."}},
+  {id:'3-86',zh:'效果',py:'xiàoguǒ',en:"effect / result",ex:{zh:'这个方法效果很好。',py:'Zhège fāngfǎ xiàoguǒ hěn hǎo.',en:"This method has a good effect."}},
+  {id:'3-87',zh:'辛苦',py:'xīnkǔ',en:"hard / laborious",ex:{zh:'你辛苦了。',py:'Nǐ xīnkǔ le.',en:"You have worked hard."}},
+  {id:'3-88',zh:'信息',py:'xìnxī',en:"information",ex:{zh:'我需要更多信息。',py:'Wǒ xūyào gèng duō xìnxī.',en:"I need more information."}},
+  {id:'3-89',zh:'行',py:'xíng',en:"OK / will do",ex:{zh:'行，我明天去。',py:'Xíng, wǒ míngtiān qù.',en:"OK, I will go tomorrow."}},
+  {id:'3-90',zh:'选择',py:'xuǎnzé',en:"to choose / choice",ex:{zh:'你有很多选择。',py:'Nǐ yǒu hěn duō xuǎnzé.',en:"You have many choices."}},
+  {id:'3-91',zh:'要求',py:'yāoqiú',en:"to require / requirement",ex:{zh:'老师对我们要求很高。',py:'Lǎoshī duì wǒmen yāoqiú hěn gāo.',en:"The teacher has high requirements for us."}},
+  {id:'3-92',zh:'一定',py:'yīdìng',en:"certainly / must",ex:{zh:'你一定能成功。',py:'Nǐ yīdìng néng chénggōng.',en:"You will certainly succeed."}},
+  {id:'3-93',zh:'意见',py:'yìjiàn',en:"opinion / suggestion",ex:{zh:'你有什么意见？',py:'Nǐ yǒu shénme yìjiàn?',en:"What is your opinion?"}},
+  {id:'3-94',zh:'因为',py:'yīnwèi',en:"because",ex:{zh:'因为下雨，所以没去。',py:'Yīnwèi xià yǔ, suǒyǐ méi qù.',en:"Because of the rain, I did not go."}},
+  {id:'3-95',zh:'影响',py:'yǐngxiǎng',en:"influence / to affect",ex:{zh:'这件事影响了他的决定。',py:'Zhè jiàn shì yǐngxiǎngle tā de juédìng.',en:"This event affected his decision."}},
+  {id:'3-96',zh:'用',py:'yòng',en:"to use",ex:{zh:'你怎么用这个？',py:'Nǐ zěnme yòng zhège?',en:"How do you use this?"}},
+  {id:'3-97',zh:'重要',py:'zhòngyào',en:"important",ex:{zh:'学习很重要。',py:'Xuéxí hěn zhòngyào.',en:"Learning is very important."}},
+  {id:'3-98',zh:'注意',py:'zhùyì',en:"to pay attention / be careful",ex:{zh:'过马路要注意安全。',py:'Guò mǎlù yào zhùyì ānquán.',en:"Be careful when crossing the road."}},
+  {id:'3-99',zh:'准备',py:'zhǔnbèi',en:"to prepare",ex:{zh:'我在准备考试。',py:'Wǒ zài zhǔnbèi kǎoshì.',en:"I am preparing for the exam."}},
+  {id:'3-100',zh:'总是',py:'zǒngshì',en:"always",ex:{zh:'他总是很准时。',py:'Tā zǒngshì hěn zhǔnshí.',en:"He is always very punctual."}},
 ],grammar:[
-  {title:'Progressive Aspect 在/正在', pattern:'S + 在/正在 + Verb + (呢)', explain:'在 or 正在 before a verb indicates an ongoing action. 呢 at the end adds emphasis.', examples:[{zh:'我正在学习。',en:'I am studying.'},{zh:'他在打电话呢。',en:'He is making a phone call.'}]},
+  {title:'把 Construction',pattern:'Subject + 把 + Object + Verb + Result',explain:'把 moves the object before the verb to emphasize what happens to it.',examples:[{zh:'请把窗户关上。',en:"Please close the window."},{zh:'他把作业做完了。',en:"He finished the homework."}]},
+  {title:'比 Comparison',pattern:'A + 比 + B + Adjective',explain:'Used to compare two things directly.',examples:[{zh:'今天比昨天冷。',en:"Today is colder than yesterday."},{zh:'他比我高。',en:"He is taller than me."}]},
+  {title:'是...的 Construction',pattern:'是 + time/place/manner + 的',explain:'Emphasizes when, where, or how a past action occurred.',examples:[{zh:'我是昨天来的。',en:"It was yesterday that I came."},{zh:'他是坐飞机去的。',en:"He went by plane."}]},
 ]},
 4:{words:[
-  {id:'4-1',zh:'结果',py:'jiéguǒ',en:'result / outcome',ex:{zh:'考试结果出来了。',py:'Kǎoshì jiéguǒ chūlái le.',en:'The exam results are out.'}},
-  {id:'4-2',zh:'影响',py:'yǐngxiǎng',en:'influence / impact',ex:{zh:'父母对孩子有很大影响。',py:'Fùmǔ duì háizi yǒu hěn dà yǐngxiǎng.',en:'Parents have a big influence on children.'}},
-  {id:'4-3',zh:'方面',py:'fāngmiàn',en:'aspect / area',ex:{zh:'在文化方面，中国很特别。',py:'Zài wénhuà fāngmiàn, Zhōngguó hěn tèbié.',en:'In terms of culture, China is special.'}},
-],grammar:[
-  {title:'Degree Complement with 极了', pattern:'Adj + 极了', explain:'极了 intensifies adjectives to the extreme.', examples:[{zh:'今天热极了。',en:'Today is extremely hot.'},{zh:'这道菜好吃极了。',en:'This dish is extremely delicious.'}]},
-]},
+  {id:'4-1',zh:'优势',py:'yōushì',en:"advantage",ex:{zh:'我们有很大的优势。',py:'Wǒmen yǒu hěn dà de yōushì.',en:"We have a great advantage."}},
+  {id:'4-2',zh:'缺乏',py:'quēfá',en:"to lack / shortage",ex:{zh:'他缺乏经验。',py:'Tā quēfá jīngyàn.',en:"He lacks experience."}},
+  {id:'4-3',zh:'频繁',py:'pínfán',en:"frequent",ex:{zh:'他们频繁地见面。',py:'Tāmen pínfán de jiànmiàn.',en:"They meet frequently."}},
+  {id:'4-4',zh:'融合',py:'rónghé',en:"to merge / to blend",ex:{zh:'两种文化逐渐融合。',py:'Liǎng zhǒng wénhuà zhújiàn rónghé.',en:"The two cultures gradually blended."}},
+  {id:'4-5',zh:'陆续',py:'lùxù',en:"one after another",ex:{zh:'客人陆续到来。',py:'Kèrén lùxù dào lái.',en:"Guests arrived one after another."}},
+],grammar:[{title:'HSK 4 Grammar',pattern:'Complex sentence structures',explain:'HSK 4 focuses on expressing nuanced ideas.',examples:[{zh:'尽管很难，他还是坚持了。',en:"Although it was hard, he persisted."}]}]},
 5:{words:[
-  {id:'5-1',zh:'确认',py:'quèrèn',en:'to confirm',ex:{zh:'请确认你的预订。',py:'Qǐng quèrèn nǐ de yùdìng.',en:'Please confirm your reservation.'}},
-  {id:'5-2',zh:'承认',py:'chéngrèn',en:'to admit / acknowledge',ex:{zh:'他承认了自己的错误。',py:'Tā chéngrèn le zìjǐ de cuòwù.',en:'He admitted his mistake.'}},
-],grammar:[
-  {title:'Complex Sentence Patterns', pattern:'不管...都...', explain:'不管...都 = no matter what...still. Expresses unconditional statements.', examples:[{zh:'不管多难，都要坚持。',en:'No matter how hard, still must persist.'}]},
-]},
+  {id:'5-1',zh:'折腾',py:'zhēteng',en:"to toss about repeatedly",ex:{zh:'别折腾了，快睡觉。',py:'Bié zhēteng le, kuài shuìjiào.',en:"Stop fussing, go to sleep."}},
+  {id:'5-2',zh:'斟酌',py:'zhēnzhuó',en:"to deliberate carefully",ex:{zh:'这个方案需要仔细斟酌。',py:'Zhège fāngàn xūyào zǐxì zhēnzhuó.',en:"This plan needs careful deliberation."}},
+],grammar:[{title:'HSK 5 Grammar',pattern:'Advanced expressions',explain:'HSK 5 uses literary and formal patterns.',examples:[{zh:'他的表现令人钦佩。',en:"His performance commands admiration."}]}]},
 6:{words:[
-  {id:'6-1',zh:'精确',py:'jīngquè',en:'precise / accurate',ex:{zh:'这个数据很精确。',py:'Zhège shùjù hěn jīngquè.',en:'This data is very precise.'}},
-  {id:'6-2',zh:'诠释',py:'quánshì',en:'to interpret / explain',ex:{zh:'他完美地诠释了这个角色。',py:'Tā wánměi de quánshì le zhège juésè.',en:'He perfectly interpreted this role.'}},
-],grammar:[
-  {title:'Classical Patterns', pattern:'之 (literary possessive)', explain:'之 is the classical form of 的, common in formal writing and idioms.', examples:[{zh:'失败是成功之母。',en:'Failure is the mother of success.'}]},
-]},
+  {id:'6-1',zh:'踌躇满志',py:'chóuchú mǎn zhì',en:"proud and content with success",ex:{zh:'他踌躇满志地离开了会场。',py:'Tā chóuchú mǎn zhì de líkāile huìchǎng.',en:"He left the venue feeling proud and content."}},
+  {id:'6-2',zh:'沧海一粟',py:'cānghǎi yī sù',en:"a drop in the ocean",ex:{zh:'个人的力量不过是沧海一粟。',py:'Gèrén de lìliàng bùguò shì cānghǎi yī sù.',en:"Individual strength is just a drop in the ocean."}},
+],grammar:[{title:'HSK 6 Grammar',pattern:'Classical and formal Chinese',explain:'HSK 6 includes classical patterns and advanced rhetoric.',examples:[{zh:'失败是成功之母。',en:"Failure is the mother of success."}]}]},
 };
 
 // ══════════════════════════════════════════════════════════
@@ -1672,11 +1765,22 @@ async function saveXP(earned) {
   try {
     const sb = window._sb;
     if (!sb || !_uid) return;
-    // Use localStorage as source of truth — always correct even if offline before
-    const totalXP = Number(localStorage.getItem(key('xp')) || 0);
-    const username = localStorage.getItem('username_' + _uid) || ('Learner ' + _uid.slice(0,6).toUpperCase());
+    const totalXP  = Number(localStorage.getItem(key('xp')) || 0);
     const hskLevel = Number(localStorage.getItem(key('user_level')) || 1);
-    // Upsert: if row exists update it, otherwise insert — no fetch needed
+    // Resolve username: localStorage → user_metadata → email prefix → fallback
+    let username = localStorage.getItem('username_' + _uid);
+    if (!username) {
+      try {
+        const { data: ud } = await sb.auth.getUser();
+        const u = ud?.user;
+        username = u?.user_metadata?.full_name
+          || u?.user_metadata?.username
+          || u?.email?.split('@')[0]
+          || null;
+        if (username) localStorage.setItem('username_' + _uid, username);
+      } catch(_e) {}
+    }
+    if (!username) username = 'Learner ' + _uid.slice(0,6).toUpperCase();
     await sb.from('leaderboard').upsert({
       user_id: _uid,
       xp: totalXP,
