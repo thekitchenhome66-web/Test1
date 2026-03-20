@@ -1519,7 +1519,7 @@ function showComplete() {
       localStorage.setItem(key('streak'), streak);
       localStorage.setItem(key('streak_day'), streakToday);
     }
-    saveXP(earnedXP);
+    await saveXP(earnedXP);
   }
 
   // Checkpoint ring
@@ -1591,13 +1591,17 @@ async function saveXP(earned) {
   try {
     const sb = window._sb;
     if (!sb || !_uid) return;
+    // Use localStorage as source of truth — always correct even if offline before
+    const totalXP = Number(localStorage.getItem(key('xp')) || 0);
     const username = localStorage.getItem('username_' + _uid) || ('Learner ' + _uid.slice(0,6).toUpperCase());
-    const { data: row } = await sb.from('leaderboard').select('xp').eq('user_id', _uid).maybeSingle();
-    if (row) {
-      await sb.from('leaderboard').update({ xp: (row.xp || 0) + earned, username }).eq('user_id', _uid);
-    } else {
-      await sb.from('leaderboard').insert({ user_id: _uid, xp: earned, username });
-    }
+    const hskLevel = Number(localStorage.getItem(key('user_level')) || 1);
+    // Upsert: if row exists update it, otherwise insert — no fetch needed
+    await sb.from('leaderboard').upsert({
+      user_id: _uid,
+      xp: totalXP,
+      username: username,
+      hsk_level: hskLevel
+    }, { onConflict: 'user_id' });
   } catch(e) { console.warn('saveXP:', e); }
 }
 
