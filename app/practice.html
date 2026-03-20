@@ -324,7 +324,61 @@ function speak(text, rate=0.85) {
 }
 
 // ── HSK WORD DATA (HSK 1 words for practice — subset for quick loading)
-const PRACTICE_WORDS = [
+// ── Word pool: dynamically pulled from user level + completed lessons
+// No hardcoded arrays — uses the HSK data already in the page
+// Falls back to HSK 1 basics if no lesson data found
+
+function getUserWords() {
+  if (!_uid) return getHSK1Basics();
+  const level      = Number(localStorage.getItem(key('user_level')) || 1);
+  const completed  = JSON.parse(localStorage.getItem(key('completed_lessons')) || '[]');
+  const lessonNum  = Number(localStorage.getItem(key('user_lesson')) || 1);
+
+  // Build word list from lessons the user has actually completed
+  // Each block of 6 lessons covers 5 words — get all words up to current lesson
+  const wordsPerBlock = 5;
+  const maxBlock = Math.max(1, Math.ceil((lessonNum - 1) / 6));
+  const maxWordIdx = maxBlock * wordsPerBlock;
+
+  // Try to get words from HSK data injected by lesson.html
+  // Since practice is a separate page, we embed a shared word list here
+  // Words from HSK levels 1 through user level, capped to what they have learned
+  const allWords = [];
+
+  // Always include all completed lower levels
+  for (let l = 1; l < level; l++) {
+    const levelWords = SHARED_WORDS[l] || [];
+    allWords.push(...levelWords);
+  }
+
+  // For current level, only words from completed lessons
+  const currentWords = (SHARED_WORDS[level] || []).slice(0, maxWordIdx);
+  allWords.push(...currentWords);
+
+  // Fallback: if nothing found, use HSK 1 basics
+  return allWords.length >= 5 ? allWords : getHSK1Basics();
+}
+
+function getHSK1Basics() {
+  return SHARED_WORDS[1] ? SHARED_WORDS[1].slice(0, 40) : [];
+}
+
+function getPool() {
+  const words = getUserWords();
+  if (!_uid || words.length === 0) return words;
+  // SRS ordering: due first, unseen second, learned last
+  const srs  = JSON.parse(localStorage.getItem(key('srs')) || '{}');
+  const now  = Date.now();
+  const due     = words.filter(w => srs[w.id] && srs[w.id].nextReview <= now);
+  const notSeen = words.filter(w => !srs[w.id]);
+  const learned = words.filter(w => srs[w.id] && srs[w.id].nextReview > now);
+  return [...shuffle(due), ...shuffle(notSeen), ...shuffle(learned)];
+}
+
+// Shared word data — mirrors lesson.html HSK words
+// (HSK 1 full + HSK 2 full + HSK 3 subset for practice)
+const SHARED_WORDS = {
+1:[
   {id:'1-1',zh:'你好',py:'nǐ hǎo',en:"Hello"},
   {id:'1-2',zh:'谢谢',py:'xiè xie',en:"Thank you"},
   {id:'1-3',zh:'我',py:'wǒ',en:"I / me"},
@@ -365,24 +419,63 @@ const PRACTICE_WORDS = [
   {id:'1-38',zh:'高兴',py:'gāoxìng',en:"happy"},
   {id:'1-39',zh:'累',py:'lèi',en:"tired"},
   {id:'1-40',zh:'再见',py:'zàijiàn',en:"goodbye"},
-];
+],
+2:[
+  {id:'2-1',zh:'努力',py:'nǔlì',en:"hardworking"},
+  {id:'2-2',zh:'认为',py:'rènwéi',en:"to think / believe"},
+  {id:'2-3',zh:'帮助',py:'bāngzhù',en:"to help"},
+  {id:'2-4',zh:'终于',py:'zhōngyú',en:"finally"},
+  {id:'2-5',zh:'其实',py:'qíshí',en:"actually"},
+  {id:'2-6',zh:'声音',py:'shēngyīn',en:"sound / voice"},
+  {id:'2-7',zh:'继续',py:'jìxù',en:"to continue"},
+  {id:'2-8',zh:'已经',py:'yǐjīng',en:"already"},
+  {id:'2-9',zh:'决定',py:'juédìng',en:"to decide"},
+  {id:'2-10',zh:'相信',py:'xiāngxìn',en:"to believe / trust"},
+  {id:'2-11',zh:'重要',py:'zhòngyào',en:"important"},
+  {id:'2-12',zh:'方法',py:'fāngfǎ',en:"method"},
+  {id:'2-13',zh:'问题',py:'wèntí',en:"problem / question"},
+  {id:'2-14',zh:'关系',py:'guānxi',en:"relationship"},
+  {id:'2-15',zh:'生活',py:'shēnghuó',en:"life / to live"},
+  {id:'2-16',zh:'工作',py:'gōngzuò',en:"work / to work"},
+  {id:'2-17',zh:'身体',py:'shēntǐ',en:"body / health"},
+  {id:'2-18',zh:'健康',py:'jiànkāng',en:"healthy / health"},
+  {id:'2-19',zh:'运动',py:'yùndòng',en:"exercise / sport"},
+  {id:'2-20',zh:'电话',py:'diànhuà',en:"telephone"},
+],
+3:[
+  {id:'3-1',zh:'按照',py:'ànzhào',en:"according to"},
+  {id:'3-5',zh:'办法',py:'bànfǎ',en:"method / way"},
+  {id:'3-13',zh:'参加',py:'cānjiā',en:"to participate"},
+  {id:'3-15',zh:'成功',py:'chénggōng',en:"success"},
+  {id:'3-17',zh:'城市',py:'chéngshì',en:"city"},
+  {id:'3-21',zh:'从来',py:'cónglái',en:"always / never with neg."},
+  {id:'3-29',zh:'发现',py:'fāxiàn',en:"to discover"},
+  {id:'3-30',zh:'方便',py:'fāngbiàn',en:"convenient"},
+  {id:'3-33',zh:'感觉',py:'gǎnjué',en:"feeling / to feel"},
+  {id:'3-35',zh:'更',py:'gèng',en:"even more"},
+  {id:'3-36',zh:'故事',py:'gùshi',en:"story"},
+  {id:'3-38',zh:'害怕',py:'hàipà',en:"to be afraid"},
+  {id:'3-39',zh:'好像',py:'hǎoxiàng',en:"to seem"},
+  {id:'3-46',zh:'机会',py:'jīhuì',en:"opportunity"},
+  {id:'3-47',zh:'几乎',py:'jīhū',en:"almost"},
+  {id:'3-48',zh:'计划',py:'jìhuà',en:"plan"},
+  {id:'3-49',zh:'记得',py:'jìde',en:"to remember"},
+  {id:'3-55',zh:'离开',py:'líkāi',en:"to leave"},
+  {id:'3-56',zh:'礼物',py:'lǐwù',en:"gift"},
+  {id:'3-58',zh:'了解',py:'liǎojiě',en:"to understand"},
+  {id:'3-60',zh:'满意',py:'mǎnyì',en:"satisfied"},
+  {id:'3-67',zh:'如果',py:'rúguǒ',en:"if"},
+  {id:'3-70',zh:'生气',py:'shēngqì',en:"to be angry"},
+  {id:'3-71',zh:'世界',py:'shìjiè',en:"world"},
+  {id:'3-73',zh:'所以',py:'suǒyǐ',en:"therefore"},
+  {id:'3-75',zh:'特别',py:'tèbié',en:"especially"},
+  {id:'3-76',zh:'提高',py:'tígāo',en:"to improve"},
+  {id:'3-77',zh:'同意',py:'tóngyì',en:"to agree"},
+  {id:'3-79',zh:'突然',py:'tūrán',en:"suddenly"},
+  {id:'3-80',zh:'完成',py:'wánchéng',en:"to complete"},
+],
+};
 
-function shuffle(arr) {
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
-  return a;
-}
-function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
-function getPool() {
-  if (!_uid) return PRACTICE_WORDS;
-  // Use SRS to prioritize due words
-  const srs = JSON.parse(localStorage.getItem(key('srs'))||'{}');
-  const now = Date.now();
-  const due     = PRACTICE_WORDS.filter(w => srs[w.id] && srs[w.id].nextReview <= now);
-  const notSeen = PRACTICE_WORDS.filter(w => !srs[w.id]);
-  const learned = PRACTICE_WORDS.filter(w => srs[w.id] && srs[w.id].nextReview > now);
-  return [...shuffle(due), ...shuffle(notSeen), ...shuffle(learned)];
-}
 
 // ══ SPEED CHALLENGE ══
 let _spTimer=null, _spTimeLeft=8, _spCurrent=0, _spScore=0, _spWrong=0, _spAnswered=false;
