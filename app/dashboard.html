@@ -268,6 +268,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="stat-pill xp"><span>⚡</span><span class="v" id="stat-xp">0</span><span>XP</span></div>
     <div class="stat-pill hearts" onclick="showHeartsModal()"><span>❤️</span><span class="v" id="stat-hearts">5</span></div>
     <div class="stat-pill fire"><span>🔥</span><span class="v" id="stat-streak">0</span></div>
+    <div class="stat-pill" id="stat-energy-pill" style="gap:4px">
+      <span>⚡</span>
+      <div style="width:38px;height:5px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden">
+        <div id="dash-energy-fill" style="height:100%;background:#fbbf24;border-radius:999px;width:100%;transition:width .4s"></div>
+      </div>
+      <span class="v" id="dash-energy-count" style="color:#fbbf24">25</span>
+    </div>
+    <div class="stat-pill" style="cursor:pointer" onclick="showToast('💎 Diamond shop coming soon!')">
+      <span>💎</span><span class="v" id="dash-diamond-count" style="color:#a78bfa">0</span>
+    </div>
   </div>
 </header>
 
