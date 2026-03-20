@@ -397,7 +397,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   <a class="nav-item active" id="nav-home" href="#" onclick="switchTab('home');return false">
     <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
   </a>
-  <a class="nav-item" id="nav-practice" href="#" onclick="switchTab('practice');return false">
+  <a class="nav-item" id="nav-practice" href="/app/practice.html">
     <span class="nav-icon">⚡</span><span class="nav-label">Practice</span>
   </a>
   <a class="nav-item" id="nav-rank" href="/app/leaderboard.html">
@@ -872,7 +872,7 @@ async function init() {
   try {
     const { data } = await sb.auth.getSession();
     const u = data?.session?.user;
-    if (!u) { window.location.replace('/app/login.html'); return; }
+    if (!u) { window.location.replace('/app/login.html?next=' + encodeURIComponent(location.pathname + location.search)); return; }
     _uid = u.id;
 
     // Clean old unscopd keys
@@ -908,7 +908,7 @@ async function init() {
 
   } catch(e) {
     console.error('Dashboard init error:', e);
-    window.location.replace('/app/login.html');
+    window.location.replace('/app/login.html?next=' + encodeURIComponent(location.pathname + location.search));
   }
 }
 
