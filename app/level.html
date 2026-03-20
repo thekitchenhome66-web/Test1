@@ -488,7 +488,9 @@ async function confirmLevel() {
 
 // ── PLACEMENT TEST (stub — will be built later)
 function startPlacement() {
-  showToast('Placement test coming soon! Pick a level for now.');
+  // Navigate to placement test — passes uid so test.html can save the result
+  const dest = '/app/test.html' + (userId ? '?uid=' + encodeURIComponent(userId) : '');
+  window.location.href = dest;
 }
 
 init();
