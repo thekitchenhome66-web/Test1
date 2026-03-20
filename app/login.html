@@ -365,9 +365,18 @@ async function handleSubmit() {
   try {
     if (mode === 'in') {
       // SIGN IN
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      const { data: siData, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      window.location.replace('/app/dashboard.html');
+      // Respect ?next= so deep links work after login
+      const nextParam = new URLSearchParams(location.search).get('next');
+      if (nextParam) {
+        window.location.replace(decodeURIComponent(nextParam));
+      } else {
+        const uid2 = siData?.session?.user?.id;
+        const hasLv = (uid2 && localStorage.getItem('user_level_' + uid2))
+          || siData?.session?.user?.user_metadata?.level_chosen;
+        window.location.replace(hasLv ? '/app/dashboard.html' : '/app/level.html');
+      }
 
     } else {
       // SIGN UP
@@ -448,10 +457,17 @@ async function handleForgot() {
   try {
     const { data } = await sb.auth.getSession();
     if (data?.session?.user) {
-      // already logged in — check if level chosen
-      const uid = data.session.user.id;
-      const hasLevel = localStorage.getItem('user_level_' + uid);
-      window.location.replace(hasLevel ? '/app/dashboard.html' : '/app/level.html');
+      const user = data.session.user;
+      const uid  = user.id;
+      // Check level: localStorage first (fast), then user_metadata (works in incognito)
+      const hasLevel = localStorage.getItem('user_level_' + uid)
+        || user.user_metadata?.level_chosen;
+      // If there's a ?next= param, go there after login
+      const next = new URLSearchParams(location.search).get('next');
+      const dest = next ? decodeURIComponent(next)
+        : hasLevel ? '/app/dashboard.html'
+        : '/app/level.html';
+      window.location.replace(dest);
     }
   } catch(e) {}
 })();
