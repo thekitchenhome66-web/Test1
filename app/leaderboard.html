@@ -3,609 +3,593 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Maobai — Leaderboard</title>
+<title>汉路 Hànlù — Leaderboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window._sb = window.supabase.createClient(
+  'https://cuiznbvvlqtwcoocehnd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+);
+</script>
 <style>
-:root{
-  --bg:#0f1923;--bg2:#0d1720;--card:#162235;--card2:#1a2a3d;
-  --border:#1f3349;--border2:#243d57;--green:#4ade80;--green-dark:#22c55e;
-  --green-muted:rgba(74,222,128,.10);--text:#e8f4ef;--text-mid:#8fb3c4;
-  --text-muted:#5a7a8a;--gold:#fbbf24;--silver:#cbd5e1;--bronze:#fb923c;
-  --rose:#f87171;--rose-muted:rgba(248,113,113,.10);--rose-border:rgba(248,113,113,.25);
-  --radius:20px;--radius-sm:12px;--t:.2s cubic-bezier(.4,0,.2,1);
-}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:88px}
-::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+:root{
+  --bg:#080f0b;--bg2:#0c1610;--card:#111e16;--card2:#162218;
+  --border:rgba(74,222,128,.12);--border2:rgba(74,222,128,.25);
+  --green:#3ddb7a;--green2:#2ab862;--green-muted:rgba(61,219,122,.10);
+  --gold:#f5c842;--gold-soft:rgba(245,200,66,.12);
+  --silver:#cbd5e1;--bronze:#fb923c;
+  --blue:#60a5fa;--blue-soft:rgba(96,165,250,.10);
+  --rose:#f87171;--rose-soft:rgba(248,113,113,.10);
+  --purple:#a78bfa;
+  --ink:#e8f2ee;--ink2:#9ab8aa;--ink3:#4a6b5a;
+  --nav-h:68px;--t:.22s cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+16px)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(74,222,128,.2);border-radius:3px}
 
 /* ── HEADER ── */
-.header-outer{position:sticky;top:0;z-index:60;background:rgba(15,25,35,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-.header{max-width:520px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:center;padding:0 18px}
-.header-title{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.3px}
+.header{position:sticky;top:0;z-index:60;background:rgba(8,15,11,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;justify-content:center;padding:0 18px}
+.header-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.header-title em{color:var(--green);font-style:normal}
 
-/* ── TAB SWITCHER ── */
-.tab-switcher{max-width:520px;margin:0 auto;padding:14px 16px 0;display:flex;gap:8px}
-.tab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 14px;border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text-muted);transition:all var(--t);letter-spacing:.02em}
-.tab-btn:hover{border-color:var(--border2);color:var(--text)}
-.tab-btn.active{background:var(--green-muted);border-color:rgba(74,222,128,.4);color:var(--green);box-shadow:0 0 0 1px rgba(74,222,128,.08)}
-.tab-btn .tab-icon{font-size:16px}
-.tab-indicator{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;display:none}
-.tab-btn.active .tab-indicator{display:block}
+/* ── TABS ── */
+.tabs-wrap{position:sticky;top:64px;z-index:55;background:rgba(8,15,11,.96);backdrop-filter:blur(20px);padding:12px 16px;border-bottom:1px solid var(--border)}
+.tabs{display:flex;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:4px;gap:3px}
+.tab{flex:1;padding:9px 6px;border-radius:10px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;transition:all var(--t);display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:.02em}
+.tab.active{background:var(--green-muted);color:var(--green);border:1px solid rgba(74,222,128,.2)}
+.tab-dot{width:5px;height:5px;border-radius:50%;background:var(--green);display:none}
+.tab.active .tab-dot{display:block}
 
 /* ── VIEWS ── */
 .view{display:none}.view.active{display:block}
-
-/* ── MAIN ── */
-.main{max-width:520px;margin:0 auto;padding:16px 16px 0;display:flex;flex-direction:column;gap:14px}
+.main{max-width:520px;margin:0 auto;padding:14px 16px 0;display:flex;flex-direction:column;gap:12px}
 
 /* ── LEAGUE BANNER ── */
-.league-banner{border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;animation:fadeUp .3s ease both}
-.league-banner.gold-league{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border:1.5px solid rgba(251,191,36,.35);box-shadow:0 0 32px rgba(251,191,36,.08)}
-.league-banner.silver-league{background:linear-gradient(135deg,rgba(203,213,225,.12),rgba(203,213,225,.04));border:1.5px solid rgba(203,213,225,.3)}
-.league-banner.bronze-league{background:linear-gradient(135deg,rgba(251,146,60,.12),rgba(251,146,60,.04));border:1.5px solid rgba(251,146,60,.3)}
-.league-banner.diamond-league{background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(96,165,250,.05));border:1.5px solid rgba(96,165,250,.35);box-shadow:0 0 32px rgba(96,165,250,.08)}
-.league-left{display:flex;flex-direction:column;gap:2px}
-.league-label{font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase}
-.league-name{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;letter-spacing:-.3px}
-.league-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
-.league-icon{font-size:42px;line-height:1}
+.league-banner{border-radius:18px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden}
+.lb-gold{background:linear-gradient(135deg,rgba(245,200,66,.15),rgba(245,200,66,.05));border:1.5px solid rgba(245,200,66,.35)}
+.lb-silver{background:linear-gradient(135deg,rgba(203,213,225,.1),rgba(203,213,225,.04));border:1.5px solid rgba(203,213,225,.25)}
+.lb-bronze{background:linear-gradient(135deg,rgba(251,146,60,.1),rgba(251,146,60,.04));border:1.5px solid rgba(251,146,60,.25)}
+.lb-diamond{background:linear-gradient(135deg,rgba(96,165,250,.12),rgba(96,165,250,.04));border:1.5px solid rgba(96,165,250,.3)}
+.league-left{}
+.league-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px}
+.league-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:-.3px}
+.league-sub{font-size:11px;color:var(--ink2);margin-top:2px}
+.league-icon{font-size:44px;filter:drop-shadow(0 0 16px rgba(245,200,66,.3))}
+
+/* ── TIMER ── */
+.timer-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.timer-left{display:flex;align-items:center;gap:10px}
+.timer-icon{font-size:20px}
+.timer-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+.timer-val{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--green)}
+.timer-note{font-size:11px;color:var(--ink3)}
 
 /* ── YOU CARD ── */
-.you-card{background:var(--card);border:1.5px solid rgba(74,222,128,.3);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(74,222,128,.06),0 8px 32px rgba(74,222,128,.06)}
-.you-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 50%,rgba(74,222,128,.08) 0%,transparent 65%);pointer-events:none}
-.you-rank-box{width:50px;height:50px;border-radius:14px;background:var(--green-muted);border:1.5px solid rgba(74,222,128,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
-.you-rank-label{font-size:8px;font-weight:900;color:rgba(74,222,128,.6);letter-spacing:.5px;text-transform:uppercase}
-.you-rank-num{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--green);line-height:1.1}
+.you-card{background:var(--green-muted);border:1.5px solid rgba(74,222,128,.25);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.you-rank-box{background:rgba(74,222,128,.15);border-radius:10px;padding:8px 12px;text-align:center;flex-shrink:0}
+.you-rank-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:1px}
+.you-rank-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--green);line-height:1}
 .you-info{flex:1;min-width:0}
-.you-tag{font-size:9px;font-weight:900;color:var(--green);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
-.you-name{font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:var(--green);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.you-xp{font-size:12px;color:var(--text-muted);margin-top:2px}
-.you-xp span{color:var(--green);font-weight:700}
-.you-move{font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;flex-shrink:0}
-.you-move.up{color:var(--green)}.you-move.down{color:var(--rose)}.you-move.same{color:var(--text-muted);font-size:11px}
-
-/* ── WEEKLY TIMER ── */
-.weekly-timer{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
-.timer-left{display:flex;align-items:center;gap:8px}
-.timer-icon{font-size:16px}
-.timer-label{font-size:11px;font-weight:700;color:var(--text-muted);font-family:'Nunito',sans-serif}
-.timer-value{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--gold)}
-.timer-reset{font-size:10px;color:var(--text-muted);font-weight:600}
+.you-tag{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:2px}
+.you-name{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.you-xp{font-size:11px;color:var(--ink2);margin-top:2px}
+.you-move{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;flex-shrink:0;padding:4px 8px;border-radius:999px}
+.you-move.up{background:rgba(61,219,122,.12);color:var(--green)}
+.you-move.down{background:var(--rose-soft);color:var(--rose)}
+.you-move.same{background:var(--card2);color:var(--ink3)}
 
 /* ── NEXT TARGET ── */
-.next-target{border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(74,222,128,.1),rgba(74,222,128,.04));border:1px solid rgba(74,222,128,.2)}
+.next-target{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px}
 .next-target-icon{font-size:22px;flex-shrink:0}
 .next-target-info{flex:1;min-width:0}
-.next-target-label{font-size:10px;font-weight:800;color:rgba(74,222,128,.7);letter-spacing:.1em;text-transform:uppercase}
-.next-target-text{font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--green);margin-top:1px}
-.next-target-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
-.next-target-xp{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--green);flex-shrink:0}
+.next-target-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+.next-target-text{font-size:14px;font-weight:700;color:var(--ink)}
+.next-target-sub{font-size:11px;color:var(--ink2);margin-top:1px}
+.next-target-xp{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--gold);flex-shrink:0}
 
 /* ── PODIUM ── */
-.podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:8px 4px 0}
-.podium-slot{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
-.podium-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;position:relative;flex-shrink:0;color:var(--text)}
-.podium-slot.p1 .podium-avatar{width:66px;height:66px;font-size:20px;background:radial-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.08));border:2px solid rgba(251,191,36,.6);box-shadow:0 0 20px rgba(251,191,36,.25)}
-.podium-slot.p2 .podium-avatar{background:radial-gradient(135deg,rgba(203,213,225,.18),rgba(203,213,225,.06));border:2px solid rgba(203,213,225,.4)}
-.podium-slot.p3 .podium-avatar{background:radial-gradient(135deg,rgba(251,146,60,.18),rgba(251,146,60,.06));border:2px solid rgba(251,146,60,.4)}
-.podium-crown{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:18px;line-height:1}
-.podium-name{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;text-align:center;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.podium-slot.p1 .podium-name{color:var(--gold);font-size:12px}
-.podium-slot.p2 .podium-name{color:var(--silver)}
-.podium-slot.p3 .podium-name{color:var(--bronze)}
-.podium-xp{font-size:11px;font-weight:700;color:var(--text-muted)}
-.podium-slot.p1 .podium-xp{color:var(--gold);font-weight:800}
-.podium-base{width:100%;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;padding:10px 0 8px}
-.podium-slot.p1 .podium-base{background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.25);height:64px;color:var(--gold)}
-.podium-slot.p2 .podium-base{background:rgba(203,213,225,.10);border:1px solid rgba(203,213,225,.18);height:48px;color:var(--silver)}
-.podium-slot.p3 .podium-base{background:rgba(251,146,60,.10);border:1px solid rgba(251,146,60,.18);height:38px;color:var(--bronze)}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:8px 0}
+.podium-slot{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:120px;cursor:pointer;transition:transform var(--t)}
+.podium-slot:hover{transform:translateY(-2px)}
+.podium-avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:18px;font-weight:900;position:relative;flex-shrink:0}
+.p1 .podium-avatar{background:linear-gradient(135deg,rgba(245,200,66,.3),rgba(245,200,66,.1));border:2.5px solid rgba(245,200,66,.6);color:var(--gold);width:64px;height:64px;font-size:22px}
+.p2 .podium-avatar{background:linear-gradient(135deg,rgba(203,213,225,.2),rgba(203,213,225,.05));border:2px solid rgba(203,213,225,.4);color:var(--silver)}
+.p3 .podium-avatar{background:linear-gradient(135deg,rgba(251,146,60,.2),rgba(251,146,60,.05));border:2px solid rgba(251,146,60,.4);color:var(--bronze)}
+.podium-crown{position:absolute;top:-14px;font-size:18px}
+.podium-name{font-size:11px;font-weight:700;color:var(--ink);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;padding:0 4px}
+.p1 .podium-name{font-size:12px;color:var(--gold)}
+.podium-xp{font-size:10px;color:var(--ink3)}
+.podium-base{font-size:18px}
+.podium-bar{border-radius:8px 8px 0 0;width:100%}
+.p1 .podium-bar{height:56px;background:linear-gradient(180deg,rgba(245,200,66,.2),rgba(245,200,66,.06));border:1px solid rgba(245,200,66,.2)}
+.p2 .podium-bar{height:40px;background:rgba(203,213,225,.06);border:1px solid rgba(203,213,225,.15)}
+.p3 .podium-bar{height:32px;background:rgba(251,146,60,.06);border:1px solid rgba(251,146,60,.15)}
 
-/* ── SECTION HEADINGS ── */
-.section-heading{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;padding:0 2px}
-.danger-label{color:var(--rose) !important;display:flex;align-items:center;gap:6px;margin-top:4px}
-.danger-pulse{width:7px;height:7px;border-radius:50%;background:var(--rose);box-shadow:0 0 6px var(--rose);animation:pulse 1.4s ease infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+/* ── SECTION HEADING ── */
+.section-heading{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:0 2px;display:flex;align-items:center;gap:8px}
+.section-heading::after{content:'';flex:1;height:1px;background:var(--border)}
+.danger-label{color:var(--rose)}
+.danger-dot{width:6px;height:6px;border-radius:50%;background:var(--rose);animation:blink 1.2s ease infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ── LIST ROWS ── */
-.lb-list{display:flex;flex-direction:column;gap:8px}
-.lb-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px;display:flex;align-items:center;gap:12px;transition:border-color var(--t),background var(--t),transform var(--t);position:relative;overflow:hidden}
-.lb-row:hover{background:var(--card2);transform:translateX(2px)}
-.lb-row.rank-1{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.03)}
-.lb-row.rank-1::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);border-radius:3px 0 0 3px}
-.lb-row.rank-2{border-color:rgba(203,213,225,.2);background:rgba(203,213,225,.02)}
-.lb-row.rank-2::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--silver);border-radius:3px 0 0 3px}
-.lb-row.rank-3{border-color:rgba(251,146,60,.22);background:rgba(251,146,60,.02)}
-.lb-row.rank-3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bronze);border-radius:3px 0 0 3px}
-.lb-row.danger{border-color:var(--rose-border);background:var(--rose-muted)}
+/* ── LB ROW ── */
+.lb-list{display:flex;flex-direction:column;gap:6px}
+.lb-row{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all var(--t);position:relative;overflow:hidden}
+.lb-row:hover{border-color:var(--border2);background:var(--card2);transform:translateX(2px)}
+.lb-row.is-me{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.05)}
+.lb-row.danger{border-color:rgba(248,113,113,.2);background:rgba(248,113,113,.03)}
 .lb-row.danger::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rose);border-radius:3px 0 0 3px}
-.lb-row.danger .lb-name-text{color:#fca5a5}
-.lb-row.danger .lb-xp{color:var(--rose)}
-.lb-row.danger .lb-rank{color:var(--rose)}
-.lb-row.is-me{border-color:rgba(74,222,128,.28) !important;background:rgba(74,222,128,.04) !important;box-shadow:0 0 0 1px rgba(74,222,128,.07)}
-.lb-row.is-me .lb-name-text{color:var(--green) !important}
-.lb-row.is-me .lb-xp{color:var(--green) !important}
-.lb-row.is-me .lb-rank{color:var(--green) !important}
-.lb-row.danger.is-me{border-color:rgba(248,113,113,.55) !important;background:rgba(248,113,113,.14) !important;box-shadow:0 0 0 1px rgba(248,113,113,.12),0 0 16px rgba(248,113,113,.08) !important}
-.lb-row.danger.is-me .lb-name-text{color:#fca5a5 !important}
-.you-badge-inline{font-family:'Nunito',sans-serif;font-size:8px;font-weight:900;color:var(--green);letter-spacing:.1em;background:var(--green-muted);border:1px solid rgba(74,222,128,.2);border-radius:999px;padding:1px 5px;flex-shrink:0}
-.lb-rank{width:28px;flex-shrink:0;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;text-align:center;line-height:1;color:var(--text-muted)}
+.lb-row.is-me::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green);border-radius:3px 0 0 3px}
+.lb-rank{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;color:var(--ink3);width:28px;flex-shrink:0;text-align:center}
 .lb-rank.r1{color:var(--gold)}.lb-rank.r2{color:var(--silver)}.lb-rank.r3{color:var(--bronze)}
-.lb-medal{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.lb-avatar{width:36px;height:36px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0}
+.lb-row.is-me .lb-avatar{background:var(--green-muted);border-color:rgba(74,222,128,.35);color:var(--green)}
 .lb-info{flex:1;min-width:0}
-.lb-name{display:flex;align-items:center;gap:6px;font-family:'Nunito',sans-serif}
-.lb-name-text{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lb-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
-.lb-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
-.lb-xp{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;display:flex;align-items:center;gap:3px;color:var(--text-mid)}
-.lb-xp .xi{font-size:10px}
-.lb-row.rank-1 .lb-xp{color:var(--gold)}.lb-row.rank-2 .lb-xp{color:var(--silver)}.lb-row.rank-3 .lb-xp{color:var(--bronze)}
-.lb-move{font-size:10px;font-weight:900;font-family:'Nunito',sans-serif}
-.lb-move.up{color:var(--green)}.lb-move.down{color:var(--rose)}.lb-move.same{color:var(--text-muted);font-size:9px}
-.danger-warning{font-size:10px;color:var(--rose);font-weight:700;margin-top:2px;font-family:'Nunito',sans-serif}
+.lb-name{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.lb-row.is-me .lb-name{color:var(--green)}
+.you-badge{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.2);border-radius:4px;padding:1px 5px;font-size:8px;font-weight:800;color:var(--green);letter-spacing:.06em}
+.lb-sub{font-size:10px;color:var(--ink3);margin-top:1px}
+.lb-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.lb-xp{font-size:12px;font-weight:700;color:var(--ink2)}
+.lb-row.is-me .lb-xp{color:var(--green)}
+.lb-move{font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px}
+.lb-move.up{background:rgba(61,219,122,.1);color:var(--green)}
+.lb-move.down{background:var(--rose-soft);color:var(--rose)}
+.lb-move.same{color:var(--ink3)}
+.danger-warn{font-size:10px;color:var(--rose);font-weight:600;margin-top:2px}
 
-/* ── GLOBAL VIEW ── */
-.global-you-card{background:var(--card);border:1.5px solid rgba(74,222,128,.3);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(74,222,128,.06)}
-.global-you-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 50%,rgba(74,222,128,.07) 0%,transparent 65%);pointer-events:none}
-.global-rank-badge{width:48px;height:48px;border-radius:12px;background:var(--green-muted);border:1.5px solid rgba(74,222,128,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
-.global-rank-lbl{font-size:8px;font-weight:900;color:rgba(74,222,128,.6);letter-spacing:.5px;text-transform:uppercase}
-.global-rank-num{font-family:'Nunito',sans-serif;font-size:19px;font-weight:900;color:var(--green);line-height:1.1}
-.global-info{flex:1;min-width:0}
-.global-you-tag{font-size:9px;font-weight:900;color:var(--green);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
-.global-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.global-xp{font-size:11px;color:var(--text-muted);margin-top:2px}
-.global-xp span{color:var(--green);font-weight:700}
-.global-list{display:flex;flex-direction:column;gap:6px}
-.gl-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;transition:border-color var(--t),background var(--t)}
-.gl-row:hover{background:var(--card2)}
-.gl-row.is-me{border-color:rgba(74,222,128,.3) !important;background:rgba(74,222,128,.04) !important;box-shadow:0 0 0 1px rgba(74,222,128,.07)}
-.gl-row.rank-1{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.03)}
-.gl-row.rank-1::before,.gl-row.rank-2::before,.gl-row.rank-3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
-.gl-row.rank-1::before{background:var(--gold)}
-.gl-row.rank-2::before{background:var(--silver)}
-.gl-row.rank-3::before{background:var(--bronze)}
-.gl-row.rank-2{border-color:rgba(203,213,225,.2);background:rgba(203,213,225,.02)}
-.gl-row.rank-3{border-color:rgba(251,146,60,.22);background:rgba(251,146,60,.02)}
-.gl-num{width:32px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:var(--text-muted);text-align:center;flex-shrink:0}
+/* ── GLOBAL LIST ── */
+.global-stats{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-around}
+.gs-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+.gs-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink)}
+.gs-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.gs-divider{width:1px;height:32px;background:var(--border)}
+.gl-list{display:flex;flex-direction:column;gap:5px}
+.gl-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all var(--t)}
+.gl-row:hover{border-color:var(--border2);transform:translateX(2px)}
+.gl-row.is-me{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.04)}
+.gl-row.rank-1{border-color:rgba(245,200,66,.25)}
+.gl-row.rank-2{border-color:rgba(203,213,225,.2)}
+.gl-row.rank-3{border-color:rgba(251,146,60,.2)}
+.gl-num{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;width:28px;flex-shrink:0;text-align:center;color:var(--ink3)}
 .gl-num.g1{color:var(--gold)}.gl-num.g2{color:var(--silver)}.gl-num.g3{color:var(--bronze)}
-.gl-row.is-me .gl-num{color:var(--green)}
-.gl-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;flex-shrink:0;color:var(--text);background:var(--card2);border:1px solid var(--border2)}
+.gl-avatar{width:32px;height:32px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--ink2);flex-shrink:0;font-family:'DM Sans',sans-serif}
 .gl-row.is-me .gl-avatar{background:var(--green-muted);border-color:rgba(74,222,128,.3);color:var(--green)}
 .gl-info{flex:1;min-width:0}
-.gl-name{font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gl-name{font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gl-row.is-me .gl-name{color:var(--green)}
-.gl-sub{font-size:10px;color:var(--text-muted);margin-top:1px}
-.gl-xp{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--text-mid);flex-shrink:0;display:flex;align-items:center;gap:3px}
+.gl-sub{font-size:10px;color:var(--ink3)}
+.gl-xp{font-size:12px;font-weight:700;color:var(--ink2);flex-shrink:0}
 .gl-row.is-me .gl-xp{color:var(--green)}
-.gl-row.rank-1 .gl-xp{color:var(--gold)}
-.gl-row.rank-2 .gl-xp{color:var(--silver)}
-.gl-row.rank-3 .gl-xp{color:var(--bronze)}
-.gl-sep{text-align:center;padding:6px 0;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.05em}
-.global-stats-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;justify-content:space-around}
-.gsb-item{display:flex;flex-direction:column;align-items:center;gap:3px}
-.gsb-val{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:var(--text)}
-.gsb-label{font-size:10px;font-weight:700;color:var(--text-muted)}
-
-/* ── MISC ── */
-.not-ranked{background:var(--card);border:1px dashed var(--border2);border-radius:var(--radius-sm);padding:14px 18px;font-size:13px;color:var(--text-muted);text-align:center;font-family:'Nunito',sans-serif;font-weight:700}
-.not-ranked strong{color:var(--text)}
-.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;gap:14px}
-.spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:13px;color:var(--text-muted);font-family:'Nunito',sans-serif;font-weight:700}
-.empty-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:12px;text-align:center}
-.empty-emoji{font-size:52px}.empty-title{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text)}.empty-sub{font-size:13px;color:var(--text-muted);line-height:1.6;max-width:260px}
-.error-wrap{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-sm);padding:16px 18px;font-size:13px;color:#f87171;font-family:'Nunito',sans-serif;font-weight:700;text-align:center}
-.section-heading{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;padding:0 2px}
-
-/* ── BOTTOM NAV ── */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:68px;background:rgba(13,23,32,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;padding:8px 4px;cursor:pointer;text-decoration:none;border-radius:12px;transition:background .2s;-webkit-tap-highlight-color:transparent;position:relative}
-.nav-item:hover{background:rgba(255,255,255,.04)}
-.nav-icon{font-size:21px;line-height:1;transition:transform .16s}
-.nav-item:hover .nav-icon{transform:translateY(-2px)}
-.nav-label{font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:800;color:var(--text-muted);letter-spacing:.2px}
-.nav-item.active .nav-label{color:var(--green)}
-.nav-item.active .nav-icon{filter:drop-shadow(0 0 5px var(--green))}
-.nav-item.active::after{content:'';position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--green)}
-
+.gl-sep{text-align:center;color:var(--ink3);font-size:12px;padding:2px 0;letter-spacing:4px}
 
 /* ── FRIENDS TAB ── */
-.friends-header-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.friends-counts{display:flex;gap:20px}
-.fc-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:6px 10px;border-radius:var(--radius-sm);transition:background var(--t)}
-.fc-item:hover{background:var(--card2)}
-.fc-num{font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text)}
-.fc-lbl{font-size:10px;font-weight:700;color:var(--text-muted)}
-.btn-find-friends{display:flex;align-items:center;gap:6px;background:var(--green);border:none;border-radius:999px;padding:9px 16px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:#0f1923;cursor:pointer;transition:all var(--t);white-space:nowrap;box-shadow:0 3px 12px rgba(74,222,128,.25)}
-.btn-find-friends:hover{box-shadow:0 5px 20px rgba(74,222,128,.35);transform:translateY(-1px)}
-.gps-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px}
-.gps-icon{font-size:22px;flex-shrink:0}
+.friends-header{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.social-counts{display:flex;gap:0}
+.sc-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:6px 16px;border-radius:10px;transition:background var(--t)}
+.sc-item:hover{background:var(--card2)}
+.sc-num{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink)}
+.sc-lbl{font-size:10px;font-weight:700;color:var(--ink3)}
+.sc-div{width:1px;background:var(--border);align-self:stretch}
+.btn-find{background:var(--green);border:none;border-radius:999px;padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:#080f0b;cursor:pointer;transition:all var(--t);box-shadow:0 3px 12px rgba(61,219,122,.25);white-space:nowrap}
+.btn-find:hover{background:var(--green2);transform:translateY(-1px)}
+.gps-card{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.gps-icon{font-size:20px;flex-shrink:0}
 .gps-info{flex:1;min-width:0}
-.gps-title{font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--text)}
-.gps-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
-.btn-gps{background:var(--blue);border:none;border-radius:999px;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#06101e;cursor:pointer;transition:all var(--t);flex-shrink:0}
-.btn-gps:hover{opacity:.85;transform:translateY(-1px)}
-.btn-gps:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.friend-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;transition:border-color var(--t)}
-.friend-row:hover{border-color:var(--border2);background:var(--card2)}
-.friend-row.is-me{border-color:rgba(74,222,128,.28);background:rgba(74,222,128,.04)}
-.friend-row.rank-1{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.03)}
-.friend-row.rank-1::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);border-radius:3px 0 0 3px}
-.friend-row.rank-2::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--silver);border-radius:3px 0 0 3px}
-.friend-row.rank-3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bronze);border-radius:3px 0 0 3px}
-.fr-rank{width:28px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;text-align:center;flex-shrink:0;color:var(--text-muted)}
-.fr-rank.g1{color:var(--gold)}.fr-rank.g2{color:var(--silver)}.fr-rank.g3{color:var(--bronze)}
-.friend-row.is-me .fr-rank{color:var(--green)}
-.fr-avatar{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--text-mid);flex-shrink:0}
-.friend-row.is-me .fr-avatar{background:var(--green-muted);border-color:rgba(74,222,128,.3);color:var(--green)}
+.gps-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:1px}
+.gps-sub{font-size:11px;color:var(--ink3)}
+.btn-gps{background:var(--blue);border:none;border-radius:999px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:#06101e;cursor:pointer;transition:all var(--t);flex-shrink:0}
+.btn-gps:hover{opacity:.85}
+.btn-gps:disabled{opacity:.45;cursor:not-allowed}
+.fr-row{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all var(--t);position:relative;overflow:hidden}
+.fr-row:hover{border-color:var(--border2);transform:translateX(2px)}
+.fr-row.is-me{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.04)}
+.fr-row.rank-1::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);border-radius:3px 0 0 3px}
+.fr-row.rank-2::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--silver);border-radius:3px 0 0 3px}
+.fr-row.rank-3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bronze);border-radius:3px 0 0 3px}
+.fr-rank{font-size:14px;width:28px;flex-shrink:0;text-align:center}
+.fr-avatar{width:36px;height:36px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0;font-family:'DM Sans',sans-serif}
+.fr-row.is-me .fr-avatar{background:var(--green-muted);border-color:rgba(74,222,128,.3);color:var(--green)}
 .fr-info{flex:1;min-width:0}
-.fr-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.friend-row.is-me .fr-name{color:var(--green)}
-.fr-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
-.fr-xp{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--text-mid);flex-shrink:0}
-.friend-row.is-me .fr-xp{color:var(--green)}
-.friend-row.rank-1 .fr-xp{color:var(--gold)}
-.friend-row.rank-2 .fr-xp{color:var(--silver)}
-.friend-row.rank-3 .fr-xp{color:var(--bronze)}
-.nearby-badge{display:inline-flex;align-items:center;gap:3px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.2);border-radius:999px;padding:1px 7px;font-size:9px;font-weight:800;color:var(--blue);font-family:'Nunito',sans-serif;margin-left:4px}
+.fr-name{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-row.is-me .fr-name{color:var(--green)}
+.fr-sub{font-size:10px;color:var(--ink3);margin-top:1px}
+.fr-xp{font-size:12px;font-weight:700;color:var(--ink2);flex-shrink:0}
+.fr-row.is-me .fr-xp{color:var(--green)}
+.nearby-badge{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.2);border-radius:999px;padding:1px 6px;font-size:9px;font-weight:700;color:var(--blue);margin-left:4px}
 
 /* ── FIND FRIENDS MODAL ── */
-.ff-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
-.ff-overlay.show{opacity:1;pointer-events:all}
-.ff-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:20px 0 0;flex:1;display:flex;flex-direction:column;margin-top:auto;max-height:90vh;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
-.ff-overlay.show .ff-sheet{transform:translateY(0)}
-.ff-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:0 auto 16px}
-.ff-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 16px;border-bottom:1px solid var(--border)}
-.ff-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--text)}
-.ff-close{background:var(--card);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted)}
-.ff-search{padding:14px 20px;border-bottom:1px solid var(--border)}
-.ff-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:14px;padding:12px 16px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;color:var(--text);outline:none;caret-color:var(--green);transition:border-color .2s}
-.ff-input:focus{border-color:rgba(74,222,128,.5)}
-.ff-input::placeholder{color:var(--text-muted)}
-.ff-list{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px}
-.ff-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color var(--t)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:200;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:0;max-height:90vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.modal-overlay.show .modal-sheet{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:999px;margin:14px auto 0}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--ink)}
+.modal-close{background:var(--card);border:1px solid var(--border);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--ink2);transition:all var(--t)}
+.modal-close:hover{background:var(--card2)}
+.modal-search{padding:12px 16px;border-bottom:1px solid var(--border)}
+.search-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:12px;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);outline:none;caret-color:var(--green);transition:border-color var(--t)}
+.search-input:focus{border-color:rgba(74,222,128,.4)}
+.search-input::placeholder{color:var(--ink3);font-weight:400}
+.modal-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.ff-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color var(--t)}
 .ff-row:hover{border-color:var(--border2)}
-.ff-avatar{width:40px;height:40px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;color:var(--text-mid);flex-shrink:0}
+.ff-avatar{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--ink2);flex-shrink:0;font-family:'DM Sans',sans-serif}
 .ff-info{flex:1;min-width:0}
-.ff-name{font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:var(--text)}
-.ff-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
-.btn-follow{border-radius:999px;padding:7px 16px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;cursor:pointer;transition:all var(--t);border:none;flex-shrink:0}
-.btn-follow.follow{background:var(--green);color:#0f1923;box-shadow:0 2px 10px rgba(74,222,128,.25)}
-.btn-follow.follow:hover{box-shadow:0 4px 16px rgba(74,222,128,.35);transform:translateY(-1px)}
-.btn-follow.following{background:var(--card2);border:1.5px solid var(--border2);color:var(--text-muted)}
+.ff-name{font-size:13px;font-weight:700;color:var(--ink)}
+.ff-meta{font-size:11px;color:var(--ink3);margin-top:1px}
+.btn-follow{border-radius:999px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all var(--t);border:none;flex-shrink:0}
+.btn-follow.follow{background:var(--green);color:#080f0b;box-shadow:0 2px 8px rgba(61,219,122,.2)}
+.btn-follow.follow:hover{background:var(--green2)}
+.btn-follow.following{background:var(--card2);border:1.5px solid var(--border2);color:var(--ink2)}
 .btn-follow.following:hover{border-color:var(--rose);color:var(--rose)}
-.ff-section-lbl{font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;padding:4px 0}
+
+/* ── EMPTY / LOADING / ERROR ── */
+.empty{text-align:center;padding:48px 24px;color:var(--ink2)}
+.empty-emoji{font-size:44px;display:block;margin-bottom:12px}
+.empty-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--ink3);line-height:1.6}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:14px}
+.spinner{width:32px;height:32px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--ink3);font-weight:600}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:rgba(8,15,11,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;padding:8px 4px;cursor:pointer;text-decoration:none;border-radius:12px;transition:background var(--t);-webkit-tap-highlight-color:transparent}
+.nav-item:hover{background:rgba(255,255,255,.04)}
+.nav-icon{font-size:20px;line-height:1}
+.nav-label{font-size:9px;font-weight:700;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase}
+.nav-item.active .nav-label{color:var(--green)}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 4px var(--green))}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:700;color:var(--ink);opacity:0;transition:all .3s;pointer-events:none;z-index:300;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
 <!-- HEADER -->
-<div class="header-outer">
-  <div class="header">
-    <div class="header-title">🏆 Leaderboard</div>
-  </div>
-</div>
+<header class="header">
+  <div class="header-title">🏆 Leaderboard</div>
+</header>
 
-<!-- TAB SWITCHER -->
-<div class="tab-switcher">
-  <button class="tab-btn active" id="tab-weekly" onclick="switchTab('weekly')">
-    <span class="tab-icon">⚔️</span> Weekly
-    <span class="tab-indicator"></span>
-  </button>
-  <button class="tab-btn" id="tab-global" onclick="switchTab('global')">
-    <span class="tab-icon">🌍</span> Global
-    <span class="tab-indicator"></span>
-  </button>
-  <button class="tab-btn" id="tab-friends" onclick="switchTab('friends')">
-    <span class="tab-icon">👥</span> Friends
-    <span class="tab-indicator"></span>
-  </button>
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" id="tab-weekly"  onclick="switchTab('weekly')">
+      <span>⚔️</span> Weekly <div class="tab-dot"></div>
+    </button>
+    <button class="tab" id="tab-global"  onclick="switchTab('global')">
+      <span>🌍</span> Global <div class="tab-dot"></div>
+    </button>
+    <button class="tab" id="tab-friends" onclick="switchTab('friends')">
+      <span>👥</span> Friends <div class="tab-dot"></div>
+    </button>
+  </div>
 </div>
 
 <!-- WEEKLY VIEW -->
 <div class="view active" id="view-weekly">
   <div class="main" id="main-weekly">
-    <div class="loading-wrap">
-      <div class="spinner"></div>
-      <div class="loading-text">Loading rankings…</div>
-    </div>
+    <div class="loading"><div class="spinner"></div><div class="loading-text">Loading league…</div></div>
   </div>
 </div>
 
 <!-- GLOBAL VIEW -->
 <div class="view" id="view-global">
   <div class="main" id="main-global">
-    <div class="loading-wrap">
-      <div class="spinner"></div>
-      <div class="loading-text">Loading global rankings…</div>
-    </div>
+    <div class="loading"><div class="spinner"></div><div class="loading-text">Loading rankings…</div></div>
   </div>
 </div>
 
 <!-- FRIENDS VIEW -->
 <div class="view" id="view-friends">
   <div class="main" id="main-friends">
-    <div class="loading-wrap">
-      <div class="spinner"></div>
-      <div class="loading-text">Loading friends…</div>
-    </div>
+    <div class="loading"><div class="spinner"></div><div class="loading-text">Loading friends…</div></div>
   </div>
 </div>
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <a class="nav-item" href="/app/dashboard.html">
-    <span class="nav-icon">🏠</span>
-    <span class="nav-label">Home</span>
-  </a>
-  <a class="nav-item" href="/app/dashboard.html">
-    <span class="nav-icon">✅</span>
-    <span class="nav-label">Tasks</span>
-  </a>
-  <a class="nav-item active" href="#">
-    <span class="nav-icon">🏆</span>
-    <span class="nav-label">Leaderboard</span>
-  </a>
-  <a class="nav-item" href="/app/profile.html">
-    <span class="nav-icon">👤</span>
-    <span class="nav-label">Profile</span>
-  </a>
+  <a class="nav-item" href="/app/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+  <a class="nav-item" href="/app/practice.html"><span class="nav-icon">⚡</span><span class="nav-label">Practice</span></a>
+  <a class="nav-item active"><span class="nav-icon">🏆</span><span class="nav-label">Ranks</span></a>
+  <a class="nav-item" href="/app/profile.html"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
 </nav>
 
-<script>
-const { createClient } = supabase;
-const supabaseClient = createClient(
-  "https://cuiznbvvlqtwcoocehnd.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w"
-);
+<!-- FIND FRIENDS MODAL -->
+<div class="modal-overlay" id="ff-overlay" onclick="if(event.target===this)closeFindFriends()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">👥 Find Friends</div>
+      <div class="modal-close" onclick="closeFindFriends()">✕</div>
+    </div>
+    <div class="modal-search">
+      <input class="search-input" id="ff-input" type="text" placeholder="Search by username…"
+        autocomplete="off" spellcheck="false"
+        oninput="clearTimeout(_ffTimer);_ffTimer=setTimeout(()=>renderFFResults(this.value),250)"/>
+    </div>
+    <div class="modal-list" id="ff-list"></div>
+  </div>
+</div>
 
-let currentUserId  = null;
-let currentUsername = null;
-let allUsers       = [];
-let weeklyLoaded   = false;
-let globalLoaded   = false;
-let friendsLoaded  = false;
-let activeTab      = 'weekly';
-let followingIds   = new Set();
-let userLat        = null;
-let userLng        = null;
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const sb = window._sb;
+let _uid          = null;
+let _username     = null;
+let _myXP         = 0;
+let allUsers      = [];
+let followingIds  = new Set();
+let activeTab     = 'weekly';
+let globalLoaded  = false;
+let friendsLoaded = false;
+let userLat       = null;
+let userLng       = null;
+let _ffTimer      = null;
+let _ffAll        = [];
+
+function key(n) { return n + '_' + _uid; }
+
+// ── TOAST
+let _toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── NAME
+function displayName(u) {
+  if (_uid && u.user_id === _uid && _username) return _username;
+  if (u.username && u.username !== 'Learner') return u.username;
+  return 'Learner ' + (u.user_id || '??????').slice(0,6).toUpperCase();
+}
+function initials(u) { return displayName(u).slice(0,2).toUpperCase(); }
+
+// ── PROFILE NAV
+function openProfile(userId) {
+  if (!userId) return;
+  if (userId === _uid) { window.location.href = '/app/profile.html'; return; }
+  window.location.href = '/app/public_profile.html?uid=' + encodeURIComponent(userId) + '&from=' + encodeURIComponent('/app/leaderboard.html');
+}
 
 // ── TAB SWITCH
 function switchTab(tab) {
   activeTab = tab;
   ['weekly','global','friends'].forEach(t => {
-    document.getElementById('view-' + t).classList.toggle('active', t === tab);
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('view-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'global'  && !globalLoaded)  renderGlobal();
   if (tab === 'friends' && !friendsLoaded) loadFriends();
 }
 
-// ── HELPERS
-function displayName(u) {
-  // Priority: username from DB → localStorage → email prefix → fallback
-  if (u.username && u.username !== 'Learner') return u.username;
-  if (u.user_id && currentUserId && u.user_id === currentUserId && currentUsername) return currentUsername;
-  if (u.username) return u.username;
-  return "Learner " + (u.user_id || '??????').slice(0,6).toUpperCase();
-}
-function initials(u) { return displayName(u).slice(0,2).toUpperCase(); }
-function medal(r)    { return r===1?"🥇":r===2?"🥈":r===3?"🥉":""; }
-
+// ── LEAGUE
 function getLeague(topXP) {
-  if (topXP >= 500) return { name:"Diamond League", icon:"💎", cls:"diamond-league", color:"#60a5fa" };
-  if (topXP >= 200) return { name:"Gold League",    icon:"🏆", cls:"gold-league",    color:"#fbbf24" };
-  if (topXP >= 100) return { name:"Silver League",  icon:"🥈", cls:"silver-league",  color:"#cbd5e1" };
-  return                   { name:"Bronze League",  icon:"🛡️", cls:"bronze-league",  color:"#fb923c" };
+  if (topXP >= 500) return { name:'Diamond League', icon:'💎', cls:'lb-diamond', color:'var(--blue)' };
+  if (topXP >= 200) return { name:'Gold League',    icon:'🏆', cls:'lb-gold',    color:'var(--gold)' };
+  if (topXP >= 100) return { name:'Silver League',  icon:'🥈', cls:'lb-silver',  color:'var(--silver)' };
+  return                   { name:'Bronze League',  icon:'🛡️', cls:'lb-bronze',  color:'var(--bronze)' };
 }
 
-function getRankMovement(userId, currentRank) {
-  const key  = "lb_rank_" + userId;
-  const prev = localStorage.getItem(key);
-  localStorage.setItem(key, String(currentRank));
-  if (!prev) return { dir:"same", label:"NEW" };
+// ── RANK MOVEMENT
+function getRankMove(userId, currentRank) {
+  const k = 'lb_rank_' + userId;
+  const prev = localStorage.getItem(k);
+  localStorage.setItem(k, String(currentRank));
+  if (!prev) return { dir:'same', label:'NEW' };
   const diff = parseInt(prev) - currentRank;
-  if (diff > 0)  return { dir:"up",   label:"↑" + diff };
-  if (diff < 0)  return { dir:"down", label:"↓" + Math.abs(diff) };
-  return               { dir:"same", label:"—" };
+  if (diff > 0) return { dir:'up',   label:'↑' + diff };
+  if (diff < 0) return { dir:'down', label:'↓' + Math.abs(diff) };
+  return               { dir:'same', label:'—' };
 }
 
-
-// ── OPEN PUBLIC PROFILE
-function openProfile(userId) {
-  if (!userId || userId === currentUserId) return;
-  window.location.href = '/app/public_profile.html?uid=' + encodeURIComponent(userId) + '&from=' + encodeURIComponent(location.pathname);
+// ── TIMER
+function startTimer() {
+  function nextMonday() {
+    const now = new Date(), day = now.getDay();
+    const d = day === 1 ? 7 : (8 - day) % 7 || 7;
+    const next = new Date(now);
+    next.setDate(now.getDate() + d);
+    next.setHours(0,0,0,0);
+    return next;
+  }
+  function fmt(ms) {
+    const t = Math.floor(ms/1000);
+    const d = Math.floor(t/86400), h = Math.floor((t%86400)/3600), m = Math.floor((t%3600)/60), s = t%60;
+    if (d > 0) return d + 'd ' + h + 'h left';
+    if (h > 0) return h + 'h ' + m + 'm left';
+    return m + 'm ' + s + 's left';
+  }
+  function tick() {
+    const el = document.getElementById('timer-val');
+    if (!el) return;
+    const diff = nextMonday() - new Date();
+    el.textContent = diff > 0 ? fmt(diff) : 'Resetting…';
+  }
+  tick();
+  setInterval(tick, 1000);
 }
+
 // ══════════════════════════════════════════
-// WEEKLY LEAGUE VIEW
+// WEEKLY VIEW
 // ══════════════════════════════════════════
 function renderWeekly(users) {
   const main = document.getElementById('main-weekly');
   main.innerHTML = '';
 
   if (!users || users.length === 0) {
-    main.innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🚀</div><div class="empty-title">No players yet</div><div class="empty-sub">Complete a lesson to be first on the leaderboard!</div></div>`;
+    main.innerHTML = '<div class="empty"><span class="empty-emoji">🚀</span><div class="empty-title">No players yet</div><div class="empty-sub">Complete a lesson to join the leaderboard!</div></div>';
     return;
   }
 
-  const total       = users.length;
-  const topXP       = users[0]?.xp || 0;
-  const league      = getLeague(topXP);
+  const total      = users.length;
+  const topXP      = users[0]?.xp || 0;
+  const league     = getLeague(topXP);
   const dangerStart = Math.max(total - 5, 3);
-  const myIdx       = users.findIndex(u => u.user_id === currentUserId);
-  const myRank      = myIdx + 1;
-  const myData      = myIdx >= 0 ? users[myIdx] : null;
+  const myIdx      = users.findIndex(u => u.user_id === _uid);
+  const myRank     = myIdx + 1;
+  const myData     = myIdx >= 0 ? users[myIdx] : null;
 
-  // 1 — LEAGUE BANNER
-  const banner = document.createElement("div");
-  banner.className = "league-banner " + league.cls;
-  banner.innerHTML = `
-    <div class="league-left">
-      <div class="league-label">Current League</div>
-      <div class="league-name" style="color:${league.color}">${league.name}</div>
-      <div class="league-sub">${total} player${total!==1?"s":""} competing this week</div>
-    </div>
-    <div class="league-icon">${league.icon}</div>`;
+  // League banner
+  const banner = document.createElement('div');
+  banner.className = 'league-banner ' + league.cls;
+  banner.style.animation = 'fadeUp .3s ease both';
+  banner.innerHTML =
+    '<div class="league-left">' +
+      '<div class="league-tag">Current League</div>' +
+      '<div class="league-name" style="color:' + league.color + '">' + league.name + '</div>' +
+      '<div class="league-sub">' + total + ' player' + (total!==1?'s':'') + ' competing</div>' +
+    '</div>' +
+    '<div class="league-icon">' + league.icon + '</div>';
   main.appendChild(banner);
 
-  // 2 — WEEKLY TIMER
-  const timerEl = document.createElement("div");
-  timerEl.className = "weekly-timer";
-  timerEl.innerHTML = `
-    <div class="timer-left">
-      <div class="timer-icon">⏳</div>
-      <div>
-        <div class="timer-label">Week Resets In</div>
-        <div class="timer-value" id="timer-val">Loading…</div>
-      </div>
-    </div>
-    <div class="timer-reset">League resets weekly</div>`;
+  // Timer
+  const timerEl = document.createElement('div');
+  timerEl.className = 'timer-card';
+  timerEl.innerHTML =
+    '<div class="timer-left">' +
+      '<div class="timer-icon">⏳</div>' +
+      '<div><div class="timer-label">Resets In</div><div class="timer-val" id="timer-val">…</div></div>' +
+    '</div>' +
+    '<div class="timer-note">League resets every Monday</div>';
   main.appendChild(timerEl);
   startTimer();
 
-  // 3 — YOU CARD
-  if (currentUserId) {
-    const move    = myData ? getRankMovement(currentUserId, myRank) : {dir:"same",label:"—"};
-    const youCard = document.createElement("div");
-    youCard.className = "you-card";
-    youCard.innerHTML = myData ? `
-      <div class="you-rank-box">
-        <div class="you-rank-label">Rank</div>
-        <div class="you-rank-num">#${myRank}</div>
-      </div>
-      <div class="you-info">
-        <div class="you-tag">You</div>
-        <div class="you-name">${displayName(myData)}</div>
-        <div class="you-xp"><span>${myData.xp||0}</span> XP</div>
-      </div>
-      <div class="you-move ${move.dir}">${move.label}</div>` : `
-      <div class="you-rank-box">
-        <div class="you-rank-label">Rank</div>
-        <div class="you-rank-num">—</div>
-      </div>
-      <div class="you-info">
-        <div class="you-tag">You</div>
-        <div class="you-name">${currentUsername || 'You'}</div>
-        <div class="you-xp">Complete a lesson to join!</div>
-      </div>`;
-    main.appendChild(youCard);
+  // You card
+  if (_uid) {
+    const move   = myData ? getRankMove(_uid, myRank) : { dir:'same', label:'—' };
+    const youEl  = document.createElement('div');
+    youEl.className = 'you-card';
+    if (myData) {
+      youEl.innerHTML =
+        '<div class="you-rank-box"><div class="you-rank-label">Rank</div><div class="you-rank-num">#' + myRank + '</div></div>' +
+        '<div class="you-info"><div class="you-tag">You</div><div class="you-name">' + displayName(myData) + '</div><div class="you-xp">⚡ ' + (myData.xp||0) + ' XP</div></div>' +
+        '<div class="you-move ' + move.dir + '">' + move.label + '</div>';
+    } else {
+      youEl.innerHTML =
+        '<div class="you-rank-box"><div class="you-rank-label">Rank</div><div class="you-rank-num">—</div></div>' +
+        '<div class="you-info"><div class="you-tag">You</div><div class="you-name">' + (_username||'You') + '</div><div class="you-xp">Complete a lesson to rank up!</div></div>';
+    }
+    main.appendChild(youEl);
 
-    // NEXT TARGET
+    // Next target
     if (myData && myRank > 1) {
-      const above    = users[myIdx - 1];
-      const xpNeeded = (above.xp||0) - (myData.xp||0) + 1;
-      const tEl      = document.createElement("div");
-      tEl.className  = "next-target";
-      tEl.innerHTML  = `
-        <div class="next-target-icon">🔥</div>
-        <div class="next-target-info">
-          <div class="next-target-label">Next Target</div>
-          <div class="next-target-text">${xpNeeded} XP to reach #${myRank-1}</div>
-          <div class="next-target-sub">Beat ${displayName(above)} · ${above.xp||0} XP</div>
-        </div>
-        <div class="next-target-xp">+${xpNeeded}</div>`;
+      const above = users[myIdx - 1];
+      const need  = (above.xp||0) - (myData.xp||0) + 1;
+      const tEl = document.createElement('div');
+      tEl.className = 'next-target';
+      tEl.innerHTML =
+        '<div class="next-target-icon">🎯</div>' +
+        '<div class="next-target-info">' +
+          '<div class="next-target-label">Next Target</div>' +
+          '<div class="next-target-text">Beat ' + displayName(above) + '</div>' +
+          '<div class="next-target-sub">' + need + ' XP needed · they have ' + (above.xp||0) + ' XP</div>' +
+        '</div>' +
+        '<div class="next-target-xp">+' + need + '</div>';
       main.appendChild(tEl);
     } else if (myData && myRank === 1) {
-      const tEl     = document.createElement("div");
-      tEl.className = "next-target";
-      tEl.innerHTML = `
-        <div class="next-target-icon">👑</div>
-        <div class="next-target-info">
-          <div class="next-target-label">You're #1</div>
-          <div class="next-target-text">Defend your throne!</div>
-          <div class="next-target-sub">Keep earning XP to stay on top</div>
-        </div>`;
+      const tEl = document.createElement('div');
+      tEl.className = 'next-target';
+      tEl.innerHTML = '<div class="next-target-icon">👑</div><div class="next-target-info"><div class="next-target-label">You\'re #1</div><div class="next-target-text">Defend your throne!</div></div>';
       main.appendChild(tEl);
     }
   }
 
-  // 4 — PODIUM (top 3)
+  // Podium (top 3)
   if (total >= 2) {
-    const podium = document.createElement("div");
-    podium.className = "podium-wrap";
+    const podiumEl = document.createElement('div');
+    podiumEl.className = 'podium';
     const slots = total >= 3
-      ? [{u:users[1],r:2,cls:"p2"},{u:users[0],r:1,cls:"p1"},{u:users[2],r:3,cls:"p3"}]
-      : [{u:users[0],r:1,cls:"p1"},{u:users[1],r:2,cls:"p2"}];
+      ? [ {u:users[1],r:2,cls:'p2'}, {u:users[0],r:1,cls:'p1'}, {u:users[2],r:3,cls:'p3'} ]
+      : [ {u:users[0],r:1,cls:'p1'}, {u:users[1],r:2,cls:'p2'} ];
     slots.forEach(s => {
-      const isMe = s.u.user_id === currentUserId;
-      const el   = document.createElement("div");
-      el.className = "podium-slot " + s.cls;
-      el.style.cursor = isMe ? 'default' : 'pointer';
-      if (!isMe) el.onclick = () => openProfile(s.u.user_id);
-      el.innerHTML = `
-        <div class="podium-avatar">${s.r===1?'<div class="podium-crown">👑</div>':''}${initials(s.u)}</div>
-        <div class="podium-name">${displayName(s.u)}${isMe?' 👤':''}</div>
-        <div class="podium-xp">⚡ ${s.u.xp||0}</div>
-        <div class="podium-base">${medal(s.r)}</div>`;
-      podium.appendChild(el);
+      const isMe = s.u.user_id === _uid;
+      const slot = document.createElement('div');
+      slot.className = 'podium-slot ' + s.cls;
+      slot.onclick = () => openProfile(s.u.user_id);
+      const medals = ['','🥇','🥈','🥉'];
+      slot.innerHTML =
+        '<div class="podium-bar"></div>' +
+        '<div class="podium-avatar">' + (s.r===1?'<div class="podium-crown">👑</div>':'') + initials(s.u) + '</div>' +
+        '<div class="podium-name">' + displayName(s.u) + (isMe?' 👤':'') + '</div>' +
+        '<div class="podium-xp">⚡ ' + (s.u.xp||0) + '</div>' +
+        '<div class="podium-base">' + medals[s.r] + '</div>';
+      podiumEl.appendChild(slot);
     });
-    main.appendChild(podium);
+    main.appendChild(podiumEl);
   }
 
-  // 5 — RANKED LIST (rank 4+)
+  // Full ranked list (rank 4+)
   const listStart = Math.min(3, total);
   if (listStart < total) {
-    const h = document.createElement("div");
-    h.className = "section-heading";
-    h.textContent = "All Rankings";
-    main.appendChild(h);
+    const hEl = document.createElement('div');
+    hEl.className = 'section-heading';
+    hEl.textContent = 'All Rankings';
+    main.appendChild(hEl);
 
-    const list = document.createElement("div");
-    list.className = "lb-list";
+    const list = document.createElement('div');
+    list.className = 'lb-list';
 
     for (let i = listStart; i < total; i++) {
-      const u        = users[i];
-      const rank     = i + 1;
-      const isMe     = u.user_id === currentUserId;
+      const u      = users[i];
+      const rank   = i + 1;
+      const isMe   = u.user_id === _uid;
       const isDanger = i >= dangerStart;
-      const xp       = typeof u.xp === "number" ? u.xp : 0;
-      const move     = isMe ? getRankMovement(currentUserId, rank) : null;
+      const move   = isMe ? getRankMove(_uid, rank) : null;
 
       if (i === dangerStart) {
-        const dz = document.createElement("div");
-        dz.className = "section-heading danger-label";
-        dz.innerHTML = `<div class="danger-pulse"></div> Danger Zone — Bottom 5`;
+        const dz = document.createElement('div');
+        dz.className = 'section-heading danger-label';
+        dz.innerHTML = '<div class="danger-dot"></div> Danger Zone — Bottom 5';
         list.appendChild(dz);
       }
 
-      const row = document.createElement("div");
-      row.className = "lb-row" + (isDanger?" danger":"") + (isMe?" is-me":"");
-      if (!isMe) { row.style.cursor = 'pointer'; row.onclick = () => openProfile(u.user_id); }
-      row.innerHTML = `
-        <div class="lb-rank${rank===1?' r1':rank===2?' r2':rank===3?' r3':''}">#${rank}</div>
-        <div class="lb-medal">${isDanger?"⚠️":""}</div>
-        <div class="lb-info">
-          <div class="lb-name">
-            <span class="lb-name-text">${displayName(u)}</span>
-            ${isMe?'<span class="you-badge-inline">YOU</span>':""}
-          </div>
-          <div class="lb-sub">${rank<=10?"⚡ Top 10":"📚 Studying"}${isDanger&&!isMe?" · At risk of demotion":""}</div>
-          ${isDanger&&isMe?'<div class="danger-warning">⚠️ You will be demoted if you stay here!</div>':""}
-        </div>
-        <div class="lb-right">
-          <div class="lb-xp"><span class="xi">⚡</span> ${xp}</div>
-          ${move?`<div class="lb-move ${move.dir}">${move.label}</div>`:""}
-        </div>`;
+      const row = document.createElement('div');
+      row.className = 'lb-row' + (isDanger?' danger':'') + (isMe?' is-me':'');
+      row.onclick = () => openProfile(u.user_id);
+
+      const rankCls = rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+      row.innerHTML =
+        '<div class="lb-rank ' + rankCls + '">#' + rank + '</div>' +
+        '<div class="lb-avatar">' + initials(u) + '</div>' +
+        '<div class="lb-info">' +
+          '<div class="lb-name">' + displayName(u) + (isMe?'<span class="you-badge">YOU</span>':'') + '</div>' +
+          '<div class="lb-sub">' + (rank<=10?'⚡ Top 10':'📚 Studying') + (isDanger&&!isMe?' · Danger zone':'') + '</div>' +
+          (isDanger&&isMe?'<div class="danger-warn">⚠️ At risk of demotion!</div>':'') +
+        '</div>' +
+        '<div class="lb-right">' +
+          '<div class="lb-xp">⚡ ' + (u.xp||0) + '</div>' +
+          (move?'<div class="lb-move ' + move.dir + '">' + move.label + '</div>':'') +
+        '</div>';
       list.appendChild(row);
     }
     main.appendChild(list);
   }
 
-  if (currentUserId && !myData) {
-    const nr = document.createElement("div");
-    nr.className = "not-ranked";
-    nr.innerHTML = `You're not ranked yet — <strong>complete a lesson</strong> to claim your spot! 💪`;
+  if (_uid && !myData) {
+    const nr = document.createElement('div');
+    nr.style.cssText = 'text-align:center;padding:14px;font-size:13px;color:var(--ink2);background:var(--card);border-radius:12px;border:1px solid var(--border)';
+    nr.innerHTML = 'Complete a lesson to claim your spot! 💪';
     main.appendChild(nr);
   }
 }
 
 // ══════════════════════════════════════════
-// GLOBAL RANK VIEW
+// GLOBAL VIEW
 // ══════════════════════════════════════════
 function renderGlobal() {
   globalLoaded = true;
@@ -614,503 +598,328 @@ function renderGlobal() {
 
   const users = allUsers;
   if (!users || users.length === 0) {
-    main.innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🌍</div><div class="empty-title">No global data yet</div><div class="empty-sub">Complete a lesson to appear on the global leaderboard!</div></div>`;
+    main.innerHTML = '<div class="empty"><span class="empty-emoji">🌍</span><div class="empty-title">No global data</div><div class="empty-sub">Be the first on the global leaderboard!</div></div>';
     return;
   }
 
-  const myIdx  = users.findIndex(u => u.user_id === currentUserId);
+  const myIdx  = users.findIndex(u => u.user_id === _uid);
   const myRank = myIdx + 1;
-  const myData = myIdx >= 0 ? users[myIdx] : null;
   const total  = users.length;
 
-  // STATS BAR
-  const statsBar = document.createElement("div");
-  statsBar.className = "global-stats-bar";
-  statsBar.innerHTML = `
-    <div class="gsb-item"><div class="gsb-val">${total}</div><div class="gsb-label">Total Players</div></div>
-    <div style="width:1px;height:32px;background:var(--border)"></div>
-    <div class="gsb-item"><div class="gsb-val" style="color:var(--green)">${myRank > 0 ? '#'+myRank : '—'}</div><div class="gsb-label">Your Rank</div></div>
-    <div style="width:1px;height:32px;background:var(--border)"></div>
-    <div class="gsb-item"><div class="gsb-val" style="color:var(--gold)">${users[0]?.xp||0}</div><div class="gsb-label">Top XP</div></div>`;
-  main.appendChild(statsBar);
+  // Stats bar
+  const stats = document.createElement('div');
+  stats.className = 'global-stats';
+  stats.innerHTML =
+    '<div class="gs-item"><div class="gs-val">' + total + '</div><div class="gs-lbl">Players</div></div>' +
+    '<div class="gs-divider"></div>' +
+    '<div class="gs-item"><div class="gs-val" style="color:var(--green)">' + (myRank>0?'#'+myRank:'—') + '</div><div class="gs-lbl">Your Rank</div></div>' +
+    '<div class="gs-divider"></div>' +
+    '<div class="gs-item"><div class="gs-val" style="color:var(--gold)">' + (users[0]?.xp||0) + '</div><div class="gs-lbl">Top XP</div></div>';
+  main.appendChild(stats);
 
-  // YOUR POSITION CARD (always visible)
-  if (currentUserId) {
-    const youCard = document.createElement("div");
-    youCard.className = "global-you-card";
-    youCard.innerHTML = myData ? `
-      <div class="global-rank-badge">
-        <div class="global-rank-lbl">Rank</div>
-        <div class="global-rank-num">#${myRank}</div>
-      </div>
-      <div class="global-info">
-        <div class="global-you-tag">Your Position</div>
-        <div class="global-name">${displayName(myData)}</div>
-        <div class="global-xp"><span>${myData.xp||0}</span> XP · Top ${Math.round((myRank/total)*100)}% of learners</div>
-      </div>` : `
-      <div class="global-rank-badge">
-        <div class="global-rank-lbl">Rank</div>
-        <div class="global-rank-num">—</div>
-      </div>
-      <div class="global-info">
-        <div class="global-you-tag">Your Position</div>
-        <div class="global-name">Not ranked yet</div>
-        <div class="global-xp">Complete a lesson to appear globally!</div>
-      </div>`;
-    main.appendChild(youCard);
-  }
+  const lbl = document.createElement('div');
+  lbl.className = 'section-heading';
+  lbl.textContent = 'All ' + total + ' Learners';
+  main.appendChild(lbl);
 
-  // FULL SCROLLABLE LIST — everyone, with YOU highlighted wherever they are
-  const listLabel = document.createElement("div");
-  listLabel.className = "section-heading";
-  listLabel.textContent = "All " + total + " Learners";
-  main.appendChild(listLabel);
+  const list = document.createElement('div');
+  list.className = 'gl-list';
 
-  const list = document.createElement("div");
-  list.className = "global-list";
-
-  // Show top 3 first, then separator if user is far down, then context around user
-  // Actually show ALL users in a compact scrollable list
   users.forEach((u, i) => {
     const rank = i + 1;
-    const isMe = u.user_id === currentUserId;
-    const xp   = typeof u.xp === "number" ? u.xp : 0;
+    const isMe = u.user_id === _uid;
 
-    // Add separator dots before user's position if they're far down
-    if (isMe && myRank > 6 && i === myIdx) {
-      const sep = document.createElement("div");
-      sep.className = "gl-sep";
-      sep.textContent = "· · ·";
-      list.appendChild(sep);
-    }
-
-    // Skip middle rows that aren't near the top 3 or near the user
-    // Show: top 5 always, 2 above+below user, and last 2
-    const showAlways = rank <= 5 || i >= total-2 || Math.abs(i - myIdx) <= 2 || myIdx < 0;
+    // Show top 5, user's context (+/-2), and last 2
+    const showAlways = rank <= 5 || i >= total-2 || (myIdx >= 0 && Math.abs(i - myIdx) <= 2);
     if (!showAlways) {
-      // Still add separator if this is the gap point
       if (rank === 6 && myIdx > 7) {
-        const sep = document.createElement("div");
-        sep.className = "gl-sep";
-        sep.textContent = "· · · · ·";
+        const sep = document.createElement('div');
+        sep.className = 'gl-sep';
+        sep.textContent = '· · ·';
         list.appendChild(sep);
       }
       return;
     }
 
-    const row = document.createElement("div");
-    let rc = "gl-row";
-    if (rank===1) rc += " rank-1";
-    else if (rank===2) rc += " rank-2";
-    else if (rank===3) rc += " rank-3";
-    if (isMe) rc += " is-me";
+    const row = document.createElement('div');
+    let rc = 'gl-row';
+    if (rank===1) rc+=' rank-1'; else if (rank===2) rc+=' rank-2'; else if (rank===3) rc+=' rank-3';
+    if (isMe) rc+=' is-me';
     row.className = rc;
+    row.onclick = () => openProfile(u.user_id);
 
-    const numCls = rank===1?"g1":rank===2?"g2":rank===3?"g3":"";
-    const rankIcon = rank<=3 ? medal(rank) : "#"+rank;
+    const numCls = rank===1?'g1':rank===2?'g2':rank===3?'g3':'';
+    const rankTxt = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+    const sub = rank===1?'👑 Champion':rank<=3?'🔥 Top 3':rank<=10?'⚡ Top 10':'📚 Studying';
 
-    if (!isMe) { row.style.cursor = 'pointer'; row.onclick = () => openProfile(u.user_id); }
-    row.innerHTML = `
-      <div class="gl-num ${numCls}">${rank<=3?medal(rank):"#"+rank}</div>
-      <div class="gl-avatar">${displayName(u).slice(0,2).toUpperCase()}</div>
-      <div class="gl-info">
-        <div class="gl-name">${displayName(u)}${isMe?' 👤':''}</div>
-        <div class="gl-sub">${rank===1?'👑 Champion':rank<=3?'🔥 Top 3':rank<=10?'⚡ Top 10':'📚 Studying'}</div>
-      </div>
-      <div class="gl-xp"><span style="font-size:10px">⚡</span> ${xp}</div>`;
+    row.innerHTML =
+      '<div class="gl-num ' + numCls + '">' + rankTxt + '</div>' +
+      '<div class="gl-avatar">' + displayName(u).slice(0,2).toUpperCase() + '</div>' +
+      '<div class="gl-info"><div class="gl-name">' + displayName(u) + (isMe?' 👤':'') + '</div><div class="gl-sub">' + sub + '</div></div>' +
+      '<div class="gl-xp">⚡ ' + (u.xp||0) + '</div>';
     list.appendChild(row);
   });
-
   main.appendChild(list);
 }
 
-// ── TIMER
-function startTimer() {
-  function getNextMonday() {
-    const now = new Date();
-    const day = now.getDay();
-    const daysUntil = day === 1 ? 7 : (8 - day) % 7 || 7;
-    const next = new Date(now);
-    next.setDate(now.getDate() + daysUntil);
-    next.setHours(0,0,0,0);
-    return next;
-  }
-  function fmt(ms) {
-    const t = Math.floor(ms/1000);
-    const d = Math.floor(t/86400), h = Math.floor((t%86400)/3600), m = Math.floor((t%3600)/60), s = t%60;
-    if (d>0) return d+"d "+h+"h left";
-    if (h>0) return h+"h "+m+"m left";
-    return m+"m "+s+"s left";
-  }
-  function tick() {
-    const el = document.getElementById("timer-val");
-    if (!el) return;
-    const diff = getNextMonday() - new Date();
-    el.textContent = diff > 0 ? fmt(diff) : "Resetting…";
-  }
-  tick();
-  setInterval(tick, 1000);
-}
-
-
 // ══════════════════════════════════════════
-// FRIENDS LEADERBOARD VIEW
+// FRIENDS VIEW
 // ══════════════════════════════════════════
 async function loadFriends() {
   friendsLoaded = true;
   const main = document.getElementById('main-friends');
-  main.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Loading friends…</div></div>';
+  main.innerHTML = '<div class="loading"><div class="spinner"></div><div class="loading-text">Loading friends…</div></div>';
 
-  if (!currentUserId) {
-    main.innerHTML = '<div class="empty-wrap"><div class="empty-emoji">🔒</div><div class="empty-title">Not logged in</div><div class="empty-sub">Sign in to see your friends leaderboard.</div></div>';
+  if (!_uid) {
+    main.innerHTML = '<div class="empty"><span class="empty-emoji">🔒</span><div class="empty-title">Not logged in</div></div>';
     return;
   }
 
   try {
-    // Fetch who current user follows
-    const { data: followingData } = await supabaseClient
-      .from('follows')
-      .select('following_id')
-      .eq('follower_id', currentUserId);
-    followingIds = new Set((followingData || []).map(f => f.following_id));
+    const [{ data: follData }, { count: followerCount }, { count: followingCount }] = await Promise.all([
+      sb.from('follows').select('following_id').eq('follower_id', _uid),
+      sb.from('follows').select('*', { count:'exact', head:true }).eq('following_id', _uid),
+      sb.from('follows').select('*', { count:'exact', head:true }).eq('follower_id', _uid),
+    ]);
 
-    // Fetch follower count and following count for display
-    const { count: followerCount } = await supabaseClient
-      .from('follows').select('*', { count:'exact', head:true })
-      .eq('following_id', currentUserId);
-    const { count: followingCount } = await supabaseClient
-      .from('follows').select('*', { count:'exact', head:true })
-      .eq('follower_id', currentUserId);
+    followingIds = new Set((follData||[]).map(f => f.following_id));
 
-    // Get leaderboard data for friends + self
-    const friendIds = [...followingIds, currentUserId];
-    const { data: friendsData } = await supabaseClient
-      .from('leaderboard')
-      .select('user_id, xp, username, lat, lng')
-      .in('user_id', friendIds)
-      .order('xp', { ascending: false });
+    // Leaderboard for friends + self
+    const ids = [...followingIds, _uid];
+    const { data: frData } = await sb.from('leaderboard')
+      .select('user_id,xp,username,lat,lng')
+      .in('user_id', ids)
+      .order('xp', { ascending:false });
 
     main.innerHTML = '';
 
-    // ── SOCIAL HEADER
+    // Header
     const header = document.createElement('div');
-    header.className = 'friends-header-card';
-    header.innerHTML = `
-      <div class="friends-counts">
-        <div class="fc-item" onclick="openFindFriends()">
-          <div class="fc-num">${followingCount || 0}</div>
-          <div class="fc-lbl">Following</div>
-        </div>
-        <div style="width:1px;background:var(--border);align-self:stretch"></div>
-        <div class="fc-item" onclick="openFindFriends()">
-          <div class="fc-num">${followerCount || 0}</div>
-          <div class="fc-lbl">Followers</div>
-        </div>
-      </div>
-      <button class="btn-find-friends" onclick="openFindFriends()">
-        👥 Find Friends
-      </button>`;
+    header.className = 'friends-header';
+    header.innerHTML =
+      '<div class="social-counts">' +
+        '<div class="sc-item" onclick="openFindFriends()"><div class="sc-num">' + (followingCount||0) + '</div><div class="sc-lbl">Following</div></div>' +
+        '<div class="sc-div"></div>' +
+        '<div class="sc-item" onclick="openFindFriends()"><div class="sc-num">' + (followerCount||0) + '</div><div class="sc-lbl">Followers</div></div>' +
+      '</div>' +
+      '<button class="btn-find" onclick="openFindFriends()">👥 Find Friends</button>';
     main.appendChild(header);
 
-    // ── GPS CARD
-    const gpsCard = document.createElement('div');
-    gpsCard.className = 'gps-card';
-    gpsCard.innerHTML = `
-      <div class="gps-icon">📍</div>
-      <div class="gps-info">
-        <div class="gps-title">Find nearby learners</div>
-        <div class="gps-sub" id="gps-status">${userLat ? 'Location active — showing nearby users' : 'Enable location to find people near you'}</div>
-      </div>
-      <button class="btn-gps" id="btn-gps" onclick="requestGPS()" ${userLat ? 'disabled' : ''}>
-        ${userLat ? '✅ On' : 'Enable'}
-      </button>`;
-    main.appendChild(gpsCard);
+    // GPS card
+    const gps = document.createElement('div');
+    gps.className = 'gps-card';
+    gps.innerHTML =
+      '<div class="gps-icon">📍</div>' +
+      '<div class="gps-info"><div class="gps-title">Find nearby learners</div><div class="gps-sub" id="gps-sub">' + (userLat?'Location active':'Enable location to find people near you') + '</div></div>' +
+      '<button class="btn-gps" id="btn-gps" onclick="requestGPS()" ' + (userLat?'disabled':'') + '>' + (userLat?'✅ On':'Enable') + '</button>';
+    main.appendChild(gps);
 
-    // ── FRIENDS LEADERBOARD
-    if (!friendsData || friendsData.length === 0) {
+    if (!frData || frData.length === 0) {
       const empty = document.createElement('div');
-      empty.className = 'empty-wrap';
-      empty.innerHTML = `<div class="empty-emoji">👥</div><div class="empty-title">No friends yet</div><div class="empty-sub">Tap "Find Friends" to follow other learners and see how you compare!</div>`;
+      empty.className = 'empty';
+      empty.innerHTML = '<span class="empty-emoji">👥</span><div class="empty-title">No friends yet</div><div class="empty-sub">Tap "Find Friends" to follow other learners!</div>';
       main.appendChild(empty);
       return;
     }
 
     const lbl = document.createElement('div');
     lbl.className = 'section-heading';
-    lbl.textContent = 'Friends Leaderboard · ' + friendsData.length + ' players';
+    lbl.textContent = 'Friends Leaderboard · ' + frData.length;
     main.appendChild(lbl);
 
     const list = document.createElement('div');
     list.className = 'lb-list';
-
-    friendsData.forEach((u, i) => {
+    frData.forEach((u, i) => {
       const rank  = i + 1;
-      const isMe  = u.user_id === currentUserId;
-      const xp    = u.xp || 0;
+      const isMe  = u.user_id === _uid;
       const name  = displayName(u);
-      const isNearby = userLat && u.lat && u.lng && getDistKm(userLat, userLng, u.lat, u.lng) < 10;
+      const isNear = userLat && u.lat && u.lng && distKm(userLat,userLng,u.lat,u.lng) < 10;
 
       const row = document.createElement('div');
-      let rc = 'friend-row';
-      if (rank===1) rc += ' rank-1';
-      else if (rank===2) rc += ' rank-2';
-      else if (rank===3) rc += ' rank-3';
-      if (isMe) rc += ' is-me';
+      let rc = 'fr-row';
+      if (rank===1) rc+=' rank-1'; else if (rank===2) rc+=' rank-2'; else if (rank===3) rc+=' rank-3';
+      if (isMe) rc+=' is-me';
       row.className = rc;
+      row.onclick = () => openProfile(u.user_id);
 
-      const rankCls = rank===1?'g1':rank===2?'g2':rank===3?'g3':'';
-      const rankTxt = rank<=3 ? ['🥇','🥈','🥉'][rank-1] : '#'+rank;
-
-      if (!isMe) { row.style.cursor = 'pointer'; row.onclick = () => openProfile(u.user_id); }
-      row.innerHTML = `
-        <div class="fr-rank ${rankCls}">${rankTxt}</div>
-        <div class="fr-avatar">${name.slice(0,2).toUpperCase()}</div>
-        <div class="fr-info">
-          <div class="fr-name">
-            ${name}${isMe?' 👤':''}
-            ${isNearby?'<span class="nearby-badge">📍 Nearby</span>':''}
-          </div>
-          <div class="fr-sub">${rank===1?'👑 Champion':rank<=3?'🔥 Top 3':'📚 Studying'}${isMe?' · You':''}</div>
-        </div>
-        <div class="fr-xp">⚡ ${xp}</div>`;
+      const medals = ['','🥇','🥈','🥉'];
+      row.innerHTML =
+        '<div class="fr-rank">' + (rank<=3?medals[rank]:'#'+rank) + '</div>' +
+        '<div class="fr-avatar">' + name.slice(0,2).toUpperCase() + '</div>' +
+        '<div class="fr-info">' +
+          '<div class="fr-name">' + name + (isMe?' 👤':'') + (isNear?'<span class="nearby-badge">📍 Nearby</span>':'') + '</div>' +
+          '<div class="fr-sub">' + (rank===1?'👑 Champion':rank<=3?'🔥 Top 3':'📚 Studying') + (isMe?' · You':'') + '</div>' +
+        '</div>' +
+        '<div class="fr-xp">⚡ ' + (u.xp||0) + '</div>';
       list.appendChild(row);
     });
     main.appendChild(list);
 
   } catch(e) {
-    console.error('Friends load error:', e);
-    main.innerHTML = '<div class="error-wrap">Could not load friends. Try again.</div>';
+    console.error('Friends error:', e);
+    document.getElementById('main-friends').innerHTML = '<div class="empty"><span class="empty-emoji">⚠️</span><div class="empty-title">Could not load</div><div class="empty-sub">Check your connection and try again.</div></div>';
   }
 }
 
-// ── DISTANCE HELPER (haversine)
-function getDistKm(lat1, lng1, lat2, lng2) {
-  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+// ── GPS
+function distKm(lat1,lng1,lat2,lng2) {
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// ── GPS REQUEST
-async function requestGPS() {
+function requestGPS() {
   const btn = document.getElementById('btn-gps');
-  const status = document.getElementById('gps-status');
-  if (btn) { btn.textContent = 'Locating…'; btn.disabled = true; }
-
+  const sub = document.getElementById('gps-sub');
+  if (btn) { btn.textContent='Locating…'; btn.disabled=true; }
   if (!navigator.geolocation) {
-    if (status) status.textContent = 'GPS not supported on this device';
-    if (btn) { btn.textContent = 'Not supported'; btn.disabled = true; }
+    if (sub) sub.textContent = 'GPS not supported on this device';
+    if (btn) { btn.textContent='N/A'; }
     return;
   }
-
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
-      if (status) status.textContent = 'Location active — showing nearby users';
-      if (btn) { btn.textContent = '✅ On'; btn.disabled = true; }
-      // Save lat/lng to leaderboard so others can find us
-      if (currentUserId) {
-        try {
-          await supabaseClient.from('leaderboard')
-            .update({ lat: userLat, lng: userLng })
-            .eq('user_id', currentUserId);
-        } catch(e) {}
-      }
-      // Reload friends view with location data
-      friendsLoaded = false;
-      loadFriends();
-    },
-    (err) => {
-      if (status) status.textContent = 'Location denied — check browser settings';
-      if (btn) { btn.textContent = 'Denied'; btn.disabled = false; }
-    },
-    { timeout: 8000, maximumAge: 60000 }
-  );
+  navigator.geolocation.getCurrentPosition(async pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+    if (sub) sub.textContent = 'Location active — showing nearby users';
+    if (btn) { btn.textContent='✅ On'; }
+    try {
+      await sb.from('leaderboard').update({ lat:userLat, lng:userLng }).eq('user_id', _uid);
+    } catch(e) {}
+    friendsLoaded = false;
+    loadFriends();
+  }, () => {
+    if (sub) sub.textContent = 'Location denied';
+    if (btn) { btn.textContent='Denied'; btn.disabled=false; }
+  }, { timeout:8000 });
 }
 
 // ══════════════════════════════════════════
 // FIND FRIENDS MODAL
 // ══════════════════════════════════════════
-let ffSearchTimer = null;
-let allUsersForSearch = [];
+async function openFindFriends() {
+  document.getElementById('ff-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('ff-input')?.focus(), 350);
 
-function openFindFriends() {
-  const overlay = document.getElementById('ff-overlay');
-  if (overlay) {
-    overlay.classList.add('show');
-    setTimeout(() => document.getElementById('ff-search-input')?.focus(), 350);
-    renderFFList('');
+  if (_ffAll.length === 0) {
+    try {
+      const { data } = await sb.from('leaderboard').select('user_id,username,xp').order('xp',{ascending:false});
+      _ffAll = (data||[]).filter(u => u.user_id !== _uid);
+      const { data: foll } = await sb.from('follows').select('following_id').eq('follower_id', _uid);
+      followingIds = new Set((foll||[]).map(f => f.following_id));
+    } catch(e) {}
   }
+  renderFFResults('');
 }
 
 function closeFindFriends() {
-  document.getElementById('ff-overlay')?.classList.remove('show');
+  document.getElementById('ff-overlay').classList.remove('show');
 }
 
-function renderFFList(query) {
-  const list = document.getElementById('ff-results');
+function renderFFResults(query) {
+  const list = document.getElementById('ff-list');
   if (!list) return;
   list.innerHTML = '';
-
   const q = query.toLowerCase().trim();
+  const results = q
+    ? _ffAll.filter(u => (u.username||'').toLowerCase().includes(q))
+    : _ffAll.slice(0, 20);
 
-  // Nearby section (if GPS enabled)
-  let nearby = [];
-  if (userLat) {
-    nearby = allUsersForSearch
-      .filter(u => u.user_id !== currentUserId && u.lat && u.lng && getDistKm(userLat, userLng, u.lat, u.lng) < 10)
-      .sort((a,b) => getDistKm(userLat, userLng, a.lat, a.lng) - getDistKm(userLat, userLng, b.lat, b.lng))
-      .slice(0, 5);
-  }
-
-  // Search results
-  let results = q
-    ? allUsersForSearch.filter(u => u.user_id !== currentUserId && displayName(u).toLowerCase().includes(q))
-    : allUsersForSearch.filter(u => u.user_id !== currentUserId).slice(0, 15);
-
-  if (!q && nearby.length > 0) {
-    const lbl = document.createElement('div');
-    lbl.className = 'ff-section-lbl';
-    lbl.textContent = '📍 Near You';
-    list.appendChild(lbl);
-    nearby.forEach(u => list.appendChild(makeFFRow(u)));
-
-    const lbl2 = document.createElement('div');
-    lbl2.className = 'ff-section-lbl';
-    lbl2.style.marginTop = '8px';
-    lbl2.textContent = '🌍 All Learners';
-    list.appendChild(lbl2);
-  }
-
-  if (results.length === 0 && q) {
-    list.innerHTML += '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;font-weight:700">No users found for "' + query + '"</div>';
+  if (results.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:28px;color:var(--ink3);font-size:13px">No users found</div>';
     return;
   }
 
-  results.forEach(u => list.appendChild(makeFFRow(u)));
-}
+  results.forEach(u => {
+    const isFollowing = followingIds.has(u.user_id);
+    const name = displayName(u);
+    const row = document.createElement('div');
+    row.className = 'ff-row';
+    row.onclick = e => { if (!e.target.classList.contains('btn-follow')) openProfile(u.user_id); };
 
-function makeFFRow(u) {
-  const isFollowing = followingIds.has(u.user_id);
-  const name = displayName(u);
-  const dist = userLat && u.lat && u.lng ? getDistKm(userLat, userLng, u.lat, u.lng) : null;
+    const avatar = document.createElement('div');
+    avatar.className = 'ff-avatar';
+    avatar.textContent = name.slice(0,2).toUpperCase();
 
-  const row = document.createElement('div');
-  row.className = 'ff-row';
-  row.style.cursor = 'pointer';
-  row.onclick = (e) => { if (!e.target.classList.contains('btn-follow')) openProfile(u.user_id); };
-  row.innerHTML = `
-    <div class="ff-avatar">${name.slice(0,2).toUpperCase()}</div>
-    <div class="ff-info">
-      <div class="ff-name">${name}</div>
-      <div class="ff-meta">⚡ ${u.xp||0} XP${dist !== null ? ' · 📍 ' + (dist < 1 ? '<1' : Math.round(dist)) + ' km away' : ''}</div>
-    </div>
-    <button class="btn-follow ${isFollowing?'following':'follow'}"
-      onclick="toggleFollow('${u.user_id}', this)">${isFollowing ? 'Following' : 'Follow'}</button>`;
-  return row;
+    const info = document.createElement('div');
+    info.className = 'ff-info';
+    info.innerHTML = '<div class="ff-name">' + name + '</div><div class="ff-meta">⚡ ' + (u.xp||0) + ' XP</div>';
+
+    const followBtn = document.createElement('button');
+    followBtn.className = 'btn-follow ' + (isFollowing?'following':'follow');
+    followBtn.textContent = isFollowing ? 'Following' : 'Follow';
+    followBtn.addEventListener('click', function() { toggleFollow(u.user_id, this); });
+
+    row.appendChild(avatar);
+    row.appendChild(info);
+    row.appendChild(followBtn);
+    list.appendChild(row);
+  });
 }
 
 async function toggleFollow(targetId, btn) {
-  if (!currentUserId) return;
+  if (!_uid) return;
   const isFollowing = followingIds.has(targetId);
   btn.disabled = true;
-
   try {
     if (isFollowing) {
-      await supabaseClient.from('follows')
-        .delete()
-        .eq('follower_id', currentUserId)
-        .eq('following_id', targetId);
+      await sb.from('follows').delete().eq('follower_id',_uid).eq('following_id',targetId);
       followingIds.delete(targetId);
-      btn.textContent = 'Follow';
-      btn.className = 'btn-follow follow';
+      btn.textContent = 'Follow'; btn.className = 'btn-follow follow';
+      showToast('Unfollowed');
     } else {
-      await supabaseClient.from('follows')
-        .insert({ follower_id: currentUserId, following_id: targetId });
+      await sb.from('follows').insert({ follower_id:_uid, following_id:targetId });
       followingIds.add(targetId);
-      btn.textContent = 'Following';
-      btn.className = 'btn-follow following';
+      btn.textContent = 'Following'; btn.className = 'btn-follow following';
+      showToast('✅ Following!');
     }
-  } catch(e) {
-    console.error('Follow error:', e);
-  }
+    friendsLoaded = false;
+  } catch(e) { showToast('Error — try again'); }
   btn.disabled = false;
-  // Refresh friends tab next time
-  friendsLoaded = false;
 }
 
-// ── LOAD
-async function loadAll() {
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function init() {
   try {
-    const { data: authData } = await supabaseClient.auth.getSession();
-    const authUser = authData?.session?.user;
-    if (authUser?.id) {
-      currentUserId = authUser.id;
-      // Get username from localStorage first (fastest), fallback to metadata
-      currentUsername = localStorage.getItem('username_' + currentUserId)
-        || authUser.user_metadata?.full_name
-        || authUser.user_metadata?.name
-        || authUser.email?.split('@')[0]
+    const { data } = await sb.auth.getSession();
+    const user = data?.session?.user;
+    if (user) {
+      _uid = user.id;
+      _username = localStorage.getItem('username_' + _uid)
+        || user.user_metadata?.full_name
+        || user.email?.split('@')[0]
         || null;
+      _myXP = Number(localStorage.getItem('xp_' + _uid) || 0);
     }
-  } catch(e) { console.warn("Auth error:", e); }
+  } catch(e) { console.warn('Auth:', e); }
 
   try {
-    const { data, error } = await supabaseClient
-      .from("leaderboard")
-      .select("user_id, xp, username")
-      .order("xp", { ascending: false });
+    const { data, error } = await sb.from('leaderboard')
+      .select('user_id,xp,username')
+      .order('xp', { ascending:false });
 
-    document.getElementById('main-weekly').innerHTML = '';
-    document.getElementById('main-global').innerHTML = '';
-
-    if (error) {
-      document.getElementById('main-weekly').innerHTML = `<div class="error-wrap">Error: ${error.message}</div>`;
-      return;
-    }
-    if (!data || data.length === 0) {
-      document.getElementById('main-weekly').innerHTML = `<div class="empty-wrap"><div class="empty-emoji">🚀</div><div class="empty-title">No players yet</div><div class="empty-sub">Be the first to complete a lesson!</div></div>`;
+    if (error || !data) {
+      document.getElementById('main-weekly').innerHTML = '<div class="empty"><span class="empty-emoji">⚠️</span><div class="empty-title">Could not load</div><div class="empty-sub">Check your connection.</div></div>';
       return;
     }
 
     allUsers = data;
-    allUsersForSearch = data;
-    weeklyLoaded = true;
 
-    // If current user has a stored username but leaderboard row has 'Learner' or null,
-    // patch it for display without waiting for a network call
-    if (currentUserId && currentUsername) {
-      const me = allUsers.find(u => u.user_id === currentUserId);
-      if (me && (!me.username || me.username === 'Learner')) {
-        me.username = currentUsername;
-      }
+    // Patch current user's name locally if leaderboard has stale value
+    if (_uid && _username) {
+      const me = allUsers.find(u => u.user_id === _uid);
+      if (me && (!me.username || me.username === 'Learner')) me.username = _username;
     }
 
     renderWeekly(allUsers);
 
   } catch(e) {
-    document.getElementById('main-weekly').innerHTML = `<div class="error-wrap">Error: ${e.message}</div>`;
+    document.getElementById('main-weekly').innerHTML = '<div class="empty"><span class="empty-emoji">⚠️</span><div class="empty-title">Error loading</div><div class="empty-sub">' + e.message + '</div></div>';
   }
 }
 
-loadAll();
+init();
 </script>
-
-<!-- FIND FRIENDS MODAL -->
-<div class="ff-overlay" id="ff-overlay" onclick="if(event.target===this)closeFindFriends()">
-  <div class="ff-sheet">
-    <div class="ff-handle"></div>
-    <div class="ff-header">
-      <div class="ff-title">👥 Find Friends</div>
-      <div class="ff-close" onclick="closeFindFriends()">✕</div>
-    </div>
-    <div class="ff-search">
-      <input class="ff-input" id="ff-search-input" type="text" placeholder="Search by username…" autocomplete="off" spellcheck="false"
-        oninput="clearTimeout(ffSearchTimer);ffSearchTimer=setTimeout(()=>renderFFList(this.value),250)"/>
-    </div>
-    <div class="ff-list" id="ff-results"></div>
-  </div>
-</div>
-
 </body>
 </html>
