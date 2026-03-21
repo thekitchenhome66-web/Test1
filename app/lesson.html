@@ -6294,53 +6294,92 @@ function buildSteps(plan) {
   const allWords = HSK[levelNum]?.words || [];
   let s = [];
 
-  if (plan.isCheckpoint) {
-    return buildCheckpointSteps(plan);
-  }
+  if (plan.isCheckpoint) return buildCheckpointSteps(plan);
+  if (plan.isSpeed)      return buildSpeedSteps(plan);
 
-  if (plan.isSpeed) {
-    return buildSpeedSteps(plan);
-  }
+  const nw  = newWords;
+  const rw  = reviewWords.length > 0 ? reviewWords : allWords.slice(0, Math.min(5, allWords.length));
+  const all5 = [...nw, ...pick(rw, Math.max(0, 5 - nw.length))].filter(Boolean);
 
+  // ── BLOCK 0: INTRODUCTION ───────────────────────────────────────────────
   if (posInBlock === 0) {
-    // LESSON 1: Introduction — word cards + grammar + basic MCQ
-    newWords.forEach(w => s.push({ type:'word_card', word: w }));
+    nw.forEach(w => s.push({ type:'word_card', word: w }));
     if (grammarItem) s.push({ type:'grammar', grammar: grammarItem });
-    newWords.forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
-    newWords.slice(0,2).forEach(w => s.push({ type:'word_position', word: w }));
-    s.push({ type:'match', words: newWords.slice(0,4) });
-  } else if (posInBlock === 1) {
-    // LESSON 2: Reinforcement — TF + fill blank + translate order
-    newWords.forEach(w => s.push({ type:'tf_sentence', word: w, pool: allWords }));
-    newWords.forEach(w => s.push({ type:'mcq_hanzi', word: w, pool: allWords }));
-    newWords.slice(0,3).forEach(w => s.push({ type:'fill_blank', word: w }));
-    newWords.slice(0,2).forEach(w => s.push({ type:'translate_order', word: w }));
-    newWords.slice(0,3).forEach(w => s.push({ type:'word_position', word: w }));
-    if (reviewWords.length > 0) pick(reviewWords, 2).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
-    s.push({ type:'match', words: newWords.slice(0,4) });
-  } else if (posInBlock === 2) {
-    // LESSON 3: Expansion — 2 new + listening + sentence build
-    const extraStart = Math.min(newWords.length * 2, allWords.length - 2);
+    // Round 1: recognize meaning
+    shuffle([...nw]).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
+    // Round 2: build the word from tiles
+    shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'word_position', word: w }));
+    // Round 3: true/false — right character?
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'tf_sentence', word: w, pool: allWords }));
+    // Round 4: match pairs
+    s.push({ type:'match', words: shuffle([...nw]).slice(0,4) });
+    // Round 5: listen and confirm
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'listen_tf', word: w }));
+    // Round 6: pick the hanzi
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'mcq_hanzi', word: w, pool: allWords }));
+    // Round 7: type the pinyin
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'pinyin_type', word: w }));
+  }
+
+  // ── BLOCK 1: REINFORCEMENT ──────────────────────────────────────────────
+  else if (posInBlock === 1) {
+    // Vary order each time with shuffle
+    shuffle([...nw]).forEach(w => s.push({ type:'mcq_hanzi', word: w, pool: allWords }));
+    shuffle([...nw]).forEach(w => s.push({ type:'tf_sentence', word: w, pool: allWords }));
+    shuffle([...nw]).forEach(w => s.push({ type:'fill_blank', word: w }));
+    shuffle([...nw]).slice(0,4).forEach(w => s.push({ type:'word_position', word: w }));
+    shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'translate_order', word: w }));
+    shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'pinyin_type', word: w }));
+    // Review older words
+    pick(rw, 3).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
+    pick(rw, 2).forEach(w => s.push({ type:'mcq_hanzi', word: w, pool: allWords }));
+    s.push({ type:'match', words: shuffle([...nw]).slice(0,4) });
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'listen_tf', word: w }));
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'listen_sentence', word: w }));
+  }
+
+  // ── BLOCK 2: EXPANSION ──────────────────────────────────────────────────
+  else if (posInBlock === 2) {
+    const extraStart = Math.min(nw.length * 2, allWords.length - 3);
     const extraWords = allWords.slice(extraStart, extraStart + 2);
     extraWords.forEach(w => s.push({ type:'word_card', word: w }));
-    newWords.forEach(w => s.push({ type:'listen_tf', word: w }));
-    newWords.slice(0,2).forEach(w => s.push({ type:'listen_sentence', word: w }));
-    newWords.slice(0,3).forEach(w => s.push({ type:'sentence_order', word: w }));
-    newWords.slice(0,2).forEach(w => s.push({ type:'word_position', word: w }));
-    if (reviewWords.length > 0) pick(reviewWords, 3).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
-    s.push({ type:'match', words: [...newWords.slice(0,2), ...extraWords.slice(0,2)] });
-  } else if (posInBlock === 3) {
-    // LESSON 4: Mixed Practice — no new words, error correction, reading passage
-    const practiceWords = [...newWords, ...reviewWords.slice(0,3)];
-    practiceWords.forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
-    practiceWords.slice(0,3).forEach(w => s.push({ type:'error_correction', word: w, pool: allWords }));
-    newWords.slice(0,2).forEach(w => s.push({ type:'reading_passage', word: w }));
-    if (newWords.length >= 4) s.push({ type:'match', words: newWords.slice(0,4) });
-    practiceWords.slice(0,3).forEach(w => s.push({ type:'pinyin_type', word: w }));
-    practiceWords.slice(0,4).forEach(w => s.push({ type:'word_position', word: w }));
+    shuffle([...nw]).forEach(w => s.push({ type:'listen_tf', word: w }));
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'listen_sentence', word: w }));
+    shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'sentence_order', word: w }));
+    shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'word_position', word: w }));
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'error_correction', word: w, pool: allWords }));
+    pick(rw, 3).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
+    extraWords.slice(0,1).forEach(w => s.push({ type:'fill_blank', word: w }));
+    s.push({ type:'match', words: [...shuffle([...nw]).slice(0,2), ...extraWords.slice(0,2)] });
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'pinyin_type', word: w }));
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'translate_order', word: w }));
+    pick(rw, 2).forEach(w => s.push({ type:'tf_sentence', word: w, pool: allWords }));
   }
 
-  return s.filter(Boolean);
+  // ── BLOCK 3: MIXED PRACTICE ─────────────────────────────────────────────
+  else if (posInBlock === 3) {
+    const pw = shuffle([...nw, ...pick(rw, 3)]);
+    // Every exercise type appears, shuffled so order varies
+    pw.forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
+    pw.slice(0,4).forEach(w => s.push({ type:'mcq_hanzi', word: w, pool: allWords }));
+    pw.slice(0,4).forEach(w => s.push({ type:'error_correction', word: w, pool: allWords }));
+    nw.slice(0,2).forEach(w => s.push({ type:'reading_passage', word: w }));
+    pw.slice(0,4).forEach(w => s.push({ type:'sentence_order', word: w }));
+    pw.slice(0,5).forEach(w => s.push({ type:'word_position', word: w }));
+    pw.slice(0,4).forEach(w => s.push({ type:'pinyin_type', word: w }));
+    nw.slice(0,2).forEach(w => s.push({ type:'listen_sentence', word: w }));
+    pw.slice(0,4).forEach(w => s.push({ type:'fill_blank', word: w }));
+    pw.slice(0,3).forEach(w => s.push({ type:'translate_order', word: w }));
+    if (nw.length >= 4) s.push({ type:'match', words: shuffle([...nw]).slice(0,4) });
+    pw.slice(0,3).forEach(w => s.push({ type:'tf_sentence', word: w, pool: allWords }));
+    pw.slice(0,3).forEach(w => s.push({ type:'listen_tf', word: w }));
+  }
+
+  // Shuffle the middle section so order varies each time
+  // (keep first word_card/grammar at top, shuffle the rest)
+  const fixed = s.filter(x => x.type === 'word_card' || x.type === 'grammar');
+  const rest  = shuffle(s.filter(x => x.type !== 'word_card' && x.type !== 'grammar'));
+  return [...fixed, ...rest].filter(Boolean);
 }
 
 function buildSpeedSteps(plan) {
@@ -7012,7 +7051,7 @@ function renderWordPosition(step) {
 
   // Difficulty: show pinyin hint for HSK 1-3, hide for HSK 4+
   const lvl = step.word?.id ? Number(step.word.id.split('-')[0]) : 1;
-  const showHint = lvl <= 3;
+  const showHint = true; // always show pinyin
 
   stepArea.innerHTML = `
     <div class="q-label write">✍️ Build the Word</div>
@@ -7098,9 +7137,28 @@ function updateWPCheck() {
 }
 
 function checkWordPosition() {
+  if (answeredStep) return;
   const { chars, placed } = wordBankState;
   const isCorrect = chars.every((ch, i) => placed[i] === ch);
-  showFeedback(isCorrect, isCorrect ? null : chars.join(''));
+  consumeEnergy();
+  if (isCorrect) {
+    answeredStep = true;
+    sessionXP += 3;
+    showFeedback(true, null);
+    bottomArea.innerHTML = '<button class="btn-primary" onclick="nextStep()">Continue →</button>';
+  } else {
+    // Reset placed so they can try again
+    wordBankState.placed = Array(chars.length).fill(null);
+    loseHeart();
+    showFeedback(false, null, chars.join(''));
+    renderWPTiles();
+    const btn = document.getElementById('check-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Check'; }
+    setTimeout(() => {
+      const fb = document.getElementById('feedback');
+      if (fb) fb.className = 'feedback';
+    }, 1500);
+  }
 }
 
 
