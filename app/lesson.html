@@ -6535,6 +6535,693 @@ const LESSON_VOCAB = {
   '2-50': {title:'HSK 2 Review',    new:['2-145','2-146','2-147','2-148','2-149','2-150'], topic:'review'},
 };
 
+// ══════════════════════════════════════════════════════════════════
+// HSK 3–6 PERFORMANCE TRAINING SYSTEM
+// Architecture: 4 layers per level
+//   1. MODULES — vocabulary + grammar introduction
+//   2. PRACTICE — mixed exercises, exam-format drills
+//   3. REVIEW   — SRS queue, weak-item targeting
+//   4. MASTERY  — accuracy + speed tracking per item
+//
+// Exercise types mirror real HSK exam formats exactly.
+// All fill-blanks have unambiguous context (rule enforced in code).
+// ══════════════════════════════════════════════════════════════════
+
+// ── MASTERY TRACKING ─────────────────────────────────────────────
+// Each word/grammar pattern has a mastery level:
+// 0=New  1=Learning  2=Familiar  3=Strong  4=Mastered
+// Level advances on correct answers, drops on errors.
+// Speed bonus: answering in <3s adds +0.5 level progress.
+
+function getMastery(uid) {
+  try { return JSON.parse(localStorage.getItem('mastery_'+uid)||'{}'); } catch(e) { return {}; }
+}
+function saveMastery(uid, d) { localStorage.setItem('mastery_'+uid, JSON.stringify(d)); }
+
+function updateMastery(uid, itemId, correct, speedMs) {
+  if (!uid) return;
+  const m = getMastery(uid);
+  const e = m[itemId] || { lvl:0, correct:0, total:0, streak:0 };
+  e.total++;
+  if (correct) {
+    e.correct++;
+    e.streak = (e.streak||0) + 1;
+    const speedBonus = speedMs && speedMs < 3000 ? 0.5 : 0;
+    e.lvl = Math.min(4, e.lvl + (e.streak >= 3 ? 1.5 + speedBonus : 1 + speedBonus));
+  } else {
+    e.streak = 0;
+    e.lvl = Math.max(0, e.lvl - 1);
+  }
+  m[itemId] = e;
+  saveMastery(uid, m);
+}
+
+function getMasteryLabel(uid, itemId) {
+  const e = getMastery(uid)[itemId];
+  if (!e) return 'New';
+  const labels = ['New','Learning','Familiar','Strong','Mastered'];
+  return labels[Math.min(4, Math.floor(e.lvl))];
+}
+
+function getWeakItems(uid, levelNum, count=8) {
+  const m = getMastery(uid);
+  const srs = getSRS(uid);
+  return (HSK[levelNum]?.words||[])
+    .filter(w => {
+      const me = m[w.id];
+      const se = srs[w.id];
+      return !me || me.lvl < 2 || (me.total > 0 && me.correct/me.total < 0.7);
+    })
+    .sort((a,b) => {
+      const la = (getMastery(uid)[a.id]?.lvl||0);
+      const lb = (getMastery(uid)[b.id]?.lvl||0);
+      return la - lb;
+    })
+    .slice(0, count);
+}
+
+// ── HSK 3 LESSON VOCABULARY (45 modules) ─────────────────────────
+// Topic groupings mirror real HSK3 exam themes:
+// Social interactions, opinions, comparing, cause-effect,
+// describing people/places, hypotheticals, sequencing
+
+const HSK3_LESSONS = {
+  '3-1':  {title:'Opinions & Agreement', new:['3-77','3-93','3-149','3-57'],  topic:'opinions'},
+  '3-2':  {title:'Cause & Effect',       new:['3-94','3-73','3-28','3-251'],  topic:'connectors3'},
+  '3-3':  {title:'Describing Places',    new:['3-25','3-32','3-17','3-201'],  topic:'places3'},
+  '3-4':  {title:'Comparing Things',     new:['3-8','3-85','3-72'],           topic:'comparison3'},
+  '3-5':  {title:'Change & Become',      new:['3-9','3-16','3-108','3-147'],  topic:'change'},
+  '3-6':  {title:'Plans & Goals',        new:['3-48','3-62','3-80','3-99'],   topic:'planning'},
+  '3-7':  {title:'Feelings & Emotions',  new:['3-33','3-70','3-148','3-159'], topic:'emotions'},
+  '3-8':  {title:'Time & Sequence',      new:['3-34','3-41','3-79','3-226'],  topic:'time3'},
+  '3-9':  {title:'Internet & Tech',      new:['3-42','3-69','3-81','3-88'],   topic:'tech'},
+  '3-10': {title:'Almost & Obviously',   new:['3-47','3-61','3-115','3-22'],  topic:'adverbs3'},
+  '3-11': {title:'Environment & Nature', new:['3-44','3-54','3-74','3-176'],  topic:'nature3'},
+  '3-12': {title:'Success & Failure',    new:['3-15','3-50','3-86','3-260'],  topic:'outcomes'},
+  '3-13': {title:'Health & Body',        new:['3-131','3-146','3-184'],       topic:'health3'},
+  '3-14': {title:'Work & Documents',     new:['3-6','3-182','3-278'],         topic:'work3'},
+  '3-15': {title:'Travel & Transport',   new:['3-120','3-122','3-136','3-246'], topic:'travel3'},
+  '3-16': {title:'Education & Study',    new:['3-31','3-64','3-295','3-20'],  topic:'education3'},
+  '3-17': {title:'Habits & Rules',       new:['3-283','3-172','3-100','3-91'], topic:'habits'},
+  '3-18': {title:'Personality & Character',new:['3-126','3-190','3-216','3-253'], topic:'character'},
+  '3-19': {title:'Shopping & Money',     new:['3-130','3-290','3-221'],       topic:'shopping3'},
+  '3-20': {title:'Social Events',        new:['3-45','3-186','3-200','3-13'], topic:'social3'},
+  '3-21': {title:'Giving Advice',        new:['3-197','3-93','3-5','3-98'],   topic:'advice'},
+  '3-22': {title:'Describing Difficulty',new:['3-87','3-296','3-155','3-128'], topic:'difficulty'},
+  '3-23': {title:'Discovery & Memory',   new:['3-29','3-49','3-188','3-58'],  topic:'cognition'},
+  '3-24': {title:'Opportunity & Choice', new:['3-46','3-90','3-103'],         topic:'decision'},
+  '3-25': {title:'City & Society',       new:['3-258','3-230','3-287'],       topic:'society'},
+  '3-26': {title:'Physical Actions',     new:['3-233','3-271','3-268','3-272'], topic:'actions3'},
+  '3-27': {title:'Relationships',        new:['3-66','3-170','3-160'],        topic:'relationships'},
+  '3-28': {title:'Conditions & Results', new:['3-67','3-174','3-263'],        topic:'conditions'},
+  '3-29': {title:'Quantity & Degree',    new:['3-262','3-28','3-35','3-274'], topic:'quantity'},
+  '3-30': {title:'Common Adjectives I',  new:['3-30','3-40','3-60','3-196'],  topic:'adj3a'},
+  '3-31': {title:'Common Adjectives II', new:['3-102','3-247','3-252','3-293'], topic:'adj3b'},
+  '3-32': {title:'Saying "Only Then"',   new:['3-12','3-92','3-21','3-75'],   topic:'adv_restriction'},
+  '3-33': {title:'Direction & Location', new:['3-84','3-144','3-236','3-273'], topic:'direction3'},
+  '3-34': {title:'Activities & Hobbies', new:['3-101','3-68','3-143','3-220'], topic:'hobbies'},
+  '3-35': {title:'Positive & Negative',  new:['3-153','3-180','3-110','3-77'], topic:'stance'},
+  '3-36': {title:'Problems & Solutions', new:['3-128','3-5','3-265','3-89'],  topic:'problems'},
+  '3-37': {title:'Culture & Society',    new:['3-198','3-258','3-230'],       topic:'culture'},
+  '3-38': {title:'Comfort & Preference', new:['3-234','3-243','3-284'],       topic:'preference'},
+  '3-39': {title:'Gradual Change',       new:['3-147','3-193','3-76'],        topic:'gradual'},
+  '3-40': {title:'Caution & Attention',  new:['3-98','3-291','3-184'],        topic:'caution'},
+  '3-41': {title:'Request & Permission', new:['3-204','3-89','3-264'],        topic:'request3'},
+  '3-42': {title:'Weather & Seasons',    new:['3-169','3-239','3-277'],       topic:'weather3'},
+  '3-43': {title:'Appearance & Style',   new:['3-118','3-129','3-163','3-228'], topic:'appearance'},
+  '3-44': {title:'HSK3 Grammar Review',  new:['3-175','3-161','3-2','3-165'], topic:'grammar_review3'},
+  '3-45': {title:'HSK3 Mastery Exam',    new:['3-300','3-297','3-298','3-299'], topic:'exam_prep3'},
+};
+
+// ── HSK 4 LESSON VOCABULARY (55 modules) ─────────────────────────
+// HSK4 introduces: abstract concepts, formal connectors,
+// 把/被 structures, conditional patterns, 4-char idioms
+
+const HSK4_LESSONS = {
+  '4-1':  {title:'No Choice But',       new:['4-18','4-19','4-20','4-17'],   topic:'necessity4'},
+  '4-2':  {title:'Attitude & Stance',   new:['4-8','4-9','4-10','4-30'],     topic:'attitude'},
+  '4-3':  {title:'Standards & Degree',  new:['4-13','4-28','4-37'],          topic:'degree4'},
+  '4-4':  {title:'Expressing & Showing',new:['4-14','4-15','4-16'],          topic:'expression'},
+  '4-5':  {title:'Avoiding & Maintaining',new:['4-11','4-4','4-17'],         topic:'control'},
+  '4-6':  {title:'Tradition & Culture', new:['4-30','4-53','4-57'],          topic:'tradition'},
+  '4-7':  {title:'Society & Property',  new:['4-21','4-50','4-103'],         topic:'society4'},
+  '4-8':  {title:'Strategy & Methods',  new:['4-23','4-22','4-6'],           topic:'strategy'},
+  '4-9':  {title:'Once & Formerly',     new:['4-24','4-1','4-26'],           topic:'time4'},
+  '4-10': {title:'Continuous Actions',  new:['4-17','4-117','4-44'],         topic:'continuous'},
+  '4-11': {title:'Exceeding Limits',    new:['4-26','4-25'],                 topic:'limits'},
+  '4-12': {title:'Silence & Emotion',   new:['4-27','4-60','4-67'],          topic:'emotion4'},
+  '4-13': {title:'Economics & Trade',   new:['4-29','4-45','4-91'],          topic:'economics'},
+  '4-14': {title:'Research & Analysis', new:['4-42','4-43','4-44'],          topic:'research'},
+  '4-15': {title:'Technology & Media',  new:['4-56','4-57','4-58'],          topic:'tech4'},
+  '4-16': {title:'The 把 Structure',    new:['4-38','4-39','4-40'],          topic:'ba_structure'},
+  '4-17': {title:'The 被 Passive',      new:['4-48','4-49','4-50'],          topic:'bei_passive'},
+  '4-18': {title:'Not Only… But Also',  new:['4-20','4-59','4-60'],          topic:'notonly'},
+  '4-19': {title:'Even If… Still',      new:['4-61','4-62','4-63'],          topic:'concession4'},
+  '4-20': {title:'As Long As',          new:['4-64','4-65','4-66'],          topic:'condition4'},
+  '4-21': {title:'Abstract Nouns I',    new:['4-2','4-3','4-5','4-7'],       topic:'abstract4a'},
+  '4-22': {title:'Abstract Nouns II',   new:['4-31','4-32','4-33','4-34'],   topic:'abstract4b'},
+  '4-23': {title:'Verbs of Cognition',  new:['4-35','4-36','4-37','4-38'],   topic:'cognition4'},
+  '4-24': {title:'Formal Transitions',  new:['4-46','4-47','4-51','4-52'],   topic:'connectors4'},
+  '4-25': {title:'Describing People',   new:['4-53','4-54','4-55','4-56'],   topic:'description4'},
+  '4-26': {title:'Work & Career',       new:['4-68','4-69','4-70','4-71'],   topic:'career'},
+  '4-27': {title:'Education System',    new:['4-72','4-73','4-74','4-75'],   topic:'education4'},
+  '4-28': {title:'Health & Medicine',   new:['4-76','4-77','4-78','4-79'],   topic:'health4'},
+  '4-29': {title:'Environment Issues',  new:['4-80','4-81','4-82','4-83'],   topic:'environment4'},
+  '4-30': {title:'Rights & Duties',     new:['4-84','4-85','4-86','4-87'],   topic:'rights'},
+  '4-31': {title:'Art & Entertainment', new:['4-88','4-89','4-90','4-91'],   topic:'arts4'},
+  '4-32': {title:'Comparing Formally',  new:['4-92','4-93','4-94'],          topic:'compare4'},
+  '4-33': {title:'Increasing & Decreasing',new:['4-95','4-96','4-97'],       topic:'change4'},
+  '4-34': {title:'Emphasis Structures', new:['4-98','4-99','4-100'],         topic:'emphasis4'},
+  '4-35': {title:'Cause-Effect Formal', new:['4-101','4-102','4-103'],       topic:'causation4'},
+  '4-36': {title:'Hypothesis & Condition',new:['4-104','4-105','4-106'],     topic:'hypothesis4'},
+  '4-37': {title:'Manner & Method',     new:['4-107','4-108','4-109'],       topic:'manner4'},
+  '4-38': {title:'Extent & Degree',     new:['4-110','4-111','4-112'],       topic:'extent4'},
+  '4-39': {title:'Formal Adjectives',   new:['4-113','4-114','4-115'],       topic:'formal_adj4'},
+  '4-40': {title:'Common 4-char Patterns',new:['4-116','4-117','4-118'],     topic:'patterns4a'},
+  '4-41': {title:'Exam Reading Skills', new:['4-119','4-120','4-121'],       topic:'reading4'},
+  '4-42': {title:'Listening Traps',     new:['4-122','4-123','4-124'],       topic:'listening4'},
+  '4-43': {title:'Writing Patterns',    new:['4-125','4-126','4-127'],       topic:'writing4'},
+  '4-44': {title:'Mixed Grammar Drill', new:['4-128','4-129','4-130'],       topic:'grammar4'},
+  '4-45': {title:'Speed Reading',       new:['4-131','4-132','4-133'],       topic:'speed4'},
+  '4-46': {title:'Common HSK4 Traps',   new:['4-134','4-135','4-136'],       topic:'traps4'},
+  '4-47': {title:'Discourse Markers',   new:['4-137','4-138','4-139'],       topic:'discourse4'},
+  '4-48': {title:'Quantifiers',         new:['4-140','4-141','4-142'],       topic:'quantifiers4'},
+  '4-49': {title:'Modifying Nouns',     new:['4-143','4-144','4-145'],       topic:'modification4'},
+  '4-50': {title:'Verb Complements',    new:['4-146','4-147','4-148'],       topic:'complements4'},
+  '4-51': {title:'Passive Structures',  new:['4-149','4-150','4-151'],       topic:'passive4'},
+  '4-52': {title:'Question Patterns',   new:['4-152','4-153','4-154'],       topic:'questions4'},
+  '4-53': {title:'HSK4 Reading Drill',  new:['4-155','4-156','4-157'],       topic:'reading_drill4'},
+  '4-54': {title:'HSK4 Listening Drill',new:['4-158','4-159','4-160'],       topic:'listen_drill4'},
+  '4-55': {title:'HSK4 Mastery Exam',   new:['4-595','4-596','4-597','4-598'], topic:'exam_prep4'},
+};
+
+// ── HSK 5 LESSON VOCABULARY (60 modules) ─────────────────────────
+// HSK5: abstract, literary, formal. Exam focus: reading comprehension,
+// complex grammar, listening to formal speech
+
+const HSK5_LESSONS = {
+  '5-1':  {title:'Formal Connectors',   new:['5-3','5-4','5-5','5-6'],       topic:'connectors5'},
+  '5-2':  {title:'Academic Vocabulary', new:['5-7','5-8','5-9','5-10'],      topic:'academic5'},
+  '5-3':  {title:'Emotions & Psychology',new:['5-1','5-13','5-3','5-23'],   topic:'psychology5'},
+  '5-4':  {title:'Society & Policy',    new:['5-14','5-15','5-16','5-17'],   topic:'policy5'},
+  '5-5':  {title:'Science & Research',  new:['5-18','5-19','5-20','5-21'],   topic:'science5'},
+  '5-6':  {title:'History & Culture',   new:['5-22','5-23','5-24','5-25'],   topic:'history5'},
+  '5-7':  {title:'Economy & Finance',   new:['5-26','5-27','5-28','5-29'],   topic:'economy5'},
+  '5-8':  {title:'Logical Patterns',    new:['5-30','5-31','5-32','5-33'],   topic:'logic5'},
+  '5-9':  {title:'Formal Comparison',   new:['5-34','5-35','5-36','5-37'],   topic:'comparison5'},
+  '5-10': {title:'Consequence & Impact',new:['5-38','5-39','5-40','5-41'],   topic:'consequence5'},
+  '5-11': {title:'Arguments & Views',   new:['5-42','5-43','5-44','5-45'],   topic:'argumentation5'},
+  '5-12': {title:'Describing Change',   new:['5-46','5-47','5-48','5-49'],   topic:'change5'},
+  '5-13': {title:'Abstract Qualities',  new:['5-50','5-51','5-52','5-53'],   topic:'qualities5'},
+  '5-14': {title:'Literary Language',   new:['5-54','5-55','5-56','5-57'],   topic:'literary5'},
+  '5-15': {title:'Complex Conditions',  new:['5-58','5-59','5-60','5-61'],   topic:'conditions5'},
+  '5-16': {title:'Media & Information', new:['5-62','5-63','5-64','5-65'],   topic:'media5'},
+  '5-17': {title:'Law & Regulation',    new:['5-66','5-67','5-68','5-69'],   topic:'law5'},
+  '5-18': {title:'Environment & Crisis',new:['5-70','5-71','5-72','5-73'],   topic:'environment5'},
+  '5-19': {title:'Technology & Innovation',new:['5-74','5-75','5-76','5-77'], topic:'innovation5'},
+  '5-20': {title:'Healthcare & Biology',new:['5-78','5-79','5-80','5-81'],   topic:'biology5'},
+  '5-21': {title:'Formal Grammar I',    new:['5-82','5-83','5-84','5-85'],   topic:'formal_grammar5a'},
+  '5-22': {title:'Formal Grammar II',   new:['5-86','5-87','5-88','5-89'],   topic:'formal_grammar5b'},
+  '5-23': {title:'HSK5 Reading I',      new:['5-90','5-91','5-92','5-93'],   topic:'reading5a'},
+  '5-24': {title:'HSK5 Reading II',     new:['5-94','5-95','5-96','5-97'],   topic:'reading5b'},
+  '5-25': {title:'HSK5 Listening I',    new:['5-98','5-99','5-100','5-101'], topic:'listening5a'},
+  '5-26': {title:'HSK5 Listening II',   new:['5-102','5-103','5-104','5-105'], topic:'listening5b'},
+  '5-27': {title:'Writing Patterns I',  new:['5-106','5-107','5-108','5-109'], topic:'writing5a'},
+  '5-28': {title:'Writing Patterns II', new:['5-110','5-111','5-112','5-113'], topic:'writing5b'},
+  '5-29': {title:'Nuanced Adjectives',  new:['5-114','5-115','5-116','5-117'], topic:'nuance5'},
+  '5-30': {title:'Abstract Verbs',      new:['5-118','5-119','5-120','5-121'], topic:'abstract_verbs5'},
+  '5-31': {title:'Formal Nouns I',      new:['5-122','5-123','5-124','5-125'], topic:'formal_nouns5a'},
+  '5-32': {title:'Formal Nouns II',     new:['5-126','5-127','5-128','5-129'], topic:'formal_nouns5b'},
+  '5-33': {title:'Speed Comprehension', new:['5-130','5-131','5-132','5-133'], topic:'speed5'},
+  '5-34': {title:'Complex Sentences',   new:['5-134','5-135','5-136','5-137'], topic:'complex5'},
+  '5-35': {title:'Inference Skills',    new:['5-138','5-139','5-140','5-141'], topic:'inference5'},
+  '5-36': {title:'Formal Discourse',    new:['5-142','5-143','5-144','5-145'], topic:'discourse5'},
+  '5-37': {title:'Error Recognition',   new:['5-146','5-147','5-148','5-149'], topic:'errors5'},
+  '5-38': {title:'Tone & Register',     new:['5-150','5-151','5-152','5-153'], topic:'register5'},
+  '5-39': {title:'Adverb Placement',    new:['5-154','5-155','5-156','5-157'], topic:'adverbs5'},
+  '5-40': {title:'Preposition Patterns',new:['5-158','5-159','5-160','5-161'], topic:'prepositions5'},
+  '5-41': {title:'Complement Patterns', new:['5-162','5-163','5-164','5-165'], topic:'complements5'},
+  '5-42': {title:'Sentence Structure',  new:['5-166','5-167','5-168','5-169'], topic:'structure5'},
+  '5-43': {title:'Topic & Comment',     new:['5-170','5-171','5-172','5-173'], topic:'topic5'},
+  '5-44': {title:'Parallel Structures', new:['5-174','5-175','5-176','5-177'], topic:'parallel5'},
+  '5-45': {title:'Emphasis & Focus',    new:['5-178','5-179','5-180','5-181'], topic:'emphasis5'},
+  '5-46': {title:'Mixed HSK5 Drill I',  new:['5-182','5-183','5-184','5-185'], topic:'drill5a'},
+  '5-47': {title:'Mixed HSK5 Drill II', new:['5-186','5-187','5-188','5-189'], topic:'drill5b'},
+  '5-48': {title:'Exam Pattern I',      new:['5-190','5-191','5-192','5-193'], topic:'exam5a'},
+  '5-49': {title:'Exam Pattern II',     new:['5-194','5-195','5-196','5-197'], topic:'exam5b'},
+  '5-50': {title:'Exam Pattern III',    new:['5-198','5-199','5-200','5-201'], topic:'exam5c'},
+  '5-51': {title:'Formal Writing I',    new:['5-202','5-203','5-204','5-205'], topic:'formal_write5a'},
+  '5-52': {title:'Formal Writing II',   new:['5-206','5-207','5-208','5-209'], topic:'formal_write5b'},
+  '5-53': {title:'Listening Intensive', new:['5-210','5-211','5-212','5-213'], topic:'listen_intensive5'},
+  '5-54': {title:'Reading Intensive',   new:['5-214','5-215','5-216','5-217'], topic:'read_intensive5'},
+  '5-55': {title:'Grammar Intensive',   new:['5-218','5-219','5-220','5-221'], topic:'grammar_intensive5'},
+  '5-56': {title:'Speed Drill I',       new:['5-222','5-223','5-224','5-225'], topic:'speed5a'},
+  '5-57': {title:'Speed Drill II',      new:['5-226','5-227','5-228','5-229'], topic:'speed5b'},
+  '5-58': {title:'Mock Exam Prep I',    new:['5-230','5-231','5-232','5-233'], topic:'mock5a'},
+  '5-59': {title:'Mock Exam Prep II',   new:['5-234','5-235','5-236','5-237'], topic:'mock5b'},
+  '5-60': {title:'HSK5 Final Review',   new:['5-238','5-239','5-240','5-241'], topic:'final5'},
+};
+
+// ── HSK 6 LESSON VOCABULARY (65 modules) ─────────────────────────
+// HSK6: chengyu, classical patterns, formal writing, nuanced reading
+
+const HSK6_LESSONS = {
+  '6-1':  {title:'Formal Chengyu I',    new:['6-1','6-2','6-3','6-4'],       topic:'chengyu6a'},
+  '6-2':  {title:'Formal Chengyu II',   new:['6-5','6-6','6-7','6-8'],       topic:'chengyu6b'},
+  '6-3':  {title:'Formal Chengyu III',  new:['6-9','6-10','6-11','6-12'],    topic:'chengyu6c'},
+  '6-4':  {title:'Abstract Concepts I', new:['6-13','6-14','6-15','6-16'],   topic:'abstract6a'},
+  '6-5':  {title:'Abstract Concepts II',new:['6-17','6-18','6-19','6-20'],   topic:'abstract6b'},
+  '6-6':  {title:'Philosophy & Ethics', new:['6-21','6-22','6-23','6-24'],   topic:'philosophy6'},
+  '6-7':  {title:'Politics & Society',  new:['6-25','6-26','6-27','6-28'],   topic:'politics6'},
+  '6-8':  {title:'Economics & Finance', new:['6-29','6-30','6-31','6-32'],   topic:'economics6'},
+  '6-9':  {title:'Science & Nature',    new:['6-33','6-34','6-35','6-36'],   topic:'science6'},
+  '6-10': {title:'History & Legacy',    new:['6-37','6-38','6-39','6-40'],   topic:'history6'},
+  '6-11': {title:'Literary Patterns I', new:['6-41','6-42','6-43','6-44'],   topic:'literary6a'},
+  '6-12': {title:'Literary Patterns II',new:['6-45','6-46','6-47','6-48'],   topic:'literary6b'},
+  '6-13': {title:'Classical Structures',new:['6-49','6-50','6-51','6-52'],   topic:'classical6'},
+  '6-14': {title:'Formal Essay Vocab',  new:['6-53','6-54','6-55','6-56'],   topic:'essay6a'},
+  '6-15': {title:'Argument & Rhetoric', new:['6-57','6-58','6-59','6-60'],   topic:'rhetoric6'},
+  '6-16': {title:'Complex Adverbs',     new:['6-61','6-62','6-63','6-64'],   topic:'adverbs6'},
+  '6-17': {title:'Nuanced Connectors',  new:['6-65','6-66','6-67','6-68'],   topic:'connectors6'},
+  '6-18': {title:'Metaphor & Idiom',    new:['6-69','6-70','6-71','6-72'],   topic:'metaphor6'},
+  '6-19': {title:'Describing Processes',new:['6-73','6-74','6-75','6-76'],   topic:'process6'},
+  '6-20': {title:'Formal Verbs I',      new:['6-77','6-78','6-79','6-80'],   topic:'formal_verbs6a'},
+  '6-21': {title:'Formal Verbs II',     new:['6-81','6-82','6-83','6-84'],   topic:'formal_verbs6b'},
+  '6-22': {title:'Cause & Logic',       new:['6-85','6-86','6-87','6-88'],   topic:'logic6'},
+  '6-23': {title:'Contrast & Concession',new:['6-89','6-90','6-91','6-92'],  topic:'contrast6'},
+  '6-24': {title:'Scale & Intensity',   new:['6-93','6-94','6-95','6-96'],   topic:'intensity6'},
+  '6-25': {title:'Complex Nouns I',     new:['6-97','6-98','6-99','6-100'],  topic:'complex_nouns6a'},
+  '6-26': {title:'Complex Nouns II',    new:['6-101','6-102','6-103','6-104'], topic:'complex_nouns6b'},
+  '6-27': {title:'Reading Passage I',   new:['6-105','6-106','6-107','6-108'], topic:'read6a'},
+  '6-28': {title:'Reading Passage II',  new:['6-109','6-110','6-111','6-112'], topic:'read6b'},
+  '6-29': {title:'Reading Passage III', new:['6-113','6-114','6-115','6-116'], topic:'read6c'},
+  '6-30': {title:'Speed Reading I',     new:['6-117','6-118','6-119','6-120'], topic:'speed6a'},
+  '6-31': {title:'Speed Reading II',    new:['6-121','6-122','6-123','6-124'], topic:'speed6b'},
+  '6-32': {title:'Listening Formal I',  new:['6-125','6-126','6-127','6-128'], topic:'listen6a'},
+  '6-33': {title:'Listening Formal II', new:['6-129','6-130','6-131','6-132'], topic:'listen6b'},
+  '6-34': {title:'Writing Formal I',    new:['6-133','6-134','6-135','6-136'], topic:'write6a'},
+  '6-35': {title:'Writing Formal II',   new:['6-137','6-138','6-139','6-140'], topic:'write6b'},
+  '6-36': {title:'Grammar Formal I',    new:['6-141','6-142','6-143','6-144'], topic:'grammar6a'},
+  '6-37': {title:'Grammar Formal II',   new:['6-145','6-146','6-147','6-148'], topic:'grammar6b'},
+  '6-38': {title:'Error Detection I',   new:['6-149','6-150','6-151','6-152'], topic:'errors6a'},
+  '6-39': {title:'Error Detection II',  new:['6-153','6-154','6-155','6-156'], topic:'errors6b'},
+  '6-40': {title:'Chengyu in Context',  new:['6-157','6-158','6-159','6-160'], topic:'chengyu_context6'},
+  '6-41': {title:'Formal Exam Drill I', new:['6-161','6-162','6-163','6-164'], topic:'exam6a'},
+  '6-42': {title:'Formal Exam Drill II',new:['6-165','6-166','6-167','6-168'], topic:'exam6b'},
+  '6-43': {title:'Intensive Review I',  new:['6-169','6-170','6-171','6-172'], topic:'review6a'},
+  '6-44': {title:'Intensive Review II', new:['6-173','6-174','6-175','6-176'], topic:'review6b'},
+  '6-45': {title:'Pattern Recognition', new:['6-177','6-178','6-179','6-180'], topic:'patterns6'},
+  '6-46': {title:'Sentence Ordering',   new:['6-181','6-182','6-183','6-184'], topic:'ordering6'},
+  '6-47': {title:'Cloze Test Drill I',  new:['6-185','6-186','6-187','6-188'], topic:'cloze6a'},
+  '6-48': {title:'Cloze Test Drill II', new:['6-189','6-190','6-191','6-192'], topic:'cloze6b'},
+  '6-49': {title:'Paragraph Logic',     new:['6-193','6-194','6-195','6-196'], topic:'paragraph6'},
+  '6-50': {title:'HSK6 Inference',      new:['6-197','6-198','6-199','6-200'], topic:'inference6'},
+  '6-51': {title:'HSK6 Mock Prep I',    new:['6-201','6-202','6-203','6-204'], topic:'mock6a'},
+  '6-52': {title:'HSK6 Mock Prep II',   new:['6-205','6-206','6-207','6-208'], topic:'mock6b'},
+  '6-53': {title:'HSK6 Mock Prep III',  new:['6-209','6-210','6-211','6-212'], topic:'mock6c'},
+  '6-54': {title:'Writing Workshop I',  new:['6-213','6-214','6-215','6-216'], topic:'workshop6a'},
+  '6-55': {title:'Writing Workshop II', new:['6-217','6-218','6-219','6-220'], topic:'workshop6b'},
+  '6-56': {title:'Advanced Grammar I',  new:['6-221','6-222','6-223','6-224'], topic:'adv_grammar6a'},
+  '6-57': {title:'Advanced Grammar II', new:['6-225','6-226','6-227','6-228'], topic:'adv_grammar6b'},
+  '6-58': {title:'Speed Challenge I',   new:['6-229','6-230','6-231','6-232'], topic:'speed_challenge6a'},
+  '6-59': {title:'Speed Challenge II',  new:['6-233','6-234','6-235','6-236'], topic:'speed_challenge6b'},
+  '6-60': {title:'Full Exam Simulation',new:['6-237','6-238','6-239','6-240'], topic:'full_sim6a'},
+  '6-61': {title:'Weak Area Targeting', new:['6-241','6-242','6-243','6-244'], topic:'targeting6'},
+  '6-62': {title:'Advanced Listening',  new:['6-245','6-246','6-247','6-248'], topic:'adv_listen6'},
+  '6-63': {title:'Advanced Reading',    new:['6-249','6-250','6-251','6-252'], topic:'adv_read6'},
+  '6-64': {title:'Final Sprint',        new:['6-253','6-254','6-255','6-256'], topic:'sprint6'},
+  '6-65': {title:'HSK6 Grand Finale',   new:['6-257','6-258','6-259','6-260'], topic:'finale6'},
+};
+
+// Merge all lesson vocabs into the global LESSON_VOCAB
+Object.assign(LESSON_VOCAB, HSK3_LESSONS, HSK4_LESSONS, HSK5_LESSONS, HSK6_LESSONS);
+
+// ── EXTENDED GRAMMAR PATTERNS FOR HSK 3–6 ───────────────────────
+// All patterns follow the NO-AMBIGUITY rule:
+// Every blank has exactly ONE correct answer given the context.
+
+const HSK36_GRAMMAR = {
+
+  // HSK3: 才 (only then / not until)
+  cai_restriction: [
+    {s:'他练习了三个月，___学会说中文。', a:'才', x:['就','又'], tr:'Only after 3 months of practice did he learn Chinese.'},
+    {s:'你今天做完作业，___可以玩。',      a:'才', x:['就','还'], tr:'Only after finishing homework can you play.'},
+  ],
+
+  // HSK3: 虽然…但是 (although…but)
+  suiran_danshi: [
+    {s:'___很累，但是他还在工作。',        a:'虽然', x:['因为','如果'], tr:'Although tired, he is still working.'},
+    {s:'虽然下雨，___我们还是去了。',      a:'但是', x:['所以','如果'], tr:'Although it rained, we still went.'},
+  ],
+
+  // HSK3: 越来越 (more and more)
+  yueLaiYue: [
+    {s:'他的汉语___说得好了。',            a:'越来越', x:['比较','更加'], tr:'His Chinese is getting better and better.'},
+    {s:'天气___冷了，要多穿衣服。',        a:'越来越', x:['非常','太'], tr:'The weather is getting colder and colder.'},
+  ],
+
+  // HSK3: 有点儿 vs 一点儿
+  youdianr: [
+    {s:'这道题___难，但我能做。',          a:'有点儿', x:['一点儿','比较'], tr:'This question is a bit difficult, but I can do it.'},
+    {s:'请等___，我马上来。',              a:'一下', x:['有点儿','一点儿'], tr:'Please wait a moment, I\'ll be right there.'},
+  ],
+
+  // HSK3: 对…来说 (for sb / from sb's perspective)
+  dui_laishuo: [
+    {s:'___初学者来说，这本书太难了。',    a:'对', x:['给','向'], tr:'For beginners, this book is too difficult.'},
+    {s:'___他来说，钱不是最重要的。',      a:'对', x:['给','为'], tr:'For him, money is not the most important thing.'},
+  ],
+
+  // HSK4: 不管…都 (no matter… always)
+  buguan_dou: [
+    {s:'___天气怎么样，他___坚持跑步。',   a:'不管', x:['虽然','即使'], tr:'No matter the weather, he always keeps running.'},
+    {s:'不管结果如何，你___要尽力。',      a:'都',   x:['也','还'], tr:'No matter the result, you must always try your best.'},
+  ],
+
+  // HSK4: 只有…才 (only if… then)
+  zhiyou_cai: [
+    {s:'___努力学习，___能通过考试。',     a:'只有', x:['只要','如果'], tr:'Only if you study hard can you pass the exam.'},
+    {s:'只有团结，___能解决问题。',        a:'才',   x:['就','都'], tr:'Only through unity can problems be solved.'},
+  ],
+
+  // HSK4: 即使…也 (even if… still)
+  jishi_ye: [
+    {s:'___下大雨，他___会来开会。',       a:'即使', x:['虽然','如果'], tr:'Even if it pours, he will still come to the meeting.'},
+    {s:'即使很困难，我___不会放弃。',      a:'也',   x:['都','还'], tr:'Even if very difficult, I will not give up.'},
+  ],
+
+  // HSK4: 把 structure
+  ba_structure: [
+    {s:'请你___这封信送给王老师。',        a:'把',   x:['被','让'], tr:'Please deliver this letter to Teacher Wang.'},
+    {s:'我___作业做完了，可以休息了。',    a:'把',   x:['被','让'], tr:'I have finished my homework, I can rest.'},
+  ],
+
+  // HSK4: 被 passive
+  bei_passive: [
+    {s:'他的钱包___小偷偷走了。',          a:'被',   x:['把','让'], tr:'His wallet was stolen by a pickpocket.'},
+    {s:'这个问题___大家讨论了很久。',      a:'被',   x:['把','给'], tr:'This issue was discussed by everyone for a long time.'},
+  ],
+
+  // HSK5: 既然…就 (since… then)
+  jiran_jiu: [
+    {s:'___你已经决定了，___去做吧。',     a:'既然', x:['因为','虽然'], tr:'Since you have already decided, just go do it.'},
+    {s:'既然来了，___多待几天吧。',        a:'就',   x:['也','都'], tr:'Since you\'re here, just stay a few more days.'},
+  ],
+
+  // HSK5: 尽管…还是 (despite… still)
+  jinguan_haishi: [
+    {s:'___困难重重，他___坚持下去。',     a:'尽管', x:['虽然','即使'], tr:'Despite great difficulties, he persisted.'},
+    {s:'尽管反对声很多，政策___通过了。',  a:'还是', x:['但是','也'], tr:'Despite much opposition, the policy still passed.'},
+  ],
+
+  // HSK5: 宁可…也不 (would rather… than)
+  ningke_yebu: [
+    {s:'他___吃苦，___接受别人的帮助。',  a:'宁可', x:['不管','虽然'], tr:'He would rather endure hardship than accept help.'},
+    {s:'宁可不睡觉，___绝不放弃目标。',   a:'也',   x:['就','都'], tr:'Would rather not sleep than give up the goal.'},
+  ],
+
+  // HSK6: 非…不可 (must / have to / cannot not)
+  fei_buke: [
+    {s:'这件事___你亲自去___。',           a:'非',   x:['不','没'], tr:'This matter requires you to go in person.'},
+    {s:'他___亲眼看到，___会相信。',       a:'非',   x:['不','没'], tr:'He has to see it with his own eyes to believe it.'},
+  ],
+
+  // HSK6: 之所以…是因为 (the reason why… is because)
+  zhisuoyi: [
+    {s:'他___成功，___他坚持不懈。',       a:'之所以', x:['因为','所以'], tr:'The reason he succeeded is that he persisted.'},
+    {s:'之所以失败，___准备不够充分。',    a:'是因为', x:['所以','因此'], tr:'The reason for failure is insufficient preparation.'},
+  ],
+};
+
+// Extend GRAMMAR_PATTERNS with HSK3-6 patterns
+Object.assign(GRAMMAR_PATTERNS, HSK36_GRAMMAR);
+
+// ── WORD CATEGORIES FOR HSK 3–6 ─────────────────────────────────
+const HSK36_CATS = {
+  conj3:     ['3-73','3-94','3-28','3-67','3-251','3-192'],  // 所以因为而且如果然而或者
+  adv3:      ['3-12','3-22','3-35','3-47','3-92','3-100','3-75'], // 才大概更几乎一定总是特别
+  verb3_cog: ['3-29','3-49','3-58','3-66','3-77'],            // 发现记得了解认识同意
+  verb3_act: ['3-7','3-13','3-15','3-52','3-76','3-80'],      // 保护参加成功进行提高完成
+  adj3:      ['3-30','3-40','3-60','3-102','3-196','3-247'],  // 方便合适满意安静简单轻松
+  noun3_abs: ['3-9','3-33','3-44','3-46','3-50','3-62'],      // 变化感觉环境机会结果目的
+  conj4:     ['4-19','4-20','4-46','4-47','4-51','4-52'],     // 不管不仅…而且…
+  adv4:      ['4-1','4-9','4-10','4-17','4-24'],              // 按时本来必然不断曾经
+  verb4_for: ['4-4','4-5','4-11','4-14','4-22'],              // 保持保存避免表达采取
+  noun4_abs: ['4-2','4-3','4-13','4-28'],                     // 把握标准程度
+  conj5:     ['5-30','5-31','5-32','5-33'],
+  adv5_lit:  ['5-42','5-43','5-44','5-45'],
+  chengyu6:  ['6-1','6-2','6-3','6-4','6-5','6-6','6-7','6-8'],
+};
+Object.assign(WORD_CATS, HSK36_CATS);
+
+// ── HSK 3–6 TOPIC → GRAMMAR PATTERN MAPPING ─────────────────────
+const TOPIC_GRAMMAR_MAP = {
+  // HSK3
+  opinions:       ['suiran_danshi','dui_laishuo'],
+  connectors3:    ['suiran_danshi','cai_restriction'],
+  comparison3:    ['yueLaiYue','dui_laishuo'],
+  change:         ['yueLaiYue'],
+  conditions:     ['suiran_danshi'],
+  adverbs3:       ['youdianr','cai_restriction'],
+  adv_restriction:['cai_restriction'],
+  stance:         ['suiran_danshi','dui_laishuo'],
+  planning:       ['cai_restriction'],
+  // HSK4
+  necessity4:     ['zhiyou_cai','buguan_dou'],
+  ba_structure:   ['ba_structure'],
+  bei_passive:    ['bei_passive'],
+  concession4:    ['jishi_ye'],
+  condition4:     ['zhiyou_cai'],
+  notonly:        ['buguan_dou'],
+  connectors4:    ['buguan_dou','zhiyou_cai'],
+  // HSK5
+  connectors5:    ['jiran_jiu','jinguan_haishi'],
+  logic5:         ['jiran_jiu'],
+  conditions5:    ['ningke_yebu','jishi_ye'],
+  consequence5:   ['jinguan_haishi'],
+  argumentation5: ['ningke_yebu','jiran_jiu'],
+  // HSK6
+  classical6:     ['fei_buke','zhisuoyi'],
+  logic6:         ['zhisuoyi','fei_buke'],
+  rhetoric6:      ['zhisuoyi'],
+  contrast6:      ['jinguan_haishi'],
+};
+
+// ── DAILY REVIEW QUEUE ───────────────────────────────────────────
+// Returns ordered list of items due for review today.
+// Priority: failed items > due items > weak items > new items
+
+function getDailyReviewQueue(uid, levelNum, maxItems=20) {
+  const srs = getSRS(uid);
+  const mastery = getMastery(uid);
+  const allWords = HSK[levelNum]?.words || [];
+  const now = Date.now();
+
+  const failed   = [];
+  const due      = [];
+  const weak     = [];
+  const newItems = [];
+
+  allWords.forEach(w => {
+    const s = srs[w.id];
+    const m = mastery[w.id];
+
+    if (!s || !m) {
+      newItems.push(w);
+    } else if ((m.fails||0) > 0 && s.next <= now) {
+      failed.push(w);
+    } else if (s.next <= now) {
+      due.push(w);
+    } else if ((m.correct||0) > 0 && (m.correct/m.total) < 0.6) {
+      weak.push(w);
+    }
+  });
+
+  return [
+    ...shuffle(failed).slice(0,8),
+    ...shuffle(due).slice(0,8),
+    ...shuffle(weak).slice(0,4),
+  ].slice(0, maxItems);
+}
+
+// ── EXTENDED getContextualBlanks for HSK3-6 ─────────────────────
+// Patch the existing function to handle new topic codes
+const _origGetContextualBlanks = getContextualBlanks;
+function getContextualBlanks(levelNum, lessonNum, newWords, allWords) {
+  // Try HSK3-6 topic mapping first
+  const key = levelNum + '-' + lessonNum;
+  const topic = (LESSON_VOCAB[key]?.topic || '');
+  const patternKeys = TOPIC_GRAMMAR_MAP[topic] || [];
+
+  if (patternKeys.length > 0) {
+    const steps = [];
+    const allPatterns = patternKeys.flatMap(k => GRAMMAR_PATTERNS[k] || []);
+    if (allPatterns.length > 0) {
+      shuffle(allPatterns).slice(0,2).forEach(p => {
+        steps.push({
+          type:'fill_blank_hc',
+          sentence:    p.s,
+          answer:      p.a,
+          options:     shuffle([p.a, ...p.x]).slice(0,3),
+          translation: p.tr,
+        });
+      });
+      return steps;
+    }
+  }
+
+  // Fall back to HSK1-2 handler
+  return _origGetContextualBlanks(levelNum, lessonNum, newWords, allWords);
+}
+
+// ── EXTENDED getErrorStep for HSK3-6 ─────────────────────────────
+const _origGetErrorStep = getErrorStep;
+function getErrorStep(levelNum, lessonNum, newWords, allWords) {
+  const key = levelNum + '-' + lessonNum;
+  const topic = (LESSON_VOCAB[key]?.topic || '');
+
+  const HSK36_ERRORS = {
+    suiran_danshi:  [{bad:'虽然很累，所以他还在工作。',   good:'虽然很累，但是他还在工作。',     tip:'虽然 pairs with 但是, not 所以'}],
+    cai_restriction:[{bad:'他练习了一个月就学会了，才很慢。', good:'他练习了三个月才学会。',        tip:'才 means "only then/not until", place it before the result verb'}],
+    ba_structure:   [{bad:'我把书在桌子上放。',           good:'我把书放在桌子上。',             tip:'把 structure: S + 把 + O + Verb + Location'}],
+    bei_passive:    [{bad:'钱包小偷被偷走了。',           good:'他的钱包被小偷偷走了。',         tip:'被 passive needs clear subject and agent'}],
+    buguan_dou:     [{bad:'不管下雨，虽然他去跑步。',     good:'不管下雨，他都去跑步。',         tip:'不管 pairs with 都, not 虽然'}],
+    zhiyou_cai:     [{bad:'只要努力学习，才能通过考试。', good:'只有努力学习，才能通过考试。',   tip:'只有…才 not 只要…才 (只要…就 is a different pattern)'}],
+    jishi_ye:       [{bad:'即使下大雨，但是他会来。',     good:'即使下大雨，他也会来。',         tip:'即使 pairs with 也, not 但是'}],
+    jiran_jiu:      [{bad:'既然决定了，但是就去做。',     good:'既然决定了，就去做吧。',         tip:'既然 pairs with 就, not 但是'}],
+    fei_buke:       [{bad:'这件事你非去不要。',           good:'这件事你非去不可。',             tip:'非…不可 is a fixed pattern meaning "must"'}],
+    zhisuoyi:       [{bad:'他之所以成功，所以他努力。',   good:'他之所以成功，是因为他努力。',   tip:'之所以 pairs with 是因为'}],
+    yueLaiYue:      [{bad:'天气很来越冷了。',             good:'天气越来越冷了。',               tip:'越来越 is a fixed adverb meaning "more and more"'}],
+    dui_laishuo:    [{bad:'给初学者来说太难了。',         good:'对初学者来说太难了。',           tip:'对…来说 not 给…来说'}],
+  };
+
+  const patternKeys = TOPIC_GRAMMAR_MAP[topic] || [];
+  for (const pk of patternKeys) {
+    if (HSK36_ERRORS[pk]) {
+      const e = HSK36_ERRORS[pk][0];
+      return {type:'error_hc', wrong:e.bad, correct:e.good, tip:e.tip};
+    }
+  }
+
+  return _origGetErrorStep(levelNum, lessonNum, newWords, allWords);
+}
+
+// ── PATCH generateLessonSteps for HSK3-6 ─────────────────────────
+// For higher levels, add harder exercise types:
+// HSK3+: sentence_placement (where does this word go?)
+// HSK4+: translate_order (harder sentence reorder)
+// HSK5+: reading_passage, error_correction
+// HSK6+: pinyin_type replaced with formal writing prompts
+
+const _origGenerateLessonSteps = generateLessonSteps;
+function generateLessonSteps(levelNum, lessonNum, allWords) {
+  // Use original for HSK1-2
+  if (levelNum <= 2) return _origGenerateLessonSteps(levelNum, lessonNum, allWords);
+
+  const key = levelNum + '-' + lessonNum;
+  const vocab = LESSON_VOCAB[key];
+  if (!vocab) return null;
+
+  const newIds   = vocab.new || [];
+  const newWords = newIds
+    .map(id => allWords.find(w=>w.id===id))
+    .filter(Boolean)
+    .filter(w => w && w.zh); // guard: skip if word ID not in HSK data
+
+  if (newWords.length === 0) return null;
+
+  // Review pool from last 15 lessons of same level
+  const reviewIds = [];
+  for (let l = Math.max(1, lessonNum-15); l < lessonNum; l++) {
+    const prev = LESSON_VOCAB[levelNum+'-'+l];
+    if (prev) reviewIds.push(...(prev.new||[]));
+  }
+  const reviewWords = shuffle(
+    reviewIds.map(id=>allWords.find(w=>w.id===id)).filter(Boolean)
+  ).slice(0, 10);
+
+  const steps = [];
+
+  // ── PHASE 1: INTRODUCE
+  newWords.forEach(w => steps.push({type:'word_card', word:w}));
+
+  // ── PHASE 2: RECOGNITION
+  newWords.forEach(w => {
+    const d = buildDistractors(w, allWords, 2);
+    steps.push({type:'audio_char',  word:w, distractors:d, pool:allWords});
+    steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
+  });
+
+  // ── PHASE 3: ACTIVE RECALL
+  shuffle([...newWords]).slice(0,2).forEach(w => {
+    const d = buildDistractors(w, allWords, 2);
+    steps.push({type:'mcq_hanzi', word:w, distractors:d, pool:allWords});
+  });
+
+  // ── PHASE 4: SENTENCE BUILD
+  newWords.slice(0,2).forEach(w => {
+    if (w.ex?.zh && [...w.ex.zh].length >= 3 && [...w.ex.zh].length <= 10) {
+      steps.push({type:'sentence_build', sentence:w.ex.zh, chars:[...w.ex.zh], extras:[], word:w});
+    }
+  });
+
+  // ── PHASE 5: CONTEXTUAL FILL-BLANK (grammar focus)
+  const blanks = getContextualBlanks(levelNum, lessonNum, newWords, allWords);
+  blanks.slice(0,2).forEach(b => steps.push(b));
+
+  // ── PHASE 6: LEVEL-SPECIFIC EXERCISES
+  if (levelNum >= 3) {
+    // Sentence placement (where does this word fit?)
+    newWords.slice(0,2).forEach(w => {
+      steps.push({type:'sentence_placement', word:w, pool:allWords});
+    });
+  }
+  if (levelNum >= 4) {
+    // Translate order (harder sentence reordering)
+    newWords.slice(0,1).forEach(w => {
+      steps.push({type:'translate_order', word:w});
+    });
+    // Error correction using real HSK patterns
+    newWords.slice(0,1).forEach(w => {
+      steps.push({type:'error_correction', word:w, pool:allWords});
+    });
+  }
+  if (levelNum >= 5) {
+    // Reading passage for context
+    newWords.slice(0,1).forEach(w => {
+      if (w.ex?.zh) steps.push({type:'reading_passage', word:w});
+    });
+  }
+
+  // ── PHASE 7: REVIEW (70% old content)
+  if (reviewWords.length >= 2) {
+    // Match pairs
+    steps.push({type:'match', words:shuffle([...reviewWords]).slice(0,4)});
+    // MCQ review
+    shuffle([...reviewWords]).slice(0,4).forEach(w => {
+      const d = buildDistractors(w, allWords, 2);
+      steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
+    });
+    // Listening review
+    shuffle([...reviewWords]).slice(0,2).forEach(w => {
+      const d = buildDistractors(w, allWords, 2);
+      steps.push({type:'listen_pick', word:w, distractors:d, pool:allWords});
+    });
+  }
+
+  // ── PHASE 8: ERROR DETECTION
+  const errStep = getErrorStep(levelNum, lessonNum, newWords, allWords);
+  if (errStep) steps.push(errStep);
+
+  // Keep word cards at top, shuffle the rest
+  const cards = steps.filter(s => s.type === 'word_card');
+  const rest  = shuffle(steps.filter(s => s.type !== 'word_card'));
+  return [...cards, ...rest];
+}
+
+
+
+
 // ── GRAMMAR PATTERNS (for fill-blank and error exercises) ─────────
 // Each pattern: context sentence, blank position, correct, wrong options
 // ALL blanks are disambiguated by context.
