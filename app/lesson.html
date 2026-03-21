@@ -366,13 +366,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   <div class="nh-card">
     <span class="nh-icon">💔</span>
     <div class="nh-title">Out of Hearts!</div>
-    <div class="nh-desc">Watch a short ad to get 1 heart and keep going.</div>
+    <div class="nh-desc">Watch a 15-second ad to earn 1 heart. Up to 5 ads per session.</div>
     <div class="nh-ad-bar" id="nh-ad-bar"><div class="nh-ad-fill" id="nh-ad-fill"></div></div>
     <div class="nh-ad-label" id="nh-ad-label"></div>
     <div class="nh-btns">
-      <button class="btn-primary" id="nh-watch-btn" onclick="watchAdForHeart()">🎥 Watch Ad (+1 Heart)</button>
-      <button style="width:100%;padding:12px;border-radius:14px;background:transparent;border:1.5px solid var(--border2);color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer" onclick="window.location.href='/app/dashboard.html'">Back to Dashboard</button>
+      <button class="btn-primary" id="nh-watch-btn" onclick="watchAdForHeart()">🎥 Watch Ad (+1 Heart, 15s)</button>
+      <button style="width:100%;padding:13px;border-radius:14px;background:linear-gradient(135deg,rgba(61,219,122,.15),rgba(167,139,250,.15));border:1.5px solid var(--green);color:var(--green);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer" onclick="tryPremiumFree()">🌟 Try Premium Free — 7 Days</button>
+      <button style="width:100%;padding:12px;border-radius:14px;background:transparent;border:1.5px solid var(--border2);color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer" onclick="window.location.href='/app/dashboard.html'">← Back to Dashboard</button>
     </div>
+    <div id="nh-ads-used" style="font-size:11px;color:var(--ink3);margin-top:4px"></div>
   </div>
 </div>
 
@@ -382,11 +384,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   <div class="eo-card">
     <div class="eo-icon">⚡</div>
     <div class="eo-title">Out of Energy!</div>
-    <div class="eo-sub">You need energy to keep going. Try Pro for unlimited energy, watch an ad for +5, or spend diamonds.</div>
+    <div class="eo-sub">You need energy to keep going. Try Pro for unlimited energy, watch an ad for +15, or spend diamonds.</div>
     <button class="btn-pro-trial" id="eo-pro-btn">🌟 Try Pro Free — 7 Days</button>
     <div class="eo-bar-wrap" id="eo-bar-wrap"><div class="eo-bar-fill" id="eo-bar-fill"></div></div>
     <div class="eo-bar-lbl" id="eo-bar-lbl"></div>
-    <button class="btn-eo-ad" id="eo-ad-btn">📺 Watch Ad (+5 Energy)</button>
+    <button class="btn-eo-ad" id="eo-ad-btn">📺 Watch Ad (+15 Energy, 15s)</button>
     <div style="font-size:11px;font-weight:700;color:var(--ink3)">Buy with Diamonds 💎</div>
     <div class="eo-diamond-prices">
       <div class="eo-price-btn" onclick="buyEnergyDiamonds(5,50)"><div class="ep-amount">+5 ⚡</div><div class="ep-cost">50💎</div></div>
@@ -6183,7 +6185,7 @@ function hideEnergyOverlay() {
   document.getElementById('eo-bar-wrap').style.display = 'none';
   document.getElementById('eo-bar-lbl').textContent = '';
   const adBtn = document.getElementById('eo-ad-btn');
-  if (adBtn) { adBtn.disabled = false; adBtn.textContent = '📺 Watch Ad (+5 Energy)'; }
+  if (adBtn) { adBtn.disabled = false; adBtn.textContent = '📺 Watch Ad (+15 Energy, 15s)'; }
 }
 
 function watchEnergyAd() {
@@ -6193,23 +6195,25 @@ function watchEnergyAd() {
   const lbl  = document.getElementById('eo-bar-lbl');
   if (!btn) return;
   btn.disabled = true;
-  btn.textContent = 'Loading ad…';
+  btn.textContent = 'Ad playing…';
   bar.style.display = 'block';
   fill.style.width = '0%';
+  const AD_DURATION = 15000;
   let elapsed = 0;
   clearInterval(eoAdTimer);
   eoAdTimer = setInterval(() => {
     elapsed += 80;
-    fill.style.width = Math.min(100, (elapsed / 5000) * 100) + '%';
-    if (elapsed >= 5000) {
+    fill.style.width = Math.min(100, (elapsed / AD_DURATION) * 100) + '%';
+    if (elapsed >= AD_DURATION) {
       clearInterval(eoAdTimer);
       lbl.textContent = 'Done!';
-      energy = Math.min(MAX_ENERGY, energy + 5);
+      energy = Math.min(MAX_ENERGY, energy + 15);
+      localStorage.setItem(key('energy'), energy);
       renderEnergy();
       hideEnergyOverlay();
-      showToast('⚡ +5 Energy! Keep going!');
+      showToast('⚡ +15 Energy! Keep going!');
     } else {
-      lbl.textContent = 'Ad playing… ' + Math.ceil((5000 - elapsed) / 1000) + 's';
+      lbl.textContent = 'Ad playing… ' + Math.ceil((AD_DURATION - elapsed) / 1000) + 's';
     }
   }, 80);
 }
@@ -8425,11 +8429,12 @@ async function showComplete() {
     localStorage.setItem(key('xp'), newXP);
     localStorage.setItem(key('completed_lessons'), JSON.stringify([...completedLessons, plan.lessonNum]));
     // Level advancement
-    const totalWords = HSK[plan.levelNum]?.words?.length || 0;
-    const totalLessonsInLevel = Math.ceil(totalWords / 5) * 6; // 6 lessons per block of 5 words
+    // Count lessons from LESSON_VOCAB for this level, fallback to word-based calc
+    const levelLessons = Object.keys(LESSON_VOCAB).filter(k => k.startsWith(plan.levelNum + '-')).length;
+    const totalLessonsInLevel = levelLessons > 0 ? levelLessons : Math.ceil((HSK[plan.levelNum]?.words?.length||0) / 3);
     const nextLessonNum = plan.lessonNum + 1;
     if (nextLessonNum > totalLessonsInLevel && plan.levelNum < 6) {
-      // Move to next HSK level
+      // All lessons in this level done → move to next HSK level
       localStorage.setItem(key('user_level'), String(plan.levelNum + 1));
       localStorage.setItem(key('user_lesson'), '1');
     } else {
@@ -8580,27 +8585,49 @@ async function saveXP(earned) {
 // ══════════════════════════════════════════════════════════
 // NO HEARTS AD
 // ══════════════════════════════════════════════════════════
+let nhAdsUsedThisSession = 0;
+const NH_MAX_ADS = 5;
+const NH_AD_DURATION = 15000;
+
 function watchAdForHeart() {
+  if (nhAdsUsedThisSession >= NH_MAX_ADS) {
+    showToast('Max ads reached for this session. Try again later!');
+    return;
+  }
   const btn = document.getElementById('nh-watch-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Ad playing…'; }
   const barWrap = document.getElementById('nh-ad-bar');
   const fill    = document.getElementById('nh-ad-fill');
   const label   = document.getElementById('nh-ad-label');
+  const counter = document.getElementById('nh-ads-used');
   if (barWrap) barWrap.style.display = 'block';
+  if (fill)   fill.style.width = '0%';
   let elapsed = 0;
   nhAdTimer = setInterval(() => {
     elapsed += 80;
-    if (fill)  fill.style.width = Math.min(100, (elapsed / 5000) * 100) + '%';
-    if (label) label.textContent = elapsed < 5000 ? 'Please wait ' + Math.ceil((5000 - elapsed) / 1000) + 's…' : 'Done!';
-    if (elapsed >= 5000) {
+    if (fill)  fill.style.width = Math.min(100, (elapsed / NH_AD_DURATION) * 100) + '%';
+    if (label) label.textContent = elapsed < NH_AD_DURATION
+      ? 'Please wait ' + Math.ceil((NH_AD_DURATION - elapsed) / 1000) + 's…'
+      : 'Done!';
+    if (elapsed >= NH_AD_DURATION) {
       clearInterval(nhAdTimer);
+      nhAdsUsedThisSession++;
       hearts = Math.min(5, hearts + 1);
       localStorage.setItem(key('hearts'), hearts);
       renderHearts();
       document.getElementById('nh-overlay').classList.remove('show');
       showToast('❤️ +1 Heart! Keep going!');
+      // Update counter display for next time
+      if (counter) counter.textContent = nhAdsUsedThisSession < NH_MAX_ADS
+        ? nhAdsUsedThisSession + '/' + NH_MAX_ADS + ' ads used this session'
+        : 'Max ads reached for today';
     }
   }, 80);
+}
+
+function tryPremiumFree() {
+  // Will be wired to payment system later
+  showToast('🌟 Premium trial coming soon!');
 }
 
 // ══════════════════════════════════════════════════════════
