@@ -6329,6 +6329,7 @@ function buildSteps(plan) {
     shuffle([...nw]).forEach(w => s.push({ type:'fill_blank', word: w }));
     shuffle([...nw]).slice(0,4).forEach(w => s.push({ type:'word_position', word: w }));
     shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'translate_order', word: w }));
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'sentence_placement', word: w }));
     shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'pinyin_type', word: w }));
     // Review older words
     pick(rw, 3).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
@@ -6340,12 +6341,16 @@ function buildSteps(plan) {
 
   // ── BLOCK 2: EXPANSION ──────────────────────────────────────────────────
   else if (posInBlock === 2) {
-    const extraStart = Math.min(nw.length * 2, allWords.length - 3);
-    const extraWords = allWords.slice(extraStart, extraStart + 2);
+    // Extra words must not overlap with current new words
+    const nwIds = new Set(nw.map(w => w.id));
+    const extraPool = allWords.filter(w => !nwIds.has(w.id));
+    const extraStart = Math.min(nw.length * 2, extraPool.length - 3);
+    const extraWords = extraPool.slice(extraStart, extraStart + 2);
     extraWords.forEach(w => s.push({ type:'word_card', word: w }));
     shuffle([...nw]).forEach(w => s.push({ type:'listen_tf', word: w }));
     shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'listen_sentence', word: w }));
     shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'sentence_order', word: w }));
+    shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'sentence_placement', word: w }));
     shuffle([...nw]).slice(0,3).forEach(w => s.push({ type:'word_position', word: w }));
     shuffle([...nw]).slice(0,2).forEach(w => s.push({ type:'error_correction', word: w, pool: allWords }));
     pick(rw, 3).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
@@ -6363,6 +6368,7 @@ function buildSteps(plan) {
     pw.forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords }));
     pw.slice(0,4).forEach(w => s.push({ type:'mcq_hanzi', word: w, pool: allWords }));
     pw.slice(0,4).forEach(w => s.push({ type:'error_correction', word: w, pool: allWords }));
+    pw.slice(0,3).forEach(w => s.push({ type:'sentence_placement', word: w }));
     nw.slice(0,2).forEach(w => s.push({ type:'reading_passage', word: w }));
     pw.slice(0,4).forEach(w => s.push({ type:'sentence_order', word: w }));
     pw.slice(0,5).forEach(w => s.push({ type:'word_position', word: w }));
@@ -6375,11 +6381,14 @@ function buildSteps(plan) {
     pw.slice(0,3).forEach(w => s.push({ type:'listen_tf', word: w }));
   }
 
-  // Shuffle the middle section so order varies each time
-  // (keep first word_card/grammar at top, shuffle the rest)
-  const fixed = s.filter(x => x.type === 'word_card' || x.type === 'grammar');
-  const rest  = shuffle(s.filter(x => x.type !== 'word_card' && x.type !== 'grammar'));
-  return [...fixed, ...rest].filter(Boolean);
+  // Keep word_card and grammar at start (in order), shuffle everything else
+  const fixed = [];
+  const rest  = [];
+  s.forEach(x => {
+    if (x.type === 'word_card' || x.type === 'grammar') fixed.push(x);
+    else rest.push(x);
+  });
+  return [...fixed, ...shuffle(rest)].filter(Boolean);
 }
 
 function buildSpeedSteps(plan) {
@@ -6444,7 +6453,8 @@ function renderStep(idx) {
     case 'pinyin_type':      renderPinyinType(step); break;
     case 'listen_sentence':  renderListenSentence(step); break;
     case 'translate_order':  renderTranslateOrder(step); break;
-    case 'word_position':   renderWordPosition(step); break;
+    case 'word_position':      renderWordPosition(step); break;
+    case 'sentence_placement': renderSentencePlacement(step); break;
     default: nextStep();
   }
 
@@ -7162,6 +7172,114 @@ function checkWordPosition() {
 }
 
 
+
+// ══════════════════════════════════════════════════════════
+// SENTENCE PLACEMENT — Which sentence correctly uses this word?
+// Shows 4 complete sentences. Only one uses the word correctly.
+// Perfect for adverbs (再,也,都), prepositions (在,从,对), adjectives.
+// ══════════════════════════════════════════════════════════
+function renderSentencePlacement(step) {
+  const w = step.word;
+  if (!w || !w.ex || !w.ex.zh) { nextStep(); return; }
+
+  const correctSentence = w.ex.zh;
+  const targetWord      = w.zh;
+  const allWords        = step.pool || [];
+
+  // Build 3 wrong sentences: take the correct sentence and move the target
+  // word to wrong positions within it
+  const chars = [...correctSentence];
+
+  // Find where the target word is in the correct sentence
+  const tChars = [...targetWord];
+  let targetIdx = -1;
+  for (let i = 0; i <= chars.length - tChars.length; i++) {
+    if (tChars.every((ch, j) => chars[i + j] === ch)) { targetIdx = i; break; }
+  }
+
+  // If can't find it, fallback
+  if (targetIdx < 0) { nextStep(); return; }
+
+  // Generate wrong sentences by moving the target word to different positions
+  const wrongSentences = [];
+  const sentWithout = [...chars.slice(0, targetIdx), ...chars.slice(targetIdx + tChars.length)];
+  const positions = [];
+
+  // Pick 3 wrong insertion positions (different from correct)
+  const len = sentWithout.length;
+  const candidatePositions = [];
+  for (let i = 0; i <= len; i++) {
+    if (i !== targetIdx) candidatePositions.push(i);
+  }
+  const wrongPositions = shuffle(candidatePositions).slice(0, 3);
+
+  wrongPositions.forEach(pos => {
+    const arr = [...sentWithout];
+    arr.splice(pos, 0, ...tChars);
+    wrongSentences.push(arr.join(''));
+  });
+
+  // Build 4 options: 1 correct + 3 wrong, shuffled
+  const options = shuffle([
+    { text: correctSentence, correct: true },
+    ...wrongSentences.map(s => ({ text: s, correct: false }))
+  ]);
+
+  stepArea.innerHTML = `
+    <div class="q-label write">📍 Which sentence is correct?</div>
+    <div style="font-size:13px;color:var(--ink2);margin-bottom:6px">Which one correctly uses:</div>
+    <div style="font-size:22px;font-weight:800;color:#a78bfa;padding:8px 14px;background:rgba(167,139,250,.12);border-radius:10px;display:inline-block;margin-bottom:14px;letter-spacing:2px">${targetWord} <span style="font-size:13px;font-weight:400;color:var(--blue)">${w.py}</span> <span style="font-size:12px;font-weight:400;color:var(--ink2)">· ${w.en}</span></div>
+    <div id="sp-options" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+
+  const optsEl = document.getElementById('sp-options');
+
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'background:var(--card2);border:2px solid var(--border2);border-radius:14px;padding:14px 16px;font-size:16px;color:var(--ink);text-align:left;cursor:pointer;width:100%;line-height:1.5;letter-spacing:.5px;transition:all .15s';
+
+    // Highlight the target word in the sentence
+    const highlighted = opt.text.replace(
+      targetWord,
+      `<span style="color:#a78bfa;font-weight:800">${targetWord}</span>`
+    );
+    btn.innerHTML = highlighted;
+
+    btn.addEventListener('click', () => {
+      if (answeredStep) return;
+      answeredStep = true;
+      consumeEnergy();
+
+      // Disable all buttons
+      optsEl.querySelectorAll('button').forEach(b => b.style.cursor = 'default');
+
+      if (opt.correct) {
+        btn.style.borderColor = 'var(--green)';
+        btn.style.background  = 'rgba(61,219,122,.1)';
+        sessionXP += 3;
+        showFeedback(true, null);
+      } else {
+        btn.style.borderColor = 'var(--rose)';
+        btn.style.background  = 'rgba(248,113,113,.08)';
+        loseHeart();
+        // Highlight correct answer
+        optsEl.querySelectorAll('button').forEach((b, bi) => {
+          if (options[bi].correct) {
+            b.style.borderColor = 'var(--green)';
+            b.style.background  = 'rgba(61,219,122,.1)';
+          }
+        });
+        showFeedback(false, null, w.ex.en);
+      }
+      bottomArea.innerHTML = '<button class="btn-primary" onclick="nextStep()">Continue →</button>';
+    });
+
+    optsEl.appendChild(btn);
+  });
+}
+
+
+
 function renderTranslateOrder(step) {
   const w = step.word;
   const ex = w.ex;
@@ -7220,7 +7338,15 @@ function renderTranslateOrder(step) {
 // MATCHING
 // ══════════════════════════════════════════════════════════
 function renderMatch(step) {
-  const words = (step.words || []).filter(Boolean).slice(0, 4);
+  // Deduplicate by id and by english meaning to prevent duplicate pairs
+  const seen = new Set();
+  const deduped = (step.words || []).filter(Boolean).filter(w => {
+    const key = w.id + '|' + w.en;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 4);
+  const words = deduped;
   if (words.length < 2) { nextStep(); return; }
   const zhItems = shuffle(words.map(w => ({ text: w.zh, id: w.id, side:'zh' })));
   const enItems = shuffle(words.map(w => ({ text: w.en, id: w.id, side:'en' })));
