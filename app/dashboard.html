@@ -268,10 +268,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="stat-pill xp"><span>⚡</span><span class="v" id="stat-xp">0</span><span>XP</span></div>
     <div class="stat-pill hearts" onclick="showHeartsModal()"><span>❤️</span><span class="v" id="stat-hearts">5</span></div>
     <div class="stat-pill fire"><span>🔥</span><span class="v" id="stat-streak">0</span></div>
-    <div class="stat-pill" id="stat-energy-pill">
+    <div class="stat-pill" id="stat-energy-pill" style="cursor:pointer" onclick="openEnergyModal()">
       <span>⚡</span><span class="v" id="dash-energy-count" style="color:#fbbf24">25</span>
     </div>
-    <div class="stat-pill" style="cursor:pointer" onclick="showToast('💎 Diamond shop coming soon!')">
+    <div class="stat-pill" style="cursor:pointer" onclick="openDiamondShop()">
       <span>💎</span><span class="v" id="dash-diamond-count" style="color:#a78bfa">0</span>
     </div>
   </div>
@@ -934,5 +934,295 @@ async function init() {
 
 init();
 </script>
+
+<!-- ══════════════════════════════════════════════════════
+     DIAMOND SHOP MODAL
+══════════════════════════════════════════════════════ -->
+<div id="diamond-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeDiamondShop()">
+  <div style="background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 44px;max-height:92vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-size:20px;font-weight:800;color:var(--ink)">💎 Diamond Shop</div>
+      <button onclick="closeDiamondShop()" style="background:none;border:none;color:var(--ink2);font-size:26px;cursor:pointer;line-height:1;padding:0 4px">×</button>
+    </div>
+    <!-- Balance -->
+    <div style="background:var(--bg2);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:32px">💎</span>
+      <div>
+        <div style="font-size:12px;color:var(--ink2)">Your balance</div>
+        <div id="shop-diamond-bal" style="font-size:24px;font-weight:800;color:#a78bfa">0</div>
+      </div>
+    </div>
+    <!-- Free trial banner -->
+    <div onclick="subscribePlan('trial')" style="background:linear-gradient(135deg,#3ddb7a22,#a78bfa22);border:2px solid var(--green);border-radius:16px;padding:16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <span style="font-size:32px">🌟</span>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:800;color:var(--green)">Try Premium Free — 7 Days</div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:2px">Unlimited lessons · No ads · All levels</div>
+      </div>
+      <div style="background:var(--green);color:#000;font-size:12px;font-weight:800;padding:6px 12px;border-radius:20px;white-space:nowrap">FREE</div>
+    </div>
+    <!-- Subscriptions -->
+    <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Premium Plans</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+      <div onclick="subscribePlan('monthly')" style="background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">Monthly</div>
+          <div style="font-size:12px;color:var(--ink2)">Unlimited lessons · No ads</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;color:var(--green)">¥17</div>
+          <div style="font-size:11px;color:var(--ink3)">/month</div>
+        </div>
+      </div>
+      <div onclick="subscribePlan('quarterly')" style="background:var(--bg2);border:2px solid var(--blue);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;position:relative">
+        <div style="position:absolute;top:-9px;right:12px;background:var(--blue);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px">POPULAR</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">3 Months</div>
+          <div style="font-size:12px;color:var(--ink2)">Save 12% · only ¥15/mo</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;color:var(--blue)">¥45</div>
+          <div style="font-size:11px;color:var(--ink3)">was ¥51</div>
+        </div>
+      </div>
+      <div onclick="subscribePlan('yearly')" style="background:var(--bg2);border:2px solid var(--gold);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;position:relative">
+        <div style="position:absolute;top:-9px;right:12px;background:var(--gold);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px">BEST VALUE</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">Yearly</div>
+          <div style="font-size:12px;color:var(--ink2)">Save 47% · ¥9/mo · +500💎 free</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;color:var(--gold)">¥108</div>
+          <div style="font-size:11px;color:var(--ink3)">was ¥204</div>
+        </div>
+      </div>
+    </div>
+    <!-- Diamond packs -->
+    <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Buy Diamonds</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div onclick="buyDiamondPack(100,5)" style="background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:14px;text-align:center;cursor:pointer">
+        <div style="font-size:26px">💎</div>
+        <div style="font-size:20px;font-weight:800;color:#a78bfa;margin:4px 0">100</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">¥5</div>
+      </div>
+      <div onclick="buyDiamondPack(300,12)" style="background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:14px;text-align:center;cursor:pointer">
+        <div style="font-size:26px">💎💎</div>
+        <div style="font-size:20px;font-weight:800;color:#a78bfa;margin:4px 0">300</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">¥12</div>
+      </div>
+      <div onclick="buyDiamondPack(700,25)" style="background:var(--bg2);border:2px solid var(--blue);border-radius:14px;padding:14px;text-align:center;cursor:pointer;position:relative">
+        <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap">SAVE 12%</div>
+        <div style="font-size:26px">💎💎💎</div>
+        <div style="font-size:20px;font-weight:800;color:#a78bfa;margin:4px 0">700</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">¥25</div>
+      </div>
+      <div onclick="buyDiamondPack(2000,60)" style="background:linear-gradient(135deg,#f5c84215,#a78bfa15);border:2px solid var(--gold);border-radius:14px;padding:14px;text-align:center;cursor:pointer;position:relative">
+        <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap">BEST VALUE</div>
+        <div style="font-size:26px">👑</div>
+        <div style="font-size:20px;font-weight:800;color:var(--gold);margin:4px 0">2000</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">¥60</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:16px">Diamonds can be used for energy refills in lessons</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ENERGY MODAL
+══════════════════════════════════════════════════════ -->
+<div id="energy-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeEnergyModal()">
+  <div style="background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 44px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-size:20px;font-weight:800;color:var(--ink)">⚡ Energy</div>
+      <button onclick="closeEnergyModal()" style="background:none;border:none;color:var(--ink2);font-size:26px;cursor:pointer;line-height:1;padding:0 4px">×</button>
+    </div>
+    <!-- Energy bar -->
+    <div style="background:var(--bg2);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:14px;color:var(--ink2)">Current energy</div>
+        <div id="em-energy-val" style="font-size:22px;font-weight:800;color:#fbbf24">25 / 25</div>
+      </div>
+      <div style="background:var(--bg);border-radius:20px;height:10px;overflow:hidden">
+        <div id="em-energy-bar" style="height:100%;background:linear-gradient(90deg,#fbbf24,#f97316);border-radius:20px;transition:width .4s;width:100%"></div>
+      </div>
+      <div id="em-refill-msg" style="font-size:12px;color:var(--ink2);margin-top:10px;text-align:center">Full! Start a lesson to use energy.</div>
+    </div>
+    <!-- How it works -->
+    <div style="background:var(--bg2);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">How energy works</div>
+      <div style="font-size:12px;color:var(--ink2);line-height:1.7">
+        ⚡ Each answer in a lesson uses 1 energy<br>
+        🔄 Energy refills 1 point every <b style="color:var(--ink)">5 minutes</b><br>
+        💎 Spend 50💎 for +5 energy instantly<br>
+        💎 Spend 200💎 to fully refill<br>
+        🌟 Premium subscribers have unlimited energy
+      </div>
+    </div>
+    <!-- Actions -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="watchAdForEnergy()" style="background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;width:100%;cursor:pointer;text-align:left">
+        <span style="font-size:26px">📺</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--ink)">Watch an ad</div>
+          <div style="font-size:12px;color:var(--ink2)">Get +5 energy free</div>
+        </div>
+        <div style="font-size:14px;font-weight:800;color:var(--green)">+5 ⚡</div>
+      </button>
+      <button onclick="buyEnergyFromDash(50, 5)" style="background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;width:100%;cursor:pointer;text-align:left">
+        <span style="font-size:26px">💎</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--ink)">Buy +5 energy</div>
+          <div style="font-size:12px;color:var(--ink2)">50 diamonds</div>
+        </div>
+        <div style="font-size:14px;font-weight:800;color:#a78bfa">50 💎</div>
+      </button>
+      <button onclick="buyEnergyFromDash(200, 25)" style="background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;width:100%;cursor:pointer;text-align:left">
+        <span style="font-size:26px">⚡</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--ink)">Full refill</div>
+          <div style="font-size:12px;color:var(--ink2)">200 diamonds</div>
+        </div>
+        <div style="font-size:14px;font-weight:800;color:#a78bfa">200 💎</div>
+      </button>
+      <button onclick="closeDiamondShop();openDiamondShop()" style="background:linear-gradient(135deg,#3ddb7a22,#a78bfa22);border:2px solid var(--green);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;width:100%;cursor:pointer;text-align:left">
+        <span style="font-size:26px">🌟</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--green)">Try Premium Free</div>
+          <div style="font-size:12px;color:var(--ink2)">7 days free · Unlimited energy</div>
+        </div>
+        <div style="font-size:14px;font-weight:800;color:var(--green)">FREE</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Diamond Shop ──────────────────────────────────────────
+function openDiamondShop() {
+  const modal = document.getElementById('diamond-modal');
+  modal.style.display = 'flex';
+  const uid = (typeof _uid !== 'undefined' && _uid) ? _uid : 'guest';
+  const bal = Number(localStorage.getItem('diamonds_' + uid) || 0);
+  const el = document.getElementById('shop-diamond-bal');
+  if (el) el.textContent = bal + ' 💎';
+}
+function closeDiamondShop() {
+  document.getElementById('diamond-modal').style.display = 'none';
+}
+function subscribePlan(plan) {
+  closeDiamondShop();
+  const msgs = {
+    trial:     '7-day free trial coming soon! Payment integration in progress.',
+    monthly:   'Monthly plan ¥17/mo — Payment integration coming soon!',
+    quarterly: 'Quarterly plan ¥45 — Payment integration coming soon!',
+    yearly:    'Yearly plan ¥108 — Payment integration coming soon!'
+  };
+  if (typeof showToast === 'function') showToast('🌟 ' + (msgs[plan] || 'Coming soon!'));
+}
+function buyDiamondPack(amount, price) {
+  closeDiamondShop();
+  if (typeof showToast === 'function') showToast('💎 ' + amount + ' diamonds for ¥' + price + ' — Payment coming soon!');
+}
+
+// ── Energy Modal ──────────────────────────────────────────
+const ENERGY_MAX = 25;
+const ENERGY_REFILL_MS = 5 * 60 * 1000; // 5 minutes per 1 energy
+
+function openEnergyModal() {
+  const modal = document.getElementById('energy-modal');
+  modal.style.display = 'flex';
+  updateEnergyModal();
+}
+function closeEnergyModal() {
+  document.getElementById('energy-modal').style.display = 'none';
+}
+function updateEnergyModal() {
+  const uid = (typeof _uid !== 'undefined' && _uid) ? _uid : 'guest';
+  const now = Date.now();
+  const ts  = Number(localStorage.getItem('energy_ts_' + uid) || now);
+  let   en  = Number(localStorage.getItem('energy_' + uid));
+  if (isNaN(en) || en < 0) en = ENERGY_MAX;
+
+  // Calculate refill
+  if (en < ENERGY_MAX) {
+    const elapsed = now - ts;
+    const gained  = Math.floor(elapsed / ENERGY_REFILL_MS);
+    en = Math.min(ENERGY_MAX, en + gained);
+    if (gained > 0) {
+      const newTs = ts + gained * ENERGY_REFILL_MS;
+      localStorage.setItem('energy_' + uid, en);
+      localStorage.setItem('energy_ts_' + uid, newTs);
+    }
+  }
+
+  const valEl = document.getElementById('em-energy-val');
+  const barEl = document.getElementById('em-energy-bar');
+  const msgEl = document.getElementById('em-refill-msg');
+
+  if (valEl) valEl.textContent = en + ' / ' + ENERGY_MAX;
+  if (barEl) barEl.style.width = Math.round(en / ENERGY_MAX * 100) + '%';
+
+  if (msgEl) {
+    if (en >= ENERGY_MAX) {
+      msgEl.textContent = 'Full! Start a lesson to use energy.';
+      msgEl.style.color = 'var(--green)';
+    } else {
+      const tsNow = Number(localStorage.getItem('energy_ts_' + uid) || now);
+      const msLeft = ENERGY_REFILL_MS - (now - tsNow);
+      const minsLeft = Math.max(0, Math.ceil(msLeft / 60000));
+      const secsLeft = Math.max(0, Math.ceil(msLeft / 1000));
+      const timeStr = minsLeft > 0 ? minsLeft + ' min' : secsLeft + ' sec';
+      msgEl.textContent = '+1 energy in ' + timeStr + ' · Full in ' + Math.ceil((ENERGY_MAX - en) * ENERGY_REFILL_MS / 60000) + ' min';
+      msgEl.style.color = '#fbbf24';
+    }
+  }
+}
+
+function watchAdForEnergy() {
+  closeEnergyModal();
+  // Simulate 5-second ad
+  let secs = 5;
+  if (typeof showToast === 'function') showToast('📺 Ad starting...');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px';
+  overlay.innerHTML = '<div style="color:#fff;font-size:18px;font-weight:700">📺 Watching ad...</div><div id="ad-countdown" style="color:#fbbf24;font-size:48px;font-weight:900">5</div><div style="color:#888;font-size:12px">Please wait</div>';
+  document.body.appendChild(overlay);
+  const iv = setInterval(() => {
+    secs--;
+    const el = document.getElementById('ad-countdown');
+    if (el) el.textContent = secs;
+    if (secs <= 0) {
+      clearInterval(iv);
+      overlay.remove();
+      // Give +5 energy
+      const uid = (typeof _uid !== 'undefined' && _uid) ? _uid : 'guest';
+      let en = Number(localStorage.getItem('energy_' + uid) || 0);
+      en = Math.min(ENERGY_MAX, en + 5);
+      localStorage.setItem('energy_' + uid, en);
+      if (typeof showToast === 'function') showToast('⚡ +5 energy added!');
+      // Update header
+      const pill = document.getElementById('dash-energy-count');
+      if (pill) pill.textContent = en;
+    }
+  }, 1000);
+}
+
+function buyEnergyFromDash(cost, amount) {
+  const uid = (typeof _uid !== 'undefined' && _uid) ? _uid : 'guest';
+  const diamonds = Number(localStorage.getItem('diamonds_' + uid) || 0);
+  if (diamonds < cost) {
+    if (typeof showToast === 'function') showToast('Not enough 💎 diamonds!');
+    return;
+  }
+  const newDiamonds = diamonds - cost;
+  localStorage.setItem('diamonds_' + uid, newDiamonds);
+  let en = Number(localStorage.getItem('energy_' + uid) || 0);
+  en = Math.min(ENERGY_MAX, en + amount);
+  localStorage.setItem('energy_' + uid, en);
+  closeEnergyModal();
+  if (typeof showToast === 'function') showToast('⚡ +' + amount + ' energy! (' + cost + '💎 spent)');
+  const pill = document.getElementById('dash-energy-count');
+  if (pill) pill.textContent = en;
+}
+</script>
 </body>
-</html>
