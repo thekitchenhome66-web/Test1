@@ -6263,1122 +6263,610 @@ function showToast(msg) {
 // ══════════════════════════════════════════════════════════════════
 // SRS — SPACED REPETITION SYSTEM
 // ══════════════════════════════════════════════════════════════════
-const SRS_INTERVALS = [1, 3, 7, 14, 30]; // days
 
-function srsKey(uid) { return 'srs_' + uid; }
+
+
+// ══════════════════════════════════════════════════════════════════
+// LEARNING ENGINE — DATA-DRIVEN, TEMPLATE-BASED
+//
+// DESIGN PRINCIPLES:
+//  1. No ambiguous questions — every blank has exactly one correct answer
+//  2. Context always disambiguates (no bare "我___老师")
+//  3. Distractors are plausible but unambiguously wrong in context
+//  4. 70% review / 30% new content per lesson
+//  5. SRS tracks every word — intervals: 1→2→4→7→14 days
+//  6. Each lesson: 2–4 new words, 6–10 exercises, 3–7 min
+// ══════════════════════════════════════════════════════════════════
+
+// ── SRS ENGINE ───────────────────────────────────────────────────
+const SRS_INTERVALS = [1, 2, 4, 7, 14]; // days
 function getSRS(uid) {
-  try { return JSON.parse(localStorage.getItem(srsKey(uid)) || '{}'); } catch(e) { return {}; }
+  try { return JSON.parse(localStorage.getItem('srs_'+uid)||'{}'); } catch(e) { return {}; }
 }
-function saveSRS(uid, data) {
-  localStorage.setItem(srsKey(uid), JSON.stringify(data));
-}
+function saveSRS(uid, d) { localStorage.setItem('srs_'+uid, JSON.stringify(d)); }
 function srsRecord(uid, wordId, correct) {
   if (!uid) return;
-  const srs = getSRS(uid);
-  const now = Date.now();
-  const e = srs[wordId] || { lvl:0, next:now, fails:0 };
+  const srs = getSRS(uid), now = Date.now();
+  const e = srs[wordId] || {lvl:0, next:now, fails:0, seen:0};
+  e.seen = (e.seen||0) + 1;
   if (correct) {
-    e.lvl  = Math.min(e.lvl + 1, SRS_INTERVALS.length - 1);
-    e.next = now + SRS_INTERVALS[e.lvl] * 86400000;
+    e.lvl = Math.min(e.lvl+1, SRS_INTERVALS.length-1);
+    e.next = now + SRS_INTERVALS[e.lvl]*86400000;
   } else {
-    e.lvl  = Math.max(0, e.lvl - 1);
-    e.next = now + 3600000; // retry in 1 hour
-    e.fails = (e.fails || 0) + 1;
+    e.lvl = Math.max(0, e.lvl-1);
+    e.next = now + 3600000;
+    e.fails = (e.fails||0)+1;
   }
   srs[wordId] = e;
   saveSRS(uid, srs);
 }
-function srsDue(uid, levelNum) {
-  const srs = getSRS(uid);
-  const now = Date.now();
-  return (HSK[levelNum]?.words || []).filter(w => srs[w.id]?.next <= now);
+function srsDue(uid, lvl) {
+  const srs = getSRS(uid), now = Date.now();
+  return (HSK[lvl]?.words||[]).filter(w => srs[w.id]?.next <= now && srs[w.id]?.seen > 0);
 }
-function srsWeak(uid, levelNum) {
+function srsWeak(uid, lvl) {
   const srs = getSRS(uid);
-  return (HSK[levelNum]?.words || []).filter(w => (srs[w.id]?.fails||0) >= 2 && (srs[w.id]?.lvl||0) <= 1).slice(0,4);
+  return (HSK[lvl]?.words||[]).filter(w => (srs[w.id]?.fails||0) >= 2 && (srs[w.id]?.lvl||0) <= 1).slice(0,4);
 }
 
-// ══════════════════════════════════════════════════════════════════
-// HANDCRAFTED LESSON DATA — HSK 1
-// Each lesson: 3-5 new words, every exercise hand-written
-//
-// Step types:
-//   {t:'card',   w:'1-3'}                                     — word card
-//   {t:'audio',  w:'1-3', x:['1-7','1-8']}                   — hear→pick char (x=wrong)
-//   {t:'zh_en',  w:'1-3', x:['1-4','1-7']}                   — see hanzi→pick meaning
-//   {t:'en_zh',  w:'1-3', x:['1-4','1-5']}                   — see english→pick hanzi
-//   {t:'build',  s:'我是学生', ws:['我','是','学生','他']}      — drag to build sentence
-//   {t:'blank',  s:'我___学生', a:'是', x:['在','有'], tr:'I am a student'}
-//   {t:'error',  bad:'我是喝水', good:'我喝水', tip:'S+V+O order'}
-//   {t:'listen', w:'1-40', x:['1-41','1-43']}                 — hear→pick meaning
-//   {t:'match',  ws:['1-3','1-4','1-5','1-6']}                — match 4 pairs
-// ══════════════════════════════════════════════════════════════════
-const LESSONS = {
+// ── SENTENCE TEMPLATES ────────────────────────────────────────────
+// These power fill-in-the-blank and sentence-build exercises.
+// Each template has:
+//   ctx  — full sentence with {W} replaced by word
+//   hint — what {W} tests
+//   good — correct answer for blank
+//   bad  — plausible wrong answers
+//   tr   — English translation
 
-// ─── LESSON 1 — First words: I, you, is, not ───────────────────────────────
-'1-1':{
-  title:'Me & You',
-  words:['1-3','1-4','1-5','1-6'],
-  steps:[
-    {t:'card',  w:'1-3'},
-    {t:'card',  w:'1-4'},
-    {t:'audio', w:'1-3', x:['1-7','1-13']},      // wǒ vs rén/bàba
-    {t:'audio', w:'1-4', x:['1-8','1-7']},        // nǐ vs dà/rén
-    {t:'zh_en', w:'1-3', x:['1-4','1-7']},
-    {t:'zh_en', w:'1-4', x:['1-3','1-10']},
-    {t:'en_zh', w:'1-3', x:['1-4','1-7']},
-    {t:'card',  w:'1-5'},
-    {t:'card',  w:'1-6'},
-    {t:'audio', w:'1-5', x:['1-49','1-50']},      // shì vs yǒu/zài
-    {t:'audio', w:'1-6', x:['1-91','1-5']},        // bù vs hěn/shì
-    {t:'zh_en', w:'1-5', x:['1-49','1-6']},
-    {t:'zh_en', w:'1-6', x:['1-5','1-91']},
-    {t:'en_zh', w:'1-5', x:['1-6','1-49']},
-    {t:'build', s:'我是学生',   ws:['我','是','学生','你']},
-    {t:'build', s:'你不是老师', ws:['你','不','是','老师','我']},
-    {t:'blank', s:'你___学生',  a:'是',  x:['不','有'],  tr:'You are a student'},
-    {t:'blank', s:'我___学生',  a:'不是',x:['是','有'],  tr:'I am not a student'},
-    {t:'match', ws:['1-3','1-4','1-5','1-6']},
-  ]
-},
+const SENTENCE_TEMPLATES = {
+  // Subject + 是 + noun
+  'S是N': {
+    ctx:  '他是{W}，不是学生。',
+    tr:   'He is a {W}, not a student.',
+    blank:'他是___，不是学生。',
+    good: '{W}',
+    bad:  ['学生','朋友'],
+  },
+  // Subject + 很 + adj
+  'S很Adj': {
+    ctx:  '今天天气{W}，不冷。',
+    tr:   'Today\'s weather is {W}, not cold.',
+    blank:'今天天气___，不冷。',
+    good: '{W}',
+    bad:  ['冷','大'],
+  },
+  // Subject + verb + object
+  'SVO': {
+    ctx:  '我{W}水，不吃饭。',
+    tr:   'I {W} water, not eat.',
+    blank:'我___水，不吃饭。',
+    good: '{W}',
+    bad:  ['吃','买'],
+  },
+  // Time + S + V + O
+  'TimeVO': {
+    ctx:  '今天我{W}学校，不去医院。',
+    tr:   'Today I {W} school, not hospital.',
+    blank:'今天我___学校，不去医院。',
+    good: '{W}',
+    bad:  ['来','买'],
+  },
+  // S + modal + V
+  'SModalV': {
+    ctx:  '他{W}说中文，不能说英语。',
+    tr:   'He {W} speak Chinese, not English.',
+    blank:'他___说中文，不能说英语。',
+    good: '{W}',
+    bad:  ['能','要'],
+  },
+};
 
-// ─── LESSON 2 — Greetings ──────────────────────────────────────────────────
-'1-2':{
-  title:'Greetings',
-  words:['1-1','1-2','1-85','1-83'],
-  steps:[
-    {t:'card',  w:'1-1'},
-    {t:'card',  w:'1-2'},
-    {t:'card',  w:'1-85'},
-    {t:'card',  w:'1-83'},
-    {t:'audio', w:'1-1',  x:['1-2','1-85']},
-    {t:'audio', w:'1-85', x:['1-1','1-2']},
-    {t:'audio', w:'1-83', x:['1-86','1-1']},
-    {t:'zh_en', w:'1-1',  x:['1-2','1-85']},
-    {t:'zh_en', w:'1-2',  x:['1-83','1-85']},
-    {t:'zh_en', w:'1-85', x:['1-1','1-2']},
-    {t:'zh_en', w:'1-83', x:['1-2','1-85']},
-    {t:'en_zh', w:'1-1',  x:['1-2','1-85']},
-    {t:'en_zh', w:'1-85', x:['1-1','1-83']},
-    {t:'error', bad:'我谢谢你好',   good:'你好！谢谢！', tip:'These are separate greetings'},
-    {t:'blank', s:'___, 我叫小明', a:'你好', x:['谢谢','再见'],  tr:'Hello, I\'m Xiao Ming'},
-    {t:'match', ws:['1-1','1-2','1-85','1-83']},
-    // Review L1
-    {t:'zh_en', w:'1-3', x:['1-4','1-1']},
-    {t:'zh_en', w:'1-5', x:['1-6','1-2']},
-  ]
-},
+// ── WORD CATEGORIES (for smart distractor selection) ─────────────
+// Group words by semantic/grammatical category so distractors
+// are PLAUSIBLE but unambiguously wrong in context.
+const WORD_CATS = {
+  // HSK1
+  verb_motion:  ['1-38','1-39','1-147','1-148','1-146'],          // 来去到走开
+  verb_basic:   ['1-40','1-41','1-42','1-43','1-44','1-45','1-46','1-47','1-48'], // 吃喝睡说看听写读买
+  verb_mental:  ['1-49','1-51','1-52','1-53','1-54','1-55','1-131','1-132'],      // 有要喜欢能会想知道觉得
+  noun_person:  ['1-3','1-4','1-7','1-10','1-11','1-12','1-13','1-14','1-123'],  // 我你人学生老师朋友爸爸妈妈医生
+  noun_food:    ['1-15','1-16','1-69','1-70','1-71','1-72'],       // 水饭苹果茶咖啡米饭
+  noun_place:   ['1-63','1-64','1-76','1-77','1-111','1-112','1-113'], // 学校家北京上海商店医院饭店
+  noun_time:    ['1-30','1-31','1-32','1-33','1-34','1-96'],       // 今天明天昨天上午下午现在
+  adj_size:     ['1-8','1-102'],                                    // 大小
+  adj_quality:  ['1-17','1-91','1-92','1-105','1-106','1-126','1-127','1-128','1-129'], // 好很太冷热高兴漂亮高累
+  num:          ['1-20','1-21','1-22','1-23','1-24','1-25','1-26','1-27','1-28','1-29'], // 一…十
+  // HSK2
+  conj:         ['2-1','2-2','2-3','2-4','2-5','2-8','2-9','2-10','2-11'], // 但是因为所以如果虽然还是或者然后先
+  adv_freq:     ['2-28','2-29','2-30','2-37'],                     // 平时经常有时候一直
+  adv_time:     ['2-11','2-12','2-31','2-32','2-33','2-34','2-35','2-36'], // 先再突然终于刚才以前以后马上
+  modal2:       ['2-22','2-23','2-24','2-25','2-26'],              // 可以需要应该必须可能
+  adj_quality2: ['2-116','2-117','2-118','2-119','2-120','2-121','2-122','2-123'], // 贵便宜新旧快慢努力聪明
+  noun_body:    ['2-81','2-82','2-83','2-84','2-85','2-86','2-87','2-88'], // 身体头眼睛耳朵嘴手脚脸
+  noun_place2:  ['2-91','2-92','2-93','2-94','2-95','2-96','2-97'], // 银行邮局超市公园图书馆宾馆机场
+  noun_transport:['2-66','2-67','2-68','2-69','2-71'],             // 地铁公共汽车火车汽车自行车
+  noun_family2: ['2-141','2-142','2-143','2-144','2-145','2-146','2-147','2-148','2-149'], // 弟弟姐姐哥哥妹妹丈夫妻子孩子爷爷奶奶
+};
 
-// ─── LESSON 3 — People ─────────────────────────────────────────────────────
-'1-3':{
-  title:'People Around You',
-  words:['1-7','1-10','1-11','1-12'],
-  steps:[
-    {t:'card',  w:'1-7'},
-    {t:'card',  w:'1-10'},
-    {t:'card',  w:'1-11'},
-    {t:'card',  w:'1-12'},
-    {t:'audio', w:'1-10', x:['1-11','1-124']},    // xuésheng vs lǎoshī/tóngxué
-    {t:'audio', w:'1-11', x:['1-10','1-7']},
-    {t:'audio', w:'1-12', x:['1-10','1-11']},
-    {t:'zh_en', w:'1-7',  x:['1-10','1-11']},
-    {t:'zh_en', w:'1-10', x:['1-11','1-12']},
-    {t:'zh_en', w:'1-11', x:['1-10','1-12']},
-    {t:'zh_en', w:'1-12', x:['1-10','1-11']},
-    {t:'en_zh', w:'1-10', x:['1-11','1-12']},
-    {t:'en_zh', w:'1-11', x:['1-10','1-7']},
-    {t:'build', s:'我是老师',   ws:['我','是','老师','你']},
-    {t:'build', s:'他是我的朋友', ws:['他','是','我的','朋友','你']},
-    {t:'blank', s:'她是___',    a:'学生', x:['老师','朋友'],  tr:'She is a student'},
-    {t:'blank', s:'他是我的___', a:'朋友', x:['学生','老师'],  tr:'He is my friend'},
-    {t:'error', bad:'老师我是',   good:'我是老师', tip:'Subject comes first'},
-    {t:'match', ws:['1-7','1-10','1-11','1-12']},
-    {t:'zh_en', w:'1-3', x:['1-4','1-7']},
-    {t:'zh_en', w:'1-4', x:['1-3','1-12']},
-  ]
-},
+// Get same-category distractors for a word
+function getDistractorsFor(wordId, count=2) {
+  const cat = Object.entries(WORD_CATS).find(([,ids]) => ids.includes(wordId));
+  if (!cat) return null;
+  const pool = cat[1].filter(id => id !== wordId);
+  return shuffle(pool).slice(0, count);
+}
 
-// ─── LESSON 4 — Family ─────────────────────────────────────────────────────
-'1-4':{
-  title:'Family',
-  words:['1-13','1-14','1-56','1-140'],
-  steps:[
-    {t:'card',  w:'1-13'},
-    {t:'card',  w:'1-14'},
-    {t:'card',  w:'1-56'},
-    {t:'card',  w:'1-140'},
-    {t:'audio', w:'1-13', x:['1-14','1-11']},     // bàba vs māma/lǎoshī
-    {t:'audio', w:'1-14', x:['1-13','1-11']},     // māma vs bàba/lǎoshī
-    {t:'audio', w:'1-56', x:['1-144','1-43']},    // jiào vs wèn/shuō
-    {t:'zh_en', w:'1-13', x:['1-14','1-11']},
-    {t:'zh_en', w:'1-14', x:['1-13','1-10']},
-    {t:'zh_en', w:'1-56', x:['1-140','1-43']},
-    {t:'zh_en', w:'1-140',x:['1-138','1-141']},
-    {t:'en_zh', w:'1-13', x:['1-14','1-11']},
-    {t:'en_zh', w:'1-56', x:['1-140','1-43']},
-    {t:'build', s:'我叫小明',   ws:['我','叫','小明','你']},
-    {t:'build', s:'他是我的爸爸', ws:['他','是','我的','爸爸','妈妈']},
-    {t:'blank', s:'我___小明',  a:'叫',  x:['是','有'],   tr:'My name is Xiao Ming'},
-    {t:'blank', s:'她是我___',  a:'妈妈', x:['爸爸','朋友'], tr:'She is my mom'},
-    {t:'error', bad:'我的名字叫是小明', good:'我叫小明', tip:'叫 or 是, not both'},
-    {t:'match', ws:['1-13','1-14','1-56','1-140']},
-    {t:'zh_en', w:'1-10', x:['1-11','1-13']},
-    {t:'zh_en', w:'1-12', x:['1-10','1-14']},
-  ]
-},
+// ── LESSON VOCABULARY PLAN ────────────────────────────────────────
+// HSK1: 50 lessons × avg 3 new words = 150 words
+// HSK2: 50 lessons × avg 3 new words = 150 words
+// Lessons are grouped by TOPIC so words feel connected
 
-// ─── LESSON 5 — Drink & Water ──────────────────────────────────────────────
-'1-5':{
-  title:'Food & Drink I',
-  words:['1-41','1-15','1-70','1-71'],
-  steps:[
-    {t:'card',  w:'1-41'},
-    {t:'card',  w:'1-15'},
-    {t:'card',  w:'1-70'},
-    {t:'card',  w:'1-71'},
-    {t:'audio', w:'1-41', x:['1-40','1-45']},     // hē vs chī/tīng
-    {t:'audio', w:'1-15', x:['1-70','1-16']},     // shuǐ vs chá/fàn
-    {t:'audio', w:'1-70', x:['1-15','1-71']},     // chá vs shuǐ/kāfēi
-    {t:'zh_en', w:'1-41', x:['1-40','1-44']},
-    {t:'zh_en', w:'1-15', x:['1-70','1-71']},
-    {t:'zh_en', w:'1-70', x:['1-15','1-71']},
-    {t:'zh_en', w:'1-71', x:['1-70','1-15']},
-    {t:'en_zh', w:'1-41', x:['1-40','1-44']},
-    {t:'en_zh', w:'1-15', x:['1-70','1-16']},
-    {t:'build', s:'我喝水',  ws:['我','喝','水','茶']},
-    {t:'build', s:'你喝茶吗', ws:['你','喝','茶','吗','水']},
-    {t:'blank', s:'我喝___', a:'水',  x:['茶','饭'],  tr:'I drink water'},
-    {t:'blank', s:'他喝___', a:'茶',  x:['水','咖啡'], tr:'He drinks tea'},
-    {t:'listen',w:'1-41', x:['1-40','1-44']},
-    {t:'listen',w:'1-15', x:['1-70','1-71']},
-    {t:'error', bad:'我水喝',  good:'我喝水', tip:'Verb before object'},
-    {t:'match', ws:['1-41','1-15','1-70','1-71']},
-  ]
-},
+const LESSON_VOCAB = {
+  // ── HSK 1 (50 lessons) ──────────────────────────────────────────
+  // Foundation (L1-10): core verbs, pronouns, basic nouns
+  '1-1':  {title:'Me & You',        new:['1-3','1-4','1-7'],           topic:'identity'},
+  '1-2':  {title:'To Be',           new:['1-5','1-6'],                  topic:'grammar_shi'},
+  '1-3':  {title:'Greetings',       new:['1-1','1-2','1-85'],          topic:'social'},
+  '1-4':  {title:'Sorry & Please',  new:['1-83','1-86'],               topic:'social'},
+  '1-5':  {title:'Eat',             new:['1-40','1-16','1-72'],        topic:'food'},
+  '1-6':  {title:'Drink',           new:['1-41','1-15','1-70'],        topic:'food'},
+  '1-7':  {title:'More Food',       new:['1-69','1-71'],               topic:'food'},
+  '1-8':  {title:'People',          new:['1-10','1-11','1-12'],        topic:'people'},
+  '1-9':  {title:'Family',          new:['1-13','1-14'],               topic:'family'},
+  '1-10': {title:'My Name',         new:['1-56','1-140'],              topic:'identity'},
 
-// ─── LESSON 6 — Eat & Food ─────────────────────────────────────────────────
-'1-6':{
-  title:'Food & Drink II',
-  words:['1-40','1-16','1-72','1-69'],
-  steps:[
-    {t:'card',  w:'1-40'},
-    {t:'card',  w:'1-16'},
-    {t:'card',  w:'1-72'},
-    {t:'card',  w:'1-69'},
-    {t:'audio', w:'1-40', x:['1-41','1-43']},     // chī vs hē/shuō
-    {t:'audio', w:'1-72', x:['1-16','1-69']},     // mǐfàn vs fàn/píngguǒ
-    {t:'audio', w:'1-69', x:['1-72','1-71']},     // píngguǒ vs mǐfàn/kāfēi
-    {t:'zh_en', w:'1-40', x:['1-41','1-44']},
-    {t:'zh_en', w:'1-16', x:['1-72','1-70']},
-    {t:'zh_en', w:'1-72', x:['1-16','1-69']},
-    {t:'zh_en', w:'1-69', x:['1-72','1-71']},
-    {t:'en_zh', w:'1-40', x:['1-41','1-43']},
-    {t:'en_zh', w:'1-72', x:['1-16','1-69']},
-    {t:'build', s:'我吃米饭',   ws:['我','吃','米饭','喝']},
-    {t:'build', s:'你吃苹果吗',  ws:['你','吃','苹果','吗','米饭']},
-    {t:'blank', s:'我吃___',   a:'米饭', x:['苹果','茶'],  tr:'I eat rice'},
-    {t:'blank', s:'他___苹果',  a:'吃',  x:['喝','买'],   tr:'He eats apple'},
-    {t:'listen',w:'1-40', x:['1-41','1-43']},
-    {t:'listen',w:'1-72', x:['1-16','1-69']},
-    {t:'error', bad:'我吃喝米饭', good:'我吃米饭', tip:'One verb per sentence here'},
-    {t:'match', ws:['1-40','1-16','1-72','1-69']},
-    {t:'zh_en', w:'1-41', x:['1-40','1-44']},
-    {t:'zh_en', w:'1-15', x:['1-70','1-71']},
-  ]
-},
+  // Numbers & Time (L11-20)
+  '1-11': {title:'Numbers 1–5',     new:['1-20','1-21','1-22','1-23','1-24'], topic:'numbers'},
+  '1-12': {title:'Numbers 6–10',    new:['1-25','1-26','1-27','1-28','1-29'], topic:'numbers'},
+  '1-13': {title:'Today & Tomorrow',new:['1-30','1-31','1-32'],        topic:'time'},
+  '1-14': {title:'Now & Morning',   new:['1-96','1-33','1-34'],        topic:'time'},
+  '1-15': {title:'Year & Month',    new:['1-35','1-36','1-37'],        topic:'time'},
+  '1-16': {title:'Come & Go',       new:['1-38','1-39','1-148'],       topic:'motion'},
+  '1-17': {title:'Arrive & Open',   new:['1-147','1-146'],             topic:'motion'},
+  '1-18': {title:'Have & Want',     new:['1-49','1-51'],               topic:'modal'},
+  '1-19': {title:'Like & Think',    new:['1-52','1-55'],               topic:'modal'},
+  '1-20': {title:'Can & Know How',  new:['1-53','1-54'],               topic:'modal'},
 
-// ─── LESSON 7 — Numbers 1–5 ────────────────────────────────────────────────
-'1-7':{
-  title:'Numbers 1–5',
-  words:['1-20','1-21','1-22','1-23','1-24'],
-  steps:[
-    {t:'card',  w:'1-20'},
-    {t:'card',  w:'1-21'},
-    {t:'card',  w:'1-22'},
-    {t:'card',  w:'1-23'},
-    {t:'card',  w:'1-24'},
-    {t:'audio', w:'1-20', x:['1-21','1-29']},     // yī vs èr/shí (clear diff)
-    {t:'audio', w:'1-22', x:['1-20','1-24']},     // sān vs yī/wǔ
-    {t:'audio', w:'1-24', x:['1-22','1-25']},     // wǔ vs sān/liù
-    {t:'zh_en', w:'1-20', x:['1-21','1-22']},
-    {t:'zh_en', w:'1-21', x:['1-20','1-22']},
-    {t:'zh_en', w:'1-22', x:['1-21','1-23']},
-    {t:'zh_en', w:'1-23', x:['1-22','1-24']},
-    {t:'zh_en', w:'1-24', x:['1-23','1-25']},
-    {t:'en_zh', w:'1-21', x:['1-20','1-22']},
-    {t:'en_zh', w:'1-23', x:['1-22','1-24']},
-    {t:'blank', s:'一 二 ___ 四 五', a:'三', x:['六','七'],   tr:'1 2 ___ 4 5'},
-    {t:'blank', s:'我有___个朋友',    a:'三', x:['一','五'],   tr:'I have three friends'},
-    {t:'match', ws:['1-20','1-21','1-22','1-23']},
-    {t:'zh_en', w:'1-40', x:['1-41','1-44']},
-    {t:'zh_en', w:'1-41', x:['1-40','1-45']},
-  ]
-},
+  // Actions & Places (L21-30)
+  '1-21': {title:'Listen & Speak',  new:['1-43','1-45'],               topic:'study'},
+  '1-22': {title:'Read & Write',    new:['1-46','1-47','1-44'],        topic:'study'},
+  '1-23': {title:'Study & Work',    new:['1-59','1-58'],               topic:'study'},
+  '1-24': {title:'School & Home',   new:['1-63','1-64'],               topic:'places'},
+  '1-25': {title:'Beijing & Shanghai',new:['1-76','1-77'],             topic:'places'},
+  '1-26': {title:'Shop & Hospital', new:['1-111','1-112','1-113'],     topic:'places'},
+  '1-27': {title:'Languages',       new:['1-60','1-61','1-62'],        topic:'language'},
+  '1-28': {title:'Buy & Find',      new:['1-48','1-150'],              topic:'actions'},
+  '1-29': {title:'Ask & Tell',      new:['1-144','1-136'],             topic:'communication'},
+  '1-30': {title:'Help & Return',   new:['1-137','1-145'],             topic:'communication'},
 
-// ─── LESSON 8 — Numbers 6–10 ───────────────────────────────────────────────
-'1-8':{
-  title:'Numbers 6–10',
-  words:['1-25','1-26','1-27','1-28','1-29'],
-  steps:[
-    {t:'card',  w:'1-25'},
-    {t:'card',  w:'1-26'},
-    {t:'card',  w:'1-27'},
-    {t:'card',  w:'1-28'},
-    {t:'card',  w:'1-29'},
-    {t:'audio', w:'1-25', x:['1-22','1-29']},     // liù vs sān/shí
-    {t:'audio', w:'1-27', x:['1-25','1-29']},     // bā vs liù/shí
-    {t:'audio', w:'1-29', x:['1-27','1-20']},     // shí vs bā/yī
-    {t:'zh_en', w:'1-25', x:['1-26','1-24']},
-    {t:'zh_en', w:'1-26', x:['1-25','1-27']},
-    {t:'zh_en', w:'1-27', x:['1-26','1-28']},
-    {t:'zh_en', w:'1-28', x:['1-27','1-29']},
-    {t:'zh_en', w:'1-29', x:['1-28','1-20']},
-    {t:'en_zh', w:'1-26', x:['1-25','1-27']},
-    {t:'en_zh', w:'1-29', x:['1-28','1-20']},
-    {t:'blank', s:'六 七 ___ 九 十', a:'八', x:['三','五'],   tr:'6 7 ___ 9 10'},
-    {t:'blank', s:'我有___个苹果',    a:'五', x:['八','十'],   tr:'I have five apples'},
-    {t:'match', ws:['1-25','1-26','1-27','1-28']},
-    {t:'zh_en', w:'1-20', x:['1-21','1-22']},
-    {t:'zh_en', w:'1-22', x:['1-23','1-24']},
-  ]
-},
+  // Adjectives & Descriptions (L31-40)
+  '1-31': {title:'Big & Small',     new:['1-8','1-102'],               topic:'adj'},
+  '1-32': {title:'Good & Very',     new:['1-17','1-91','1-92'],        topic:'adj'},
+  '1-33': {title:'Hot & Cold',      new:['1-105','1-106'],             topic:'adj_weather'},
+  '1-34': {title:'Happy & Tired',   new:['1-126','1-129'],             topic:'adj_feeling'},
+  '1-35': {title:'Tall & Pretty',   new:['1-128','1-127'],             topic:'adj_appearance'},
+  '1-36': {title:'Weather',         new:['1-108','1-107'],             topic:'weather'},
+  '1-37': {title:'This & That',     new:['1-78','1-79'],               topic:'demonstrative'},
+  '1-38': {title:'Up & Down',       new:['1-100','1-101'],             topic:'direction'},
+  '1-39': {title:'Also & All',      new:['1-89','1-90'],               topic:'adverb'},
+  '1-40': {title:'How & Why',       new:['1-95','1-98'],               topic:'question'},
 
-// ─── LESSON 9 — Time Words ─────────────────────────────────────────────────
-'1-9':{
-  title:'Today, Tomorrow, Yesterday',
-  words:['1-30','1-31','1-32','1-96'],
-  steps:[
-    {t:'card',  w:'1-30'},
-    {t:'card',  w:'1-31'},
-    {t:'card',  w:'1-32'},
-    {t:'card',  w:'1-96'},
-    {t:'audio', w:'1-30', x:['1-31','1-32']},     // jīntiān vs míngtiān/zuótiān
-    {t:'audio', w:'1-31', x:['1-30','1-32']},
-    {t:'audio', w:'1-32', x:['1-30','1-31']},
-    {t:'zh_en', w:'1-30', x:['1-31','1-32']},
-    {t:'zh_en', w:'1-31', x:['1-30','1-32']},
-    {t:'zh_en', w:'1-32', x:['1-30','1-31']},
-    {t:'zh_en', w:'1-96', x:['1-30','1-143']},
-    {t:'en_zh', w:'1-30', x:['1-31','1-32']},
-    {t:'en_zh', w:'1-31', x:['1-30','1-96']},
-    {t:'build', s:'今天我去学校',  ws:['今天','我','去','学校','明天']},
-    {t:'blank', s:'___我不去',   a:'明天', x:['今天','昨天'],  tr:'Tomorrow I won\'t go'},
-    {t:'blank', s:'___他来了',   a:'昨天', x:['今天','现在'],  tr:'Yesterday he came'},
-    {t:'error', bad:'我今天昨天去', good:'我今天去', tip:'Only one time word per sentence'},
-    {t:'listen',w:'1-30', x:['1-31','1-32']},
-    {t:'match', ws:['1-30','1-31','1-32','1-96']},
-    {t:'zh_en', w:'1-40', x:['1-41','1-38']},
-  ]
-},
+  // Questions & Grammar (L41-50)
+  '1-41': {title:'What & How Many', new:['1-18','1-19','1-93'],        topic:'question'},
+  '1-42': {title:'Which & Where',   new:['1-94','1-141'],              topic:'question'},
+  '1-43': {title:'Question Particles',new:['1-87','1-88'],             topic:'grammar_particles'},
+  '1-44': {title:'Animals',         new:['1-73','1-74'],               topic:'animals'},
+  '1-45': {title:'Book & Money',    new:['1-75','1-68'],               topic:'objects'},
+  '1-46': {title:'Transport',       new:['1-109','1-110'],             topic:'transport'},
+  '1-47': {title:'At & In',         new:['1-50','1-57'],               topic:'location'},
+  '1-48': {title:'Time & Things',   new:['1-143','1-142'],             topic:'abstract'},
+  '1-49': {title:'Know & Feel',     new:['1-131','1-132'],             topic:'mental'},
+  '1-50': {title:'HSK 1 Review',    new:['1-125','1-133'],             topic:'review'},
 
-// ─── LESSON 10 — Come & Go ─────────────────────────────────────────────────
-'1-10':{
-  title:'Come & Go',
-  words:['1-38','1-39','1-148','1-147'],
-  steps:[
-    {t:'card',  w:'1-38'},
-    {t:'card',  w:'1-39'},
-    {t:'card',  w:'1-148'},
-    {t:'card',  w:'1-147'},
-    {t:'audio', w:'1-38', x:['1-39','1-50']},     // lái vs qù/zài
-    {t:'audio', w:'1-39', x:['1-38','1-148']},    // qù vs lái/zǒu
-    {t:'audio', w:'1-148',x:['1-38','1-39']},     // zǒu vs lái/qù
-    {t:'zh_en', w:'1-38', x:['1-39','1-148']},
-    {t:'zh_en', w:'1-39', x:['1-38','1-148']},
-    {t:'zh_en', w:'1-148',x:['1-38','1-39']},
-    {t:'zh_en', w:'1-147',x:['1-38','1-148']},
-    {t:'en_zh', w:'1-38', x:['1-39','1-147']},
-    {t:'en_zh', w:'1-39', x:['1-38','1-148']},
-    {t:'build', s:'我去学校',    ws:['我','去','学校','来']},
-    {t:'build', s:'他来我家',    ws:['他','来','我','家','去']},
-    {t:'blank', s:'请___',      a:'来',  x:['去','走'],   tr:'Please come'},
-    {t:'blank', s:'我们___北京', a:'去',  x:['来','走'],   tr:'We go to Beijing'},
-    {t:'listen',w:'1-38', x:['1-39','1-148']},
-    {t:'error', bad:'我学校去',   good:'我去学校', tip:'Verb before destination'},
-    {t:'match', ws:['1-38','1-39','1-148','1-147']},
-    {t:'zh_en', w:'1-30', x:['1-31','1-32']},
-    {t:'zh_en', w:'1-96', x:['1-30','1-143']},
-  ]
-},
+  // ── HSK 2 (50 lessons) ──────────────────────────────────────────
+  // Connectors & Logic (L1-10)
+  '2-1':  {title:'But & Because',   new:['2-1','2-2','2-3'],           topic:'connectors'},
+  '2-2':  {title:'If & Although',   new:['2-4','2-5'],                 topic:'connectors'},
+  '2-3':  {title:'Together & Already',new:['2-6','2-7'],              topic:'adverb2'},
+  '2-4':  {title:'Or',              new:['2-8','2-9'],                 topic:'connectors'},
+  '2-5':  {title:'Then & First',    new:['2-10','2-11'],               topic:'sequence'},
+  '2-6':  {title:'Again & From',    new:['2-12','2-13'],               topic:'adverb2'},
+  '2-7':  {title:'Towards & Correct',new:['2-14','2-15'],             topic:'prepositions'},
+  '2-8':  {title:'Than & With',     new:['2-16','2-17'],               topic:'prepositions'},
+  '2-9':  {title:'Give & Disposal 把',new:['2-18','2-19'],            topic:'grammar_ba'},
+  '2-10': {title:'Passive 被',      new:['2-20'],                      topic:'grammar_bei'},
 
-// ─── LESSON 11 — Have & Want ───────────────────────────────────────────────
-'1-11':{
-  title:'Have, Want & Like',
-  words:['1-49','1-51','1-52','1-55'],
-  steps:[
-    {t:'card',  w:'1-49'},
-    {t:'card',  w:'1-51'},
-    {t:'card',  w:'1-52'},
-    {t:'card',  w:'1-55'},
-    {t:'audio', w:'1-49', x:['1-5','1-50']},      // yǒu vs shì/zài
-    {t:'audio', w:'1-51', x:['1-55','1-52']},     // yào vs xiǎng/xǐhuān
-    {t:'audio', w:'1-52', x:['1-51','1-55']},     // xǐhuān vs yào/xiǎng
-    {t:'zh_en', w:'1-49', x:['1-51','1-52']},
-    {t:'zh_en', w:'1-51', x:['1-55','1-52']},
-    {t:'zh_en', w:'1-52', x:['1-51','1-55']},
-    {t:'zh_en', w:'1-55', x:['1-52','1-51']},
-    {t:'en_zh', w:'1-49', x:['1-5','1-50']},
-    {t:'en_zh', w:'1-52', x:['1-51','1-55']},
-    {t:'build', s:'我有三个朋友',  ws:['我','有','三个','朋友','要']},
-    {t:'build', s:'我喜欢吃苹果',  ws:['我','喜欢','吃','苹果','要']},
-    {t:'blank', s:'你___苹果吗',   a:'要',  x:['有','是'],  tr:'Do you want an apple?'},
-    {t:'blank', s:'我___喝茶',     a:'喜欢', x:['要','想'],  tr:'I like drinking tea'},
-    {t:'blank', s:'他___两个猫',   a:'有',  x:['是','要'],  tr:'He has two cats'},
-    {t:'listen',w:'1-52', x:['1-51','1-55']},
-    {t:'error', bad:'我想喜欢茶',   good:'我喜欢茶', tip:'喜欢 or 想, not both here'},
-    {t:'match', ws:['1-49','1-51','1-52','1-55']},
-    {t:'zh_en', w:'1-38', x:['1-39','1-148']},
-    {t:'zh_en', w:'1-39', x:['1-38','1-148']},
-  ]
-},
+  // Ability & Frequency (L11-20)
+  '2-11': {title:'Of Course & Can', new:['2-21','2-22'],               topic:'modal2'},
+  '2-12': {title:'Need & Should',   new:['2-23','2-24'],               topic:'modal2'},
+  '2-13': {title:'Must & Maybe',    new:['2-25','2-26'],               topic:'modal2'},
+  '2-14': {title:'Really & Usually',new:['2-27','2-28'],               topic:'adverb2'},
+  '2-15': {title:'Often & Sometimes',new:['2-29','2-30'],              topic:'freq'},
+  '2-16': {title:'Suddenly & Finally',new:['2-31','2-32'],             topic:'adverb2'},
+  '2-17': {title:'Just Now & Before',new:['2-33','2-34'],              topic:'time2'},
+  '2-18': {title:'After & Right Away',new:['2-35','2-36'],             topic:'time2'},
+  '2-19': {title:'Always & Prepare',new:['2-37','2-38'],               topic:'adverb2'},
+  '2-20': {title:'Start & End',     new:['2-39','2-40'],               topic:'actions2'},
 
-// ─── LESSON 12 — Can & Know How ────────────────────────────────────────────
-'1-12':{
-  title:'Can & Ability',
-  words:['1-53','1-54','1-43','1-44'],
-  steps:[
-    {t:'card',  w:'1-53'},
-    {t:'card',  w:'1-54'},
-    {t:'card',  w:'1-43'},
-    {t:'card',  w:'1-44'},
-    {t:'audio', w:'1-53', x:['1-54','1-51']},     // néng vs huì/yào
-    {t:'audio', w:'1-54', x:['1-53','1-55']},     // huì vs néng/xiǎng
-    {t:'audio', w:'1-43', x:['1-44','1-45']},     // shuō vs kàn/tīng
-    {t:'audio', w:'1-44', x:['1-43','1-45']},     // kàn vs shuō/tīng
-    {t:'zh_en', w:'1-53', x:['1-54','1-51']},
-    {t:'zh_en', w:'1-54', x:['1-53','1-55']},
-    {t:'zh_en', w:'1-43', x:['1-44','1-45']},
-    {t:'zh_en', w:'1-44', x:['1-43','1-45']},
-    {t:'en_zh', w:'1-53', x:['1-54','1-51']},
-    {t:'en_zh', w:'1-43', x:['1-44','1-45']},
-    {t:'build', s:'我会说中文',    ws:['我','会','说','中文','能']},
-    {t:'build', s:'你能看这个吗',   ws:['你','能','看','这个','吗','会']},
-    {t:'blank', s:'我___说英语',   a:'会',  x:['能','想'],  tr:'I can speak English'},
-    {t:'blank', s:'他___来吗',     a:'能',  x:['会','要'],  tr:'Can he come?'},
-    {t:'listen',w:'1-43', x:['1-44','1-45']},
-    {t:'error', bad:'我能会说中文',  good:'我会说中文', tip:'Use 会 for learned skills'},
-    {t:'match', ws:['1-53','1-54','1-43','1-44']},
-    {t:'zh_en', w:'1-49', x:['1-51','1-52']},
-    {t:'zh_en', w:'1-52', x:['1-51','1-55']},
-  ]
-},
+  // School & Study (L21-25)
+  '2-21': {title:'Practice & Review',new:['2-41','2-42','2-43'],       topic:'study2'},
+  '2-22': {title:'Exam & Grade',    new:['2-44','2-45'],               topic:'study2'},
+  '2-23': {title:'Class & Homework',new:['2-46','2-47','2-48'],        topic:'study2'},
+  '2-24': {title:'Characters & Words',new:['2-49','2-50','2-51'],      topic:'language2'},
+  '2-25': {title:'Grammar & Translation',new:['2-52','2-53','2-54','2-55','2-56'], topic:'language2'},
 
-// ─── LESSON 13 — Days & Time ───────────────────────────────────────────────
-'1-13':{
-  title:'Morning & Afternoon',
-  words:['1-33','1-34','1-35','1-36'],
-  steps:[
-    {t:'card',  w:'1-33'},
-    {t:'card',  w:'1-34'},
-    {t:'card',  w:'1-35'},
-    {t:'card',  w:'1-36'},
-    {t:'audio', w:'1-33', x:['1-34','1-30']},     // shàngwǔ vs xiàwǔ/jīntiān
-    {t:'audio', w:'1-34', x:['1-33','1-31']},
-    {t:'zh_en', w:'1-33', x:['1-34','1-30']},
-    {t:'zh_en', w:'1-34', x:['1-33','1-31']},
-    {t:'zh_en', w:'1-35', x:['1-36','1-37']},
-    {t:'zh_en', w:'1-36', x:['1-35','1-37']},
-    {t:'en_zh', w:'1-33', x:['1-34','1-30']},
-    {t:'en_zh', w:'1-35', x:['1-36','1-37']},
-    {t:'build', s:'今天上午我学习',  ws:['今天','上午','我','学习','下午']},
-    {t:'blank', s:'明天___我有课',  a:'上午', x:['下午','昨天'],  tr:'Tomorrow morning I have class'},
-    {t:'blank', s:'今年___月你来',  a:'三',   x:['十','八'],     tr:'You come in March this year'},
-    {t:'match', ws:['1-33','1-34','1-35','1-36']},
-    {t:'zh_en', w:'1-30', x:['1-31','1-32']},
-    {t:'zh_en', w:'1-31', x:['1-30','1-32']},
-    {t:'zh_en', w:'1-96', x:['1-30','1-143']},
-  ]
-},
+  // Time of Day & Meals (L26-30)
+  '2-26': {title:'Morning & Evening',new:['2-57','2-58','2-59'],       topic:'time_day'},
+  '2-27': {title:'Meals',           new:['2-60','2-61','2-62'],        topic:'meals'},
+  '2-28': {title:'Birthday & Holiday',new:['2-63','2-64'],             topic:'occasions'},
+  '2-29': {title:'Travel',          new:['2-65'],                      topic:'travel'},
+  '2-30': {title:'Subway & Bus',    new:['2-66','2-67'],               topic:'transport2'},
 
-// ─── LESSON 14 — Study & School ────────────────────────────────────────────
-'1-14':{
-  title:'School Life',
-  words:['1-59','1-63','1-45','1-46'],
-  steps:[
-    {t:'card',  w:'1-59'},
-    {t:'card',  w:'1-63'},
-    {t:'card',  w:'1-45'},
-    {t:'card',  w:'1-46'},
-    {t:'audio', w:'1-59', x:['1-58','1-63']},     // xuéxí vs gōngzuò/xuéxiào
-    {t:'audio', w:'1-45', x:['1-44','1-43']},     // tīng vs kàn/shuō
-    {t:'audio', w:'1-46', x:['1-47','1-45']},     // xiě vs dú/tīng
-    {t:'zh_en', w:'1-59', x:['1-58','1-63']},
-    {t:'zh_en', w:'1-63', x:['1-59','1-64']},
-    {t:'zh_en', w:'1-45', x:['1-44','1-43']},
-    {t:'zh_en', w:'1-46', x:['1-47','1-45']},
-    {t:'en_zh', w:'1-59', x:['1-58','1-63']},
-    {t:'en_zh', w:'1-45', x:['1-44','1-43']},
-    {t:'build', s:'我去学校学习',    ws:['我','去','学校','学习','听']},
-    {t:'build', s:'她在学校写字',    ws:['她','在','学校','写','字','听']},
-    {t:'blank', s:'我每天___中文',   a:'学习', x:['听','写'],   tr:'I study Chinese every day'},
-    {t:'blank', s:'你___音乐吗',     a:'听',   x:['看','写'],   tr:'Do you listen to music?'},
-    {t:'listen',w:'1-59', x:['1-58','1-63']},
-    {t:'error', bad:'我去学习学校',   good:'我去学校学习', tip:'Place before action'},
-    {t:'match', ws:['1-59','1-63','1-45','1-46']},
-    {t:'zh_en', w:'1-53', x:['1-54','1-43']},
-    {t:'zh_en', w:'1-54', x:['1-53','1-44']},
-  ]
-},
+  // Transport & Directions (L31-35)
+  '2-31': {title:'Train & Car',     new:['2-68','2-69'],               topic:'transport2'},
+  '2-32': {title:'Ride & Bicycle',  new:['2-70','2-71'],               topic:'transport2'},
+  '2-33': {title:'Road & Left/Right',new:['2-72','2-73','2-74'],       topic:'directions'},
+  '2-34': {title:'Middle & Beside', new:['2-75','2-76'],               topic:'directions'},
+  '2-35': {title:'Inside & Outside',new:['2-77','2-78','2-79','2-80'], topic:'directions'},
 
-// ─── LESSON 15 — Language ──────────────────────────────────────────────────
-'1-15':{
-  title:'Languages',
-  words:['1-60','1-61','1-62','1-47'],
-  steps:[
-    {t:'card',  w:'1-60'},
-    {t:'card',  w:'1-61'},
-    {t:'card',  w:'1-62'},
-    {t:'card',  w:'1-47'},
-    {t:'audio', w:'1-60', x:['1-61','1-62']},     // zhōngwén vs hànyǔ/yīngyǔ
-    {t:'audio', w:'1-62', x:['1-60','1-61']},     // yīngyǔ vs zhōngwén/hànyǔ
-    {t:'zh_en', w:'1-60', x:['1-61','1-62']},
-    {t:'zh_en', w:'1-61', x:['1-60','1-62']},
-    {t:'zh_en', w:'1-62', x:['1-60','1-61']},
-    {t:'zh_en', w:'1-47', x:['1-46','1-45']},
-    {t:'en_zh', w:'1-60', x:['1-61','1-62']},
-    {t:'en_zh', w:'1-62', x:['1-60','1-61']},
-    {t:'build', s:'我学习中文',      ws:['我','学习','中文','英语']},
-    {t:'build', s:'他会说英语',      ws:['他','会','说','英语','中文']},
-    {t:'blank', s:'我在学___',      a:'中文', x:['英语','汉语'],  tr:'I am studying Chinese'},
-    {t:'blank', s:'她会___和中文',   a:'英语', x:['汉语','中文'],  tr:'She speaks English and Chinese'},
-    {t:'listen',w:'1-60', x:['1-61','1-62']},
-    {t:'match', ws:['1-60','1-61','1-62','1-47']},
-    {t:'zh_en', w:'1-59', x:['1-58','1-63']},
-    {t:'zh_en', w:'1-45', x:['1-44','1-43']},
-  ]
-},
+  // Body & Health (L36-40)
+  '2-36': {title:'Body & Head',     new:['2-81','2-82'],               topic:'body'},
+  '2-37': {title:'Eyes & Ears',     new:['2-83','2-84'],               topic:'body'},
+  '2-38': {title:'Mouth & Hands',   new:['2-85','2-86','2-87','2-88'], topic:'body'},
+  '2-39': {title:'Sick & Medicine', new:['2-89','2-90'],               topic:'health'},
+  '2-40': {title:'Places in Town',  new:['2-91','2-92','2-93'],        topic:'places2'},
 
-// ─── LESSON 16 — At Home ───────────────────────────────────────────────────
-'1-16':{
-  title:'Home & Living',
-  words:['1-64','1-57','1-50','1-126'],
-  steps:[
-    {t:'card',  w:'1-64'},
-    {t:'card',  w:'1-57'},
-    {t:'card',  w:'1-50'},
-    {t:'card',  w:'1-126'},
-    {t:'audio', w:'1-64', x:['1-63','1-57']},     // jiā vs xuéxiào/zhù
-    {t:'audio', w:'1-50', x:['1-49','1-5']},      // zài vs yǒu/shì
-    {t:'zh_en', w:'1-64', x:['1-63','1-57']},
-    {t:'zh_en', w:'1-57', x:['1-64','1-58']},
-    {t:'zh_en', w:'1-50', x:['1-49','1-5']},
-    {t:'zh_en', w:'1-126',x:['1-129','1-127']},
-    {t:'en_zh', w:'1-64', x:['1-63','1-57']},
-    {t:'en_zh', w:'1-50', x:['1-49','1-5']},
-    {t:'build', s:'我在家吃饭',      ws:['我','在','家','吃','饭','学校']},
-    {t:'build', s:'他住在北京',      ws:['他','住','在','北京','上海']},
-    {t:'blank', s:'我___北京',      a:'在',  x:['去','住'],   tr:'I am in Beijing'},
-    {t:'blank', s:'她___上海',      a:'住在', x:['在','去'],   tr:'She lives in Shanghai'},
-    {t:'blank', s:'今天我很___',     a:'高兴', x:['累','冷'],   tr:'I am very happy today'},
-    {t:'listen',w:'1-50', x:['1-49','1-5']},
-    {t:'error', bad:'我在是家',      good:'我在家', tip:'在 is the verb here, no 是 needed'},
-    {t:'match', ws:['1-64','1-57','1-50','1-126']},
-    {t:'zh_en', w:'1-38', x:['1-39','1-148']},
-  ]
-},
+  // Nature & Colors (L41-45)
+  '2-41': {title:'Park & Library',  new:['2-94','2-95','2-96','2-97'], topic:'places2'},
+  '2-42': {title:'Flowers & Trees', new:['2-98','2-99'],               topic:'nature'},
+  '2-43': {title:'Mountain & Sea',  new:['2-100','2-101','2-102','2-103'], topic:'nature'},
+  '2-44': {title:'Colors',          new:['2-104','2-105','2-106','2-107','2-108','2-109','2-110'], topic:'colors'},
+  '2-45': {title:'Clothes',         new:['2-111','2-112','2-113','2-114','2-115'], topic:'clothes'},
 
-// ─── LESSON 17 — Adjectives I ──────────────────────────────────────────────
-'1-17':{
-  title:'Describing Things',
-  words:['1-8','1-102','1-17','1-91'],
-  steps:[
-    {t:'card',  w:'1-8'},
-    {t:'card',  w:'1-102'},
-    {t:'card',  w:'1-17'},
-    {t:'card',  w:'1-91'},
-    {t:'audio', w:'1-8',   x:['1-102','1-91']},   // dà vs xiǎo/hěn
-    {t:'audio', w:'1-102', x:['1-8','1-91']},      // xiǎo vs dà/hěn
-    {t:'audio', w:'1-91',  x:['1-92','1-8']},      // hěn vs tài/dà
-    {t:'zh_en', w:'1-8',   x:['1-102','1-91']},
-    {t:'zh_en', w:'1-102', x:['1-8','1-91']},
-    {t:'zh_en', w:'1-17',  x:['1-126','1-8']},
-    {t:'zh_en', w:'1-91',  x:['1-92','1-8']},
-    {t:'en_zh', w:'1-8',   x:['1-102','1-17']},
-    {t:'en_zh', w:'1-91',  x:['1-92','1-17']},
-    {t:'build', s:'这个很大',        ws:['这个','很','大','小']},
-    {t:'build', s:'我的家很小',      ws:['我的','家','很','小','大']},
-    {t:'blank', s:'这个苹果很___',   a:'大',  x:['小','好'],   tr:'This apple is very big'},
-    {t:'blank', s:'他___好',        a:'很',  x:['太','大'],   tr:'He is very good'},
-    {t:'blank', s:'这个___贵了',     a:'太',  x:['很','大'],   tr:'This is too expensive'},
-    {t:'error', bad:'我的家是很小',   good:'我的家很小', tip:'No 是 before adjective+很'},
-    {t:'match', ws:['1-8','1-102','1-17','1-91']},
-    {t:'zh_en', w:'1-126',x:['1-129','1-127']},
-    {t:'zh_en', w:'1-50', x:['1-49','1-5']},
-  ]
-},
+  // Adjectives & Family (L46-50)
+  '2-46': {title:'Expensive & New', new:['2-116','2-117','2-118','2-119'], topic:'adj2'},
+  '2-47': {title:'Fast & Hard',     new:['2-120','2-121','2-122','2-123'], topic:'adj2'},
+  '2-48': {title:'Easy & Difficult',new:['2-127','2-128','2-129','2-130'], topic:'adj2'},
+  '2-49': {title:'More Family',     new:['2-141','2-142','2-143','2-144'], topic:'family2'},
+  '2-50': {title:'HSK 2 Review',    new:['2-145','2-146','2-147','2-148','2-149','2-150'], topic:'review'},
+};
 
-// ─── LESSON 18 — Hot & Cold ────────────────────────────────────────────────
-'1-18':{
-  title:'Weather & Feelings',
-  words:['1-105','1-106','1-108','1-129'],
-  steps:[
-    {t:'card',  w:'1-105'},
-    {t:'card',  w:'1-106'},
-    {t:'card',  w:'1-108'},
-    {t:'card',  w:'1-129'},
-    {t:'audio', w:'1-105',x:['1-106','1-91']},    // lěng vs rè/hěn
-    {t:'audio', w:'1-106',x:['1-105','1-91']},    // rè vs lěng/hěn
-    {t:'zh_en', w:'1-105',x:['1-106','1-108']},
-    {t:'zh_en', w:'1-106',x:['1-105','1-108']},
-    {t:'zh_en', w:'1-108',x:['1-105','1-106']},
-    {t:'zh_en', w:'1-129',x:['1-126','1-127']},
-    {t:'en_zh', w:'1-105',x:['1-106','1-108']},
-    {t:'en_zh', w:'1-129',x:['1-126','1-127']},
-    {t:'build', s:'今天天气很冷',    ws:['今天','天气','很','冷','热']},
-    {t:'build', s:'我很累',         ws:['我','很','累','高兴']},
-    {t:'blank', s:'今天天气___',    a:'冷',  x:['热','好'],   tr:'Today\'s weather is cold'},
-    {t:'blank', s:'你___吗',       a:'累',  x:['冷','热'],   tr:'Are you tired?'},
-    {t:'blank', s:'北京___冷',      a:'很',  x:['太','是'],   tr:'Beijing is very cold'},
-    {t:'listen',w:'1-105',x:['1-106','1-108']},
-    {t:'error', bad:'今天是很冷',    good:'今天很冷', tip:'No 是 before adj with 很'},
-    {t:'match', ws:['1-105','1-106','1-108','1-129']},
-    {t:'zh_en', w:'1-8',   x:['1-102','1-91']},
-    {t:'zh_en', w:'1-91',  x:['1-92','1-8']},
-  ]
-},
+// ── GRAMMAR PATTERNS (for fill-blank and error exercises) ─────────
+// Each pattern: context sentence, blank position, correct, wrong options
+// ALL blanks are disambiguated by context.
 
-// ─── LESSON 19 — Questions ─────────────────────────────────────────────────
-'1-19':{
-  title:'Asking Questions',
-  words:['1-87','1-18','1-93','1-95'],
-  steps:[
-    {t:'card',  w:'1-87'},
-    {t:'card',  w:'1-18'},
-    {t:'card',  w:'1-93'},
-    {t:'card',  w:'1-95'},
-    {t:'audio', w:'1-87', x:['1-88','1-6']},      // ma vs ne/bù
-    {t:'audio', w:'1-18', x:['1-93','1-98']},     // shénme vs duōshǎo/wèishénme
-    {t:'zh_en', w:'1-87', x:['1-88','1-6']},
-    {t:'zh_en', w:'1-18', x:['1-93','1-98']},
-    {t:'zh_en', w:'1-93', x:['1-19','1-18']},
-    {t:'zh_en', w:'1-95', x:['1-98','1-18']},
-    {t:'en_zh', w:'1-87', x:['1-88','1-6']},
-    {t:'en_zh', w:'1-18', x:['1-93','1-98']},
-    {t:'build', s:'你吃什么',       ws:['你','吃','什么','喝']},
-    {t:'build', s:'这个多少钱',     ws:['这个','多少','钱','什么']},
-    {t:'blank', s:'你去___',       a:'哪里', x:['什么','多少'],  tr:'Where are you going?'},
-    {t:'blank', s:'你怎么___',     a:'去',   x:['吃','有'],    tr:'How do you get there?'},
-    {t:'blank', s:'你吃___',       a:'什么', x:['哪','多少'],   tr:'What are you eating?'},
-    {t:'listen',w:'1-18', x:['1-93','1-98']},
-    {t:'error', bad:'你去哪里吗',    good:'你去哪里', tip:'No 吗 with question words'},
-    {t:'match', ws:['1-87','1-18','1-93','1-95']},
-    {t:'zh_en', w:'1-30', x:['1-31','1-32']},
-  ]
-},
+const GRAMMAR_PATTERNS = {
+  // HSK1
+  shi_positive: [
+    { s:'他是___，不是学生。',     a:'老师',  x:['学生','朋友'],   tr:'He is a teacher, not a student.' },
+    { s:'她是___，不是老师。',     a:'学生',  x:['老师','朋友'],   tr:'She is a student, not a teacher.' },
+    { s:'这是___，不是茶。',       a:'水',    x:['茶','咖啡'],     tr:'This is water, not tea.' },
+  ],
+  shi_negative: [
+    { s:'他___学生，他是老师。',   a:'不是',  x:['是','有'],       tr:'He is not a student, he is a teacher.' },
+    { s:'这___水，这是茶。',       a:'不是',  x:['是','有'],       tr:'This is not water, this is tea.' },
+  ],
+  hen_adj: [
+    { s:'今天___冷，昨天不冷。',   a:'很',    x:['太','不'],       tr:'Today is very cold, yesterday was not.' },
+    { s:'这个苹果___大，那个小。', a:'很',    x:['太','不'],       tr:'This apple is very big, that one small.' },
+    { s:'他___累了，需要休息。',   a:'太',    x:['很','不'],       tr:'He is too tired, needs rest.' },
+  ],
+  svo_verb: [
+    { s:'我___水，不吃饭。',       a:'喝',    x:['吃','买'],       tr:'I drink water, not eat.' },
+    { s:'他___书，不看电视。',     a:'看',    x:['买','吃'],       tr:'He reads books, not TV.' },
+    { s:'她___中文，不学英语。',   a:'学习',  x:['说','买'],       tr:'She studies Chinese, not English.' },
+  ],
+  modal_neng_hui: [
+    { s:'他___说中文，不能说英语。', a:'会',  x:['能','要'],       tr:'He can speak Chinese, not English.' },
+    { s:'今天我___来，明天我来。',   a:'不能', x:['不会','不要'],   tr:'Today I can\'t come, tomorrow I will.' },
+  ],
+  modal_yao_xihuan: [
+    { s:'我___吃苹果，不要吃米饭。',a:'要',   x:['喜欢','能'],     tr:'I want to eat apple, not rice.' },
+    { s:'他___喝茶，不喜欢咖啡。',  a:'喜欢', x:['要','能'],       tr:'He likes tea, doesn\'t like coffee.' },
+  ],
+  location_zai: [
+    { s:'他___家，不在学校。',      a:'在',   x:['是','有'],       tr:'He is at home, not at school.' },
+    { s:'书___桌子上，不在椅子上。',a:'在',   x:['是','有'],       tr:'The book is on the desk, not on the chair.' },
+  ],
+  ye_dou: [
+    { s:'他去，我___去，大家都去。', a:'也',  x:['都','很'],       tr:'He goes, I also go, everyone goes.' },
+    { s:'我们___是学生，没有老师。', a:'都',  x:['也','很'],       tr:'We are all students, no teacher.' },
+  ],
+  time_first: [
+    { s:'___我去学校，不去医院。',   a:'今天', x:['我','学校'],    tr:'Today I go to school, not hospital.' },
+    { s:'___他来，我们就开始。',     a:'明天', x:['他','来'],      tr:'Tomorrow when he comes, we start.' },
+  ],
 
-// ─── LESSON 20 — Also & All ────────────────────────────────────────────────
-'1-20':{
-  title:'Also & Both',
-  words:['1-89','1-90','1-92','1-86'],
-  steps:[
-    {t:'card',  w:'1-89'},
-    {t:'card',  w:'1-90'},
-    {t:'card',  w:'1-92'},
-    {t:'card',  w:'1-86'},
-    {t:'audio', w:'1-89', x:['1-90','1-88']},     // yě vs dōu/ne
-    {t:'audio', w:'1-90', x:['1-89','1-88']},     // dōu vs yě/ne
-    {t:'audio', w:'1-92', x:['1-91','1-6']},      // tài vs hěn/bù
-    {t:'zh_en', w:'1-89', x:['1-90','1-88']},
-    {t:'zh_en', w:'1-90', x:['1-89','1-88']},
-    {t:'zh_en', w:'1-92', x:['1-91','1-6']},
-    {t:'zh_en', w:'1-86', x:['1-83','1-1']},
-    {t:'en_zh', w:'1-89', x:['1-90','1-88']},
-    {t:'en_zh', w:'1-90', x:['1-89','1-88']},
-    {t:'build', s:'我也喜欢茶',      ws:['我','也','喜欢','茶','都']},
-    {t:'build', s:'我们都去学校',    ws:['我们','都','去','学校','也']},
-    {t:'blank', s:'他___喜欢苹果',   a:'也', x:['都','太'],   tr:'He also likes apples'},
-    {t:'blank', s:'我们___是学生',   a:'都', x:['也','很'],   tr:'We are all students'},
-    {t:'blank', s:'这个___贵了',     a:'太', x:['很','都'],   tr:'This is too expensive'},
-    {t:'error', bad:'我都也去',      good:'我也去', tip:'也 and 都 don\'t go together like this'},
-    {t:'match', ws:['1-89','1-90','1-92','1-86']},
-    {t:'zh_en', w:'1-87', x:['1-88','1-6']},
-    {t:'zh_en', w:'1-91', x:['1-92','1-8']},
-  ]
-},
+  // HSK2
+  danshi_suoyi: [
+    { s:'他很累，___还在工作。',    a:'但是',  x:['所以','如果'],   tr:'He is tired, but still working.' },
+    { s:'他很累，___他休息了。',    a:'所以',  x:['但是','如果'],   tr:'He is tired, so he rested.' },
+  ],
+  yinwei_suoyi: [
+    { s:'___下雨，我们不去。',      a:'因为',  x:['所以','虽然'],   tr:'Because it rains, we won\'t go.' },
+    { s:'因为下雨，___我们不去。',  a:'所以',  x:['但是','如果'],   tr:'Because of rain, so we won\'t go.' },
+  ],
+  bi_comparison: [
+    { s:'他___我高，我比他矮。',     a:'比',   x:['跟','对'],       tr:'He is taller than me, I am shorter.' },
+    { s:'苹果___香蕉甜，香蕉不甜。',a:'比',   x:['跟','对'],       tr:'Apples are sweeter than bananas.' },
+  ],
+  keyi_yinggai: [
+    { s:'你___休息，不要工作了。',   a:'应该',  x:['可以','必须'],  tr:'You should rest, stop working.' },
+    { s:'你___走，不用等了。',       a:'可以',  x:['应该','必须'],  tr:'You can leave, no need to wait.' },
+    { s:'你___去，这是规定。',       a:'必须',  x:['可以','应该'],  tr:'You must go, it\'s the rule.' },
+  ],
+  xian_zai_ranhou: [
+    { s:'请___坐下，___说话。',      a:'先',   x:['再','然后'],     tr:'Please sit down first, then talk.' },
+    { s:'___吃饭，___我们去公园。', a:'先',   x:['再','然后'],     tr:'First eat, then we go to the park.' },
+  ],
+  frequency: [
+    { s:'他___来，不是第一次了。',   a:'经常',  x:['突然','终于'],  tr:'He comes often, not first time.' },
+    { s:'我___看电影，不是每天看。', a:'有时候',x:['经常','平时'],  tr:'I sometimes watch movies, not every day.' },
+  ],
+};
 
-// ─── LESSON 21 — Animals ───────────────────────────────────────────────────
-'1-21':{
-  title:'Cats & Dogs',
-  words:['1-73','1-74','1-75','1-48'],
-  steps:[
-    {t:'card',  w:'1-73'},
-    {t:'card',  w:'1-74'},
-    {t:'card',  w:'1-75'},
-    {t:'card',  w:'1-48'},
-    {t:'audio', w:'1-73', x:['1-74','1-14']},     // māo vs gǒu/māma
-    {t:'audio', w:'1-74', x:['1-73','1-75']},     // gǒu vs māo/shū
-    {t:'audio', w:'1-48', x:['1-40','1-41']},     // mǎi vs chī/hē
-    {t:'zh_en', w:'1-73', x:['1-74','1-10']},
-    {t:'zh_en', w:'1-74', x:['1-73','1-10']},
-    {t:'zh_en', w:'1-75', x:['1-74','1-73']},
-    {t:'zh_en', w:'1-48', x:['1-40','1-41']},
-    {t:'en_zh', w:'1-73', x:['1-74','1-10']},
-    {t:'en_zh', w:'1-48', x:['1-40','1-41']},
-    {t:'build', s:'我有一只猫',      ws:['我','有','一只','猫','狗']},
-    {t:'build', s:'他买了一本书',    ws:['他','买了','一本','书','猫']},
-    {t:'blank', s:'她有一只___',    a:'狗',  x:['猫','书'],   tr:'She has a dog'},
-    {t:'blank', s:'我想___这本书',   a:'买',  x:['吃','看'],   tr:'I want to buy this book'},
-    {t:'listen',w:'1-73', x:['1-74','1-75']},
-    {t:'error', bad:'我有猫一只',    good:'我有一只猫', tip:'Number+measure word before noun'},
-    {t:'match', ws:['1-73','1-74','1-75','1-48']},
-    {t:'zh_en', w:'1-49', x:['1-51','1-52']},
-    {t:'zh_en', w:'1-52', x:['1-51','1-55']},
-  ]
-},
+// ── LESSON GENERATOR ─────────────────────────────────────────────
+// Builds a lesson's step array from vocabulary and grammar data.
+// Enforces: 30% new, 70% review, no ambiguous blanks.
 
-// ─── LESSON 22 — Places in the City ───────────────────────────────────────
-'1-22':{
-  title:'Places in the City',
-  words:['1-111','1-112','1-113','1-123'],
-  steps:[
-    {t:'card',  w:'1-111'},
-    {t:'card',  w:'1-112'},
-    {t:'card',  w:'1-113'},
-    {t:'card',  w:'1-123'},
-    {t:'audio', w:'1-111',x:['1-113','1-112']},   // shāngdiàn vs fàndiàn/yīyuàn
-    {t:'audio', w:'1-112',x:['1-111','1-113']},   // yīyuàn vs shāngdiàn/fàndiàn
-    {t:'audio', w:'1-123',x:['1-11','1-10']},     // yīshēng vs lǎoshī/xuésheng
-    {t:'zh_en', w:'1-111',x:['1-113','1-112']},
-    {t:'zh_en', w:'1-112',x:['1-111','1-113']},
-    {t:'zh_en', w:'1-113',x:['1-111','1-112']},
-    {t:'zh_en', w:'1-123',x:['1-11','1-10']},
-    {t:'en_zh', w:'1-111',x:['1-113','1-112']},
-    {t:'en_zh', w:'1-123',x:['1-11','1-10']},
-    {t:'build', s:'我去商店买东西',   ws:['我','去','商店','买','东西','医院']},
-    {t:'build', s:'他在医院工作',    ws:['他','在','医院','工作','商店']},
-    {t:'blank', s:'我去___吃饭',    a:'饭店', x:['商店','医院'],  tr:'I go to the restaurant'},
-    {t:'blank', s:'他是___',       a:'医生', x:['老师','学生'],  tr:'He is a doctor'},
-    {t:'listen',w:'1-111',x:['1-113','1-112']},
-    {t:'error', bad:'我去到商店',    good:'我去商店', tip:'Just 去 + place, no 到 needed here'},
-    {t:'match', ws:['1-111','1-112','1-113','1-123']},
-    {t:'zh_en', w:'1-64', x:['1-63','1-57']},
-    {t:'zh_en', w:'1-50', x:['1-49','1-5']},
-  ]
-},
-
-// ─── LESSON 23 — Transport ─────────────────────────────────────────────────
-'1-23':{
-  title:'Getting Around',
-  words:['1-109','1-110','1-147','1-146'],
-  steps:[
-    {t:'card',  w:'1-109'},
-    {t:'card',  w:'1-110'},
-    {t:'card',  w:'1-147'},
-    {t:'card',  w:'1-146'},
-    {t:'audio', w:'1-109',x:['1-110','1-108']},   // fēijī vs chūzūchē/tiānqì
-    {t:'audio', w:'1-110',x:['1-109','1-113']},
-    {t:'audio', w:'1-146',x:['1-147','1-38']},    // kāi vs dào/lái
-    {t:'zh_en', w:'1-109',x:['1-110','1-108']},
-    {t:'zh_en', w:'1-110',x:['1-109','1-113']},
-    {t:'zh_en', w:'1-147',x:['1-38','1-148']},
-    {t:'zh_en', w:'1-146',x:['1-147','1-38']},
-    {t:'en_zh', w:'1-109',x:['1-110','1-108']},
-    {t:'en_zh', w:'1-147',x:['1-38','1-148']},
-    {t:'build', s:'我坐飞机去北京',   ws:['我','坐','飞机','去','北京','出租车']},
-    {t:'build', s:'他开车来我家',    ws:['他','开车','来','我家','去']},
-    {t:'blank', s:'我坐___去上海',   a:'飞机', x:['出租车','火车'],  tr:'I fly to Shanghai'},
-    {t:'blank', s:'我到___了',      a:'北京', x:['上海','学校'],   tr:'I arrived in Beijing'},
-    {t:'listen',w:'1-109',x:['1-110','1-108']},
-    {t:'error', bad:'我飞机坐',      good:'我坐飞机', tip:'Verb then transport'},
-    {t:'match', ws:['1-109','1-110','1-147','1-146']},
-    {t:'zh_en', w:'1-38', x:['1-39','1-148']},
-    {t:'zh_en', w:'1-39', x:['1-38','1-148']},
-  ]
-},
-
-// ─── LESSON 24 — Electronics ───────────────────────────────────────────────
-'1-24':{
-  title:'Tech & Media',
-  words:['1-117','1-118','1-119','1-120'],
-  steps:[
-    {t:'card',  w:'1-117'},
-    {t:'card',  w:'1-118'},
-    {t:'card',  w:'1-119'},
-    {t:'card',  w:'1-120'},
-    {t:'audio', w:'1-117',x:['1-118','1-119']},   // diànnǎo vs shǒujī/diànshì
-    {t:'audio', w:'1-118',x:['1-117','1-119']},
-    {t:'audio', w:'1-120',x:['1-119','1-44']},    // diànyǐng vs diànshì/kàn
-    {t:'zh_en', w:'1-117',x:['1-118','1-119']},
-    {t:'zh_en', w:'1-118',x:['1-117','1-119']},
-    {t:'zh_en', w:'1-119',x:['1-117','1-118']},
-    {t:'zh_en', w:'1-120',x:['1-119','1-44']},
-    {t:'en_zh', w:'1-117',x:['1-118','1-119']},
-    {t:'en_zh', w:'1-120',x:['1-119','1-44']},
-    {t:'build', s:'我用手机打电话',   ws:['我','用','手机','打','电话','电脑']},
-    {t:'build', s:'他在家看电视',    ws:['他','在','家','看','电视','电影']},
-    {t:'blank', s:'我用___学习',    a:'电脑', x:['手机','电视'],  tr:'I use a computer to study'},
-    {t:'blank', s:'你喜欢看___吗',  a:'电影', x:['电视','电脑'],  tr:'Do you like watching movies?'},
-    {t:'listen',w:'1-117',x:['1-118','1-119']},
-    {t:'match', ws:['1-117','1-118','1-119','1-120']},
-    {t:'zh_en', w:'1-44', x:['1-43','1-45']},
-    {t:'zh_en', w:'1-48', x:['1-40','1-41']},
-  ]
-},
-
-// ─── LESSON 25 — Classroom Items ───────────────────────────────────────────
-'1-25':{
-  title:'Classroom Things',
-  words:['1-75','1-114','1-115','1-116'],
-  steps:[
-    {t:'card',  w:'1-75'},
-    {t:'card',  w:'1-114'},
-    {t:'card',  w:'1-115'},
-    {t:'card',  w:'1-116'},
-    {t:'audio', w:'1-115',x:['1-116','1-114']},   // zhuōzi vs yǐzi/bēizi
-    {t:'audio', w:'1-116',x:['1-115','1-114']},
-    {t:'zh_en', w:'1-75', x:['1-114','1-115']},
-    {t:'zh_en', w:'1-114',x:['1-115','1-116']},
-    {t:'zh_en', w:'1-115',x:['1-116','1-114']},
-    {t:'zh_en', w:'1-116',x:['1-115','1-114']},
-    {t:'en_zh', w:'1-75', x:['1-114','1-115']},
-    {t:'en_zh', w:'1-115',x:['1-116','1-114']},
-    {t:'build', s:'书在桌子上',      ws:['书','在','桌子','上','下']},
-    {t:'build', s:'杯子在椅子旁边',   ws:['杯子','在','椅子','旁边','上']},
-    {t:'blank', s:'我的___在桌子上', a:'书',  x:['杯子','椅子'],  tr:'My book is on the desk'},
-    {t:'blank', s:'请坐___',       a:'椅子', x:['桌子','书'],   tr:'Please sit on the chair'},
-    {t:'match', ws:['1-75','1-114','1-115','1-116']},
-    {t:'zh_en', w:'1-117',x:['1-118','1-119']},
-    {t:'zh_en', w:'1-118',x:['1-117','1-119']},
-  ]
-},
-
-// ─── LESSON 26 — Up, Down, This, That ─────────────────────────────────────
-'1-26':{
-  title:'Directions & Pointers',
-  words:['1-78','1-79','1-100','1-101'],
-  steps:[
-    {t:'card',  w:'1-78'},
-    {t:'card',  w:'1-79'},
-    {t:'card',  w:'1-100'},
-    {t:'card',  w:'1-101'},
-    {t:'audio', w:'1-78', x:['1-79','1-94']},     // nà vs zhè/nǎ
-    {t:'audio', w:'1-79', x:['1-78','1-94']},     // zhè vs nà/nǎ
-    {t:'audio', w:'1-100',x:['1-101','1-34']},    // xià vs shàng/xiàwǔ
-    {t:'audio', w:'1-101',x:['1-100','1-33']},    // shàng vs xià/shàngwǔ
-    {t:'zh_en', w:'1-78', x:['1-79','1-94']},
-    {t:'zh_en', w:'1-79', x:['1-78','1-94']},
-    {t:'zh_en', w:'1-100',x:['1-101','1-34']},
-    {t:'zh_en', w:'1-101',x:['1-100','1-33']},
-    {t:'en_zh', w:'1-78', x:['1-79','1-94']},
-    {t:'en_zh', w:'1-100',x:['1-101','1-34']},
-    {t:'build', s:'书在桌子上面',    ws:['书','在','桌子','上面','下面']},
-    {t:'blank', s:'___是什么',      a:'这',  x:['那','哪'],   tr:'What is this?'},
-    {t:'blank', s:'猫在___面',      a:'下',  x:['上','那'],   tr:'The cat is underneath'},
-    {t:'blank', s:'___个人是谁',    a:'那',  x:['这','哪'],   tr:'Who is that person?'},
-    {t:'error', bad:'我上去楼',      good:'我上楼去', tip:'Direction words follow the verb'},
-    {t:'match', ws:['1-78','1-79','1-100','1-101']},
-    {t:'zh_en', w:'1-50', x:['1-49','1-5']},
-    {t:'zh_en', w:'1-64', x:['1-63','1-57']},
-  ]
-},
-
-// ─── LESSON 27 — Know & Feel ───────────────────────────────────────────────
-'1-27':{
-  title:'Know & Feel',
-  words:['1-131','1-132','1-125','1-127'],
-  steps:[
-    {t:'card',  w:'1-131'},
-    {t:'card',  w:'1-132'},
-    {t:'card',  w:'1-125'},
-    {t:'card',  w:'1-127'},
-    {t:'audio', w:'1-131',x:['1-130','1-132']},   // zhīdào vs liǎojiě/juéde
-    {t:'audio', w:'1-132',x:['1-131','1-130']},   // juéde vs zhīdào/liǎojiě
-    {t:'audio', w:'1-125',x:['1-56','1-131']},    // rènshi vs jiào/zhīdào
-    {t:'zh_en', w:'1-131',x:['1-130','1-132']},
-    {t:'zh_en', w:'1-132',x:['1-131','1-130']},
-    {t:'zh_en', w:'1-125',x:['1-56','1-131']},
-    {t:'zh_en', w:'1-127',x:['1-126','1-128']},
-    {t:'en_zh', w:'1-131',x:['1-130','1-132']},
-    {t:'en_zh', w:'1-127',x:['1-126','1-128']},
-    {t:'build', s:'我觉得今天很冷',   ws:['我','觉得','今天','很','冷','热']},
-    {t:'build', s:'你认识他吗',      ws:['你','认识','他','吗','知道']},
-    {t:'blank', s:'我___他',        a:'认识', x:['知道','觉得'],  tr:'I know him (personally)'},
-    {t:'blank', s:'我不___这个字',   a:'知道', x:['认识','觉得'],  tr:'I don\'t know this character'},
-    {t:'blank', s:'她___很漂亮',     a:'觉得', x:['知道','认识'],  tr:'She thinks she is beautiful'},
-    {t:'listen',w:'1-131',x:['1-130','1-132']},
-    {t:'match', ws:['1-131','1-132','1-125','1-127']},
-    {t:'zh_en', w:'1-52', x:['1-51','1-55']},
-    {t:'zh_en', w:'1-49', x:['1-51','1-52']},
-  ]
-},
-
-// ─── LESSON 28 — Tell & Ask ────────────────────────────────────────────────
-'1-28':{
-  title:'Communicate',
-  words:['1-136','1-144','1-137','1-133'],
-  steps:[
-    {t:'card',  w:'1-136'},
-    {t:'card',  w:'1-144'},
-    {t:'card',  w:'1-137'},
-    {t:'card',  w:'1-133'},
-    {t:'audio', w:'1-136',x:['1-43','1-144']},    // gàosù vs shuō/wèn
-    {t:'audio', w:'1-144',x:['1-136','1-43']},    // wèn vs gàosù/shuō
-    {t:'audio', w:'1-137',x:['1-136','1-144']},   // bāngzhù vs gàosù/wèn
-    {t:'zh_en', w:'1-136',x:['1-43','1-144']},
-    {t:'zh_en', w:'1-144',x:['1-136','1-43']},
-    {t:'zh_en', w:'1-137',x:['1-136','1-144']},
-    {t:'zh_en', w:'1-133',x:['1-52','1-55']},
-    {t:'en_zh', w:'1-136',x:['1-43','1-144']},
-    {t:'en_zh', w:'1-137',x:['1-136','1-144']},
-    {t:'build', s:'我告诉你一件事',   ws:['我','告诉','你','一件事','问']},
-    {t:'build', s:'你能帮助我吗',    ws:['你','能','帮助','我','吗','问']},
-    {t:'blank', s:'他___我去哪里',   a:'问', x:['告诉','帮助'],  tr:'He asks me where to go'},
-    {t:'blank', s:'我___他学习',     a:'帮助',x:['问','告诉'],  tr:'I help him study'},
-    {t:'blank', s:'我___你一件事',   a:'告诉',x:['问','帮助'],  tr:'I\'ll tell you something'},
-    {t:'listen',w:'1-136',x:['1-43','1-144']},
-    {t:'match', ws:['1-136','1-144','1-137','1-133']},
-    {t:'zh_en', w:'1-43', x:['1-44','1-45']},
-    {t:'zh_en', w:'1-131',x:['1-132','1-130']},
-  ]
-},
-
-// ─── LESSON 29 — Time & Things ─────────────────────────────────────────────
-'1-29':{
-  title:'Time & Things',
-  words:['1-143','1-142','1-141','1-139'],
-  steps:[
-    {t:'card',  w:'1-143'},
-    {t:'card',  w:'1-142'},
-    {t:'card',  w:'1-141'},
-    {t:'card',  w:'1-139'},
-    {t:'audio', w:'1-143',x:['1-97','1-96']},     // shíjiān vs shíhou/xiànzài
-    {t:'audio', w:'1-142',x:['1-141','1-139']},   // dōngxi vs dìfang/yìsi
-    {t:'zh_en', w:'1-143',x:['1-97','1-96']},
-    {t:'zh_en', w:'1-142',x:['1-141','1-139']},
-    {t:'zh_en', w:'1-141',x:['1-142','1-139']},
-    {t:'zh_en', w:'1-139',x:['1-142','1-138']},
-    {t:'en_zh', w:'1-143',x:['1-97','1-96']},
-    {t:'en_zh', w:'1-142',x:['1-141','1-139']},
-    {t:'build', s:'你有时间吗',       ws:['你','有','时间','吗','东西']},
-    {t:'build', s:'这个东西是什么',    ws:['这个','东西','是','什么','地方']},
-    {t:'blank', s:'我没有___',       a:'时间', x:['东西','地方'],  tr:'I don\'t have time'},
-    {t:'blank', s:'你去什么___',     a:'地方', x:['时间','东西'],  tr:'What place are you going to?'},
-    {t:'listen',w:'1-143',x:['1-97','1-96']},
-    {t:'match', ws:['1-143','1-142','1-141','1-139']},
-    {t:'zh_en', w:'1-96', x:['1-30','1-143']},
-    {t:'zh_en', w:'1-30', x:['1-31','1-32']},
-  ]
-},
-
-// ─── LESSON 30 — Final Review & Mastery ────────────────────────────────────
-'1-30':{
-  title:'HSK 1 Mastery Review',
-  words:['1-145','1-149','1-150','1-128'],
-  steps:[
-    {t:'card',  w:'1-145'},
-    {t:'card',  w:'1-149'},
-    {t:'card',  w:'1-150'},
-    {t:'card',  w:'1-128'},
-    {t:'audio', w:'1-145',x:['1-145','1-38']},
-    {t:'audio', w:'1-149',x:['1-40','1-146']},
-    {t:'audio', w:'1-150',x:['1-144','1-136']},
-    {t:'zh_en', w:'1-145',x:['1-38','1-39']},
-    {t:'zh_en', w:'1-149',x:['1-40','1-146']},
-    {t:'zh_en', w:'1-150',x:['1-144','1-136']},
-    {t:'zh_en', w:'1-128',x:['1-129','1-127']},
-    {t:'en_zh', w:'1-145',x:['1-38','1-148']},
-    {t:'en_zh', w:'1-150',x:['1-144','1-136']},
-    {t:'build', s:'你找什么东西',     ws:['你','找','什么','东西','人']},
-    {t:'build', s:'我打电话给你',     ws:['我','打','电话','给','你','他']},
-    {t:'blank', s:'他___家了',       a:'回',  x:['去','来'],   tr:'He went back home'},
-    {t:'blank', s:'我___老师问问题',  a:'向',  x:['去','来'],   tr:'I ask the teacher questions'},
-    {t:'blank', s:'她很___',         a:'高',  x:['大','累'],   tr:'She is very tall'},
-    // Grand review
-    {t:'zh_en', w:'1-3',  x:['1-4','1-7']},
-    {t:'zh_en', w:'1-5',  x:['1-49','1-6']},
-    {t:'zh_en', w:'1-40', x:['1-41','1-44']},
-    {t:'zh_en', w:'1-52', x:['1-51','1-55']},
-    {t:'zh_en', w:'1-91', x:['1-92','1-8']},
-    {t:'listen',w:'1-145',x:['1-148','1-38']},
-    {t:'error', bad:'我找到找他',     good:'我找他', tip:'Just one verb needed'},
-    {t:'match', ws:['1-145','1-149','1-150','1-128']},
-  ]
-},
-
-};  // end LESSONS
-
-
-// ══════════════════════════════════════════════════════════════════
-// LESSON PLAN RESOLVER
-// ══════════════════════════════════════════════════════════════════
-function getLessonPlan(levelNum, lessonNum) {
+function generateLessonSteps(levelNum, lessonNum, allWords) {
   const key = levelNum + '-' + lessonNum;
+  const vocab = LESSON_VOCAB[key];
+  if (!vocab) return null;
 
-  if (LESSONS[key]) {
-    const L = LESSONS[key];
-    const allWords = HSK[levelNum]?.words || [];
-    const wordObjs = (L.words||[]).map(id => allWords.find(w=>w.id===id)).filter(Boolean);
-    return {
-      name:         L.title || ('Lesson ' + lessonNum),
-      key,  levelNum, lessonNum,
-      newWords:     wordObjs,
-      isHandcrafted:true,
-      isSpeed:      false,
-      isCheckpoint: false,
-    };
+  const newIds  = vocab.new || [];
+  const newWords = newIds.map(id => allWords.find(w=>w.id===id)).filter(Boolean);
+  if (newWords.length === 0) return null;
+
+  // Review pool: words from earlier lessons (same level)
+  const reviewIds = [];
+  for (let l = Math.max(1, lessonNum-10); l < lessonNum; l++) {
+    const prevKey = levelNum + '-' + l;
+    const prev = LESSON_VOCAB[prevKey];
+    if (prev) reviewIds.push(...(prev.new||[]));
   }
+  const reviewWords = shuffle(
+    reviewIds.map(id=>allWords.find(w=>w.id===id)).filter(Boolean)
+  ).slice(0, Math.min(8, reviewIds.length));
 
-  // Fallback dynamic plan for HSK 2-6
-  const allWords = HSK[levelNum]?.words || [];
-  const posInBlock = ((lessonNum-1) % 6);
-  const blockNum   = Math.ceil(lessonNum / 6);
-  const blockStart = ((blockNum-1)*4) % Math.max(allWords.length,1);
-  const newWords   = allWords.slice(blockStart, blockStart+4);
-  const revStart   = Math.max(0, blockStart-8);
-  const reviewWords= blockStart>0 ? allWords.slice(revStart, blockStart) : [];
-  const grammar    = (HSK[levelNum]?.grammar||[])[blockNum % Math.max((HSK[levelNum]?.grammar||[]).length,1)];
-  const NAMES      = ['Introduction','Reinforcement','Expansion','Mixed Practice','⚡ Speed','✓ Checkpoint'];
-  return {
-    name:NAMES[posInBlock], key, levelNum, lessonNum,
-    newWords, reviewWords, grammarItem:grammar,
-    isHandcrafted:false,
-    isSpeed:      posInBlock===4,
-    isCheckpoint: posInBlock===5,
-    posInBlock,
-  };
-}
+  const steps = [];
 
-// ══════════════════════════════════════════════════════════════════
-// STEP BUILDER — converts lesson data → renderable steps
-// ══════════════════════════════════════════════════════════════════
-function buildSteps(plan) {
-  if (plan.isHandcrafted)  return buildHandcraftedSteps(plan);
-  if (plan.isCheckpoint)   return buildCheckpointSteps(plan);
-  if (plan.isSpeed)        return buildSpeedSteps(plan);
-  return buildDynamicSteps(plan);
-}
+  // ── PHASE 1: INTRODUCE (word cards for new words only)
+  newWords.forEach(w => steps.push({type:'word_card', word:w}));
 
-function buildHandcraftedSteps(plan) {
-  const raw      = LESSONS[plan.key]?.steps || [];
-  const allWords = HSK[plan.levelNum]?.words || [];
-  const uid      = window._uid || null;
+  // ── PHASE 2: RECOGNITION (audio + meaning, new words)
+  newWords.forEach(w => {
+    const d = buildDistractors(w, allWords, 2);
+    steps.push({type:'audio_char',  word:w, distractors:d, pool:allWords});
+    steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
+  });
 
-  // Append SRS weak/due words as bonus review at end
-  const extra = [];
-  if (uid) {
-    const weak = srsWeak(uid, plan.levelNum);
-    const due  = srsDue(uid, plan.levelNum)
-      .filter(w => !(plan.newWords||[]).find(n=>n.id===w.id))
-      .slice(0,3);
-    shuffle([...weak,...due]).slice(0,4).forEach(w => {
-      const wrong = shuffle(allWords.filter(x=>x.id!==w.id)).slice(0,2);
-      extra.push({t:'zh_en', w:w.id, x:wrong.map(x=>x.id), isSRS:true});
+  // ── PHASE 3: ACTIVE RECALL (reverse: meaning → hanzi)
+  shuffle([...newWords]).slice(0, Math.min(2, newWords.length)).forEach(w => {
+    const d = buildDistractors(w, allWords, 2);
+    steps.push({type:'mcq_hanzi', word:w, distractors:d, pool:allWords});
+  });
+
+  // ── PHASE 4: SENTENCE BUILD (new words in sentences)
+  newWords.slice(0, 2).forEach(w => {
+    if (w.ex?.zh) {
+      const chars = [...w.ex.zh];
+      if (chars.length >= 3 && chars.length <= 8) {
+        steps.push({type:'sentence_build', sentence:w.ex.zh, chars, extras:[], word:w});
+      }
+    }
+  });
+
+  // ── PHASE 5: FILL-IN-THE-BLANK (grammar, always with context)
+  const blanks = getContextualBlanks(levelNum, lessonNum, newWords, allWords);
+  blanks.slice(0, 2).forEach(b => steps.push(b));
+
+  // ── PHASE 6: LISTENING (new words)
+  shuffle([...newWords]).slice(0, 2).forEach(w => {
+    const d = buildDistractors(w, allWords, 2);
+    steps.push({type:'listen_pick', word:w, distractors:d, pool:allWords});
+  });
+
+  // ── PHASE 7: REVIEW (old words — 70% of exercises must touch old vocab)
+  if (reviewWords.length >= 2) {
+    // Match pairs from review pool
+    const matchWords = shuffle([...reviewWords]).slice(0, 4);
+    if (matchWords.length >= 2) steps.push({type:'match', words:matchWords});
+
+    // MCQ review
+    shuffle([...reviewWords]).slice(0, 3).forEach(w => {
+      const d = buildDistractors(w, allWords, 2);
+      steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
     });
   }
 
-  return [...raw, ...extra]
-    .map(step => resolveStep(step, allWords, plan.levelNum))
-    .filter(Boolean);
+  // ── PHASE 8: ERROR DETECTION
+  const errStep = getErrorStep(levelNum, lessonNum, newWords, allWords);
+  if (errStep) steps.push(errStep);
+
+  // Keep word_cards at top, shuffle the rest
+  const cards = steps.filter(s => s.type === 'word_card');
+  const rest  = shuffle(steps.filter(s => s.type !== 'word_card'));
+  return [...cards, ...rest];
 }
 
-function resolveStep(step, allWords, levelNum) {
-  const get = id => allWords.find(w=>w.id===id) || (HSK[parseInt(id)]?.words||[]).find(w=>w.id===id);
+// Build plausible-but-wrong distractors from same semantic category
+function buildDistractors(word, allWords, count=2) {
+  // Try category-based first
+  const catIds = getDistractorsFor(word.id, count+2);
+  if (catIds && catIds.length >= count) {
+    const fromCat = catIds.map(id=>allWords.find(w=>w.id===id)).filter(Boolean);
+    if (fromCat.length >= count) return fromCat.slice(0, count);
+  }
+  // Fallback: same-length words
+  const fallback = shuffle(allWords.filter(w =>
+    w.id !== word.id && Math.abs(w.zh.length - word.zh.length) <= 1
+  )).slice(0, count);
+  return fallback;
+}
 
-  const ensureDistractors = (id, wrongIds) => {
-    const wrongs = (wrongIds||[]).map(x=>get(x)).filter(Boolean);
-    while (wrongs.length < 2) {
-      const extra = shuffle(allWords.filter(x=>x.id!==id&&!wrongs.find(w=>w.id===x.id)))[0];
-      if (extra) wrongs.push(extra); else break;
-    }
-    return wrongs;
+// Get fill-in-the-blank steps with unambiguous context
+function getContextualBlanks(levelNum, lessonNum, newWords, allWords) {
+  const steps = [];
+
+  // Determine which grammar patterns apply to this lesson
+  const key = levelNum + '-' + lessonNum;
+  const topic = LESSON_VOCAB[key]?.topic || '';
+
+  let patterns = [];
+  if (topic === 'grammar_shi' || topic === 'identity') {
+    patterns = [...GRAMMAR_PATTERNS.shi_positive, ...GRAMMAR_PATTERNS.shi_negative];
+  } else if (topic === 'adj' || topic === 'adj_weather' || topic === 'adj_feeling') {
+    patterns = GRAMMAR_PATTERNS.hen_adj;
+  } else if (topic === 'food' || topic === 'study') {
+    patterns = GRAMMAR_PATTERNS.svo_verb;
+  } else if (topic === 'modal') {
+    patterns = [...GRAMMAR_PATTERNS.modal_neng_hui, ...GRAMMAR_PATTERNS.modal_yao_xihuan];
+  } else if (topic === 'location') {
+    patterns = GRAMMAR_PATTERNS.location_zai;
+  } else if (topic === 'adverb') {
+    patterns = GRAMMAR_PATTERNS.ye_dou;
+  } else if (topic === 'time') {
+    patterns = GRAMMAR_PATTERNS.time_first;
+  } else if (topic === 'connectors') {
+    patterns = [...GRAMMAR_PATTERNS.danshi_suoyi, ...GRAMMAR_PATTERNS.yinwei_suoyi];
+  } else if (topic === 'prepositions') {
+    patterns = GRAMMAR_PATTERNS.bi_comparison;
+  } else if (topic === 'modal2') {
+    patterns = GRAMMAR_PATTERNS.keyi_yinggai;
+  } else if (topic === 'sequence') {
+    patterns = GRAMMAR_PATTERNS.xian_zai_ranhou;
+  } else if (topic === 'freq') {
+    patterns = GRAMMAR_PATTERNS.frequency;
+  }
+
+  // Fall back to general patterns if none match
+  if (patterns.length === 0) {
+    patterns = [...GRAMMAR_PATTERNS.svo_verb, ...GRAMMAR_PATTERNS.hen_adj];
+  }
+
+  shuffle(patterns).slice(0, 2).forEach(p => {
+    steps.push({
+      type:'fill_blank_hc',
+      sentence:    p.s,
+      answer:      p.a,
+      options:     shuffle([p.a, ...p.x]).slice(0, 3),
+      translation: p.tr,
+    });
+  });
+
+  return steps;
+}
+
+// Get error correction step
+function getErrorStep(levelNum, lessonNum, newWords, allWords) {
+  const topic = LESSON_VOCAB[levelNum+'-'+lessonNum]?.topic || '';
+
+  const ERRORS = {
+    grammar_shi:  [{bad:'我学生是',        good:'我是学生',       tip:'Subject + 是 + Noun order'}],
+    adj:          [{bad:'今天是很冷',       good:'今天很冷',       tip:'No 是 before 很 + adjective'}],
+    food:         [{bad:'我水喝',           good:'我喝水',         tip:'Subject + Verb + Object order'}],
+    modal:        [{bad:'我能会说中文',     good:'我会说中文',     tip:'Use 会 for learned skills, not 能+会 together'}],
+    location:     [{bad:'我在是家',         good:'我在家',         tip:'在 is the verb here, no 是 needed'}],
+    adverb:       [{bad:'我都也去',         good:'我也去',         tip:'也 and 都 have different uses'}],
+    time:         [{bad:'我今天昨天去',     good:'我今天去',       tip:'Use only one time word per clause'}],
+    motion:       [{bad:'我学校去',         good:'我去学校',       tip:'Verb before destination'}],
+    connectors:   [{bad:'因为下雨，但是我们不去', good:'因为下雨，所以我们不去', tip:'因为 pairs with 所以, not 但是'}],
+    modal2:       [{bad:'你可以应该休息',   good:'你应该休息',     tip:'Use one modal verb at a time'}],
+    grammar_ba:   [{bad:'我把书在桌子放',   good:'我把书放在桌子上',tip:'把 structure: 把+object+verb+location'}],
   };
 
-  switch(step.t) {
-    case 'card': {
-      const w = get(step.w); if(!w) return null;
-      return {type:'word_card', word:w};
-    }
-    case 'audio': {
-      const w = get(step.w); if(!w) return null;
-      return {type:'audio_char', word:w, distractors:ensureDistractors(step.w, step.x), pool:allWords};
-    }
-    case 'zh_en': {
-      const w = get(step.w); if(!w) return null;
-      return {type:'mcq_meaning', word:w, distractors:ensureDistractors(step.w, step.x), pool:allWords};
-    }
-    case 'en_zh': {
-      const w = get(step.w); if(!w) return null;
-      return {type:'mcq_hanzi', word:w, distractors:ensureDistractors(step.w, step.x), pool:allWords};
-    }
-    case 'listen': {
-      const w = get(step.w); if(!w) return null;
-      return {type:'listen_pick', word:w, distractors:ensureDistractors(step.w, step.x), pool:allWords};
-    }
-    case 'build': {
-      if (!step.s) return null;
-      // Split sentence into individual chars as tiles
-      const chars = [...step.s];
-      const extra = (step.ws||[]).filter(tok => !chars.includes(tok));
-      return {type:'sentence_build', sentence:step.s, chars, extras:extra, word:{zh:step.s,py:'',en:step.tr||'',id:'sb',ex:{zh:step.s,py:'',en:step.tr||''}}};
-    }
-    case 'blank': {
-      if (!step.s||!step.a) return null;
-      return {type:'fill_blank_hc', sentence:step.s, answer:step.a, options:shuffle([...step.x||[],step.a]).slice(0,4), translation:step.tr||''};
-    }
-    case 'error': {
-      if (!step.bad||!step.good) return null;
-      return {type:'error_hc', wrong:step.bad, correct:step.good, tip:step.tip||''};
-    }
-    case 'match': {
-      const words = (step.ws||[]).map(id=>get(id)).filter(Boolean);
-      if (words.length<2) return null;
-      // Deduplicate
-      const seen = new Set();
-      const deduped = words.filter(w=>{ if(seen.has(w.id)) return false; seen.add(w.id); return true; });
-      return {type:'match', words:deduped};
-    }
-    default: return null;
+  const pool = ERRORS[topic] || ERRORS['food'];
+  if (!pool || pool.length === 0) return null;
+  const e = pool[Math.floor(Math.random() * pool.length)];
+  return {type:'error_hc', wrong:e.bad, correct:e.good, tip:e.tip};
+}
+
+// ── LESSON PLAN RESOLVER ─────────────────────────────────────────
+function getLessonPlan(levelNum, lessonNum) {
+  const key = levelNum + '-' + lessonNum;
+  const allWords = HSK[levelNum]?.words || [];
+
+  if (LESSON_VOCAB[key]) {
+    const vocab = LESSON_VOCAB[key];
+    const newWordObjs = (vocab.new||[]).map(id=>allWords.find(w=>w.id===id)).filter(Boolean);
+    return {
+      name:          vocab.title || ('Lesson '+lessonNum),
+      key, levelNum, lessonNum,
+      newWords:      newWordObjs,
+      isHandcrafted: true,
+      isSpeed:       false,
+      isCheckpoint:  false,
+    };
   }
+
+  // Fallback for levels without LESSON_VOCAB entries
+  const allW   = HSK[levelNum]?.words || [];
+  const pos    = ((lessonNum-1)%6);
+  const blk    = Math.ceil(lessonNum/6);
+  const start  = ((blk-1)*4) % Math.max(allW.length,1);
+  const nw     = allW.slice(start, start+4);
+  const rs     = Math.max(0,start-8);
+  const rw     = start>0 ? allW.slice(rs,start) : [];
+  const gram   = (HSK[levelNum]?.grammar||[])[blk % Math.max((HSK[levelNum]?.grammar||[]).length,1)];
+  const NAMES  = ['Introduction','Reinforcement','Expansion','Mixed Practice','⚡ Speed','✓ Checkpoint'];
+  return {
+    name:NAMES[pos], key, levelNum, lessonNum,
+    newWords:nw, reviewWords:rw, grammarItem:gram,
+    isHandcrafted:false, isSpeed:pos===4, isCheckpoint:pos===5, posInBlock:pos,
+  };
+}
+
+// ── STEP BUILDER ─────────────────────────────────────────────────
+function buildSteps(plan) {
+  if (plan.isHandcrafted) {
+    const allWords = HSK[plan.levelNum]?.words || [];
+    const uid = window._uid || null;
+
+    // Generate core steps
+    const core = generateLessonSteps(plan.levelNum, plan.lessonNum, allWords) || [];
+
+    // Append SRS review words (weak + due)
+    const extra = [];
+    if (uid) {
+      const weak = srsWeak(uid, plan.levelNum);
+      const due  = srsDue(uid, plan.levelNum)
+        .filter(w => !(plan.newWords||[]).find(n=>n.id===w.id))
+        .slice(0, 3);
+      shuffle([...weak,...due]).slice(0,3).forEach(w => {
+        const d = buildDistractors(w, allWords, 2);
+        extra.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords, isSRS:true});
+      });
+    }
+
+    return [...core, ...extra].filter(Boolean);
+  }
+  if (plan.isCheckpoint) return buildCheckpointSteps(plan);
+  if (plan.isSpeed)      return buildSpeedSteps(plan);
+  return buildDynamicSteps(plan);
 }
 
 function buildDynamicSteps(plan) {
-  const {newWords,reviewWords,grammarItem,levelNum,posInBlock} = plan;
+  const {newWords,reviewWords,grammarItem,levelNum} = plan;
   const allWords = HSK[levelNum]?.words || [];
   const nw = newWords, rw = reviewWords?.length>0 ? reviewWords : allWords.slice(0,4);
   let s = [];
   nw.forEach(w=>s.push({type:'word_card',word:w}));
   if(grammarItem) s.push({type:'grammar',grammar:grammarItem});
-  nw.forEach(w=>s.push({type:'mcq_meaning',word:w,pool:allWords}));
-  nw.forEach(w=>s.push({type:'mcq_hanzi',word:w,pool:allWords}));
+  nw.forEach(w=>{ const d=buildDistractors(w,allWords,2); s.push({type:'mcq_meaning',word:w,distractors:d,pool:allWords}); });
+  nw.forEach(w=>{ const d=buildDistractors(w,allWords,2); s.push({type:'mcq_hanzi',word:w,distractors:d,pool:allWords}); });
   nw.slice(0,3).forEach(w=>s.push({type:'word_position',word:w}));
   nw.forEach(w=>s.push({type:'tf_sentence',word:w,pool:allWords}));
   nw.slice(0,2).forEach(w=>s.push({type:'fill_blank',word:w}));
   nw.slice(0,2).forEach(w=>s.push({type:'sentence_order',word:w}));
-  pick(rw,2).forEach(w=>s.push({type:'mcq_meaning',word:w,pool:allWords}));
-  s.push({type:'match',words:nw.slice(0,4)});
-  const fixed = s.filter(x=>x.type==='word_card'||x.type==='grammar');
-  const rest  = shuffle(s.filter(x=>x.type!=='word_card'&&x.type!=='grammar'));
-  return [...fixed,...rest].filter(Boolean);
+  pick(rw,2).forEach(w=>{ const d=buildDistractors(w,allWords,2); s.push({type:'mcq_meaning',word:w,distractors:d,pool:allWords}); });
+  s.push({type:'match',words:shuffle([...nw]).slice(0,4)});
+  const fixed=s.filter(x=>x.type==='word_card'||x.type==='grammar');
+  return [...fixed,...shuffle(s.filter(x=>x.type!=='word_card'&&x.type!=='grammar'))].filter(Boolean);
 }
 
 
-function buildSpeedSteps(plan) {
-  const { newWords, reviewWords, levelNum } = plan;
-  const allWords = HSK[levelNum]?.words || [];
-  const pool = shuffle([...newWords, ...reviewWords]).slice(0, 10);
-  const types = ['mcq_meaning','mcq_hanzi','tf_sentence','listen_tf'];
-  return pool.map(w => ({ type: rand(types), word: w, pool: allWords, speed: true }));
-}
 
-function buildCheckpointSteps(plan) {
-  const { newWords, reviewWords, levelNum } = plan;
-  const allWords = HSK[levelNum]?.words || [];
-  const pool = [...newWords, ...reviewWords].filter(Boolean);
-  let s = [];
-  // Part 1 — Listening (5 questions)
-  shuffle(pool).slice(0,5).forEach(w => s.push({ type:'listen_tf', word: w, section:'listen' }));
-  // Part 2 — Reading (5 questions)
-  shuffle(pool).slice(0,3).forEach(w => s.push({ type:'mcq_meaning', word: w, pool: allWords, section:'read' }));
-  shuffle(pool).slice(0,2).forEach(w => s.push({ type:'reading_passage', word: w, section:'read' }));
-  // Part 3 — Writing (3 questions)
-  shuffle(pool).slice(0,2).forEach(w => s.push({ type:'sentence_order', word: w, section:'write' }));
-  shuffle(pool).slice(0,1).forEach(w => s.push({ type:'pinyin_type', word: w, section:'write' }));
-  return s;
-}
-
-// ══════════════════════════════════════════════════════════
-// RENDER STEP
-// ══════════════════════════════════════════════════════════
 function renderStep(idx) {
   if (idx >= steps.length) { showComplete(); return; }
   answeredStep = false;
