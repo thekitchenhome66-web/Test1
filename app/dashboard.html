@@ -254,6 +254,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 /* ══ ANIMATIONS ══ */
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -561,16 +562,65 @@ function renderDaily() {
 }
 
 /* ── REVIEW CARD ── */
-function renderReview() {
-  const srs = JSON.parse(localStorage.getItem(key('srs')) || '{}');
-  const now = Date.now();
-  const due = Object.values(srs).filter(w => w.nextReview && w.nextReview <= now).length;
+async function renderReview() {
   const card = document.getElementById('review-card');
-  if (due > 0) {
-    card.style.display = 'block';
-    document.getElementById('rv-sub').textContent = `${due} word${due>1?'s':''} need attention today`;
-  } else {
+  try {
+    const { data, error } = await sb
+      .from('word_progress')
+      .select('word_id', { count: 'exact' })
+      .eq('user_id', _uid)
+      .lte('next_review', new Date().toISOString());
+    const due = data?.length || 0;
+    if (due > 0) {
+      card.style.display = 'block';
+      document.getElementById('rv-sub').textContent = `${due} word${due>1?'s':''} due for review today`;
+    } else {
+      card.style.display = 'none';
+    }
+  } catch(e) {
     card.style.display = 'none';
+  }
+}
+
+/* ── EXAM PENDING BANNER ── */
+function renderExamBanner() {
+  const examLevel = localStorage.getItem(key('hsk_exam_pending'));
+  const existing = document.getElementById('exam-banner');
+  if (existing) existing.remove();
+  if (!examLevel) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'exam-banner';
+  banner.style.cssText = `
+    background: linear-gradient(135deg, rgba(245,200,66,.18), rgba(245,200,66,.05));
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 18px 16px;
+    margin: 0 16px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    animation: fadeSlideIn .4s ease;
+  `;
+  banner.innerHTML = `
+    <div style="font-size:32px;flex-shrink:0">🏆</div>
+    <div style="flex:1">
+      <div style="font-size:15px;font-weight:800;color:var(--gold)">HSK ${examLevel} Exam Ready!</div>
+      <div style="font-size:12px;color:var(--ink2);margin-top:3px">You finished all lessons. Take the simulation exam before starting HSK ${Number(examLevel)+1}.</div>
+    </div>
+    <div style="background:var(--gold);color:#000;font-size:12px;font-weight:800;padding:8px 14px;border-radius:10px;flex-shrink:0;white-space:nowrap">Take Exam →</div>
+  `;
+  banner.onclick = () => {
+    window.location.href = `/app/hsk-exam.html?level=${examLevel}`;
+  };
+
+  // Insert after stats row
+  const statsRow = document.querySelector('.stats-row') || document.querySelector('.card');
+  if (statsRow && statsRow.parentNode) {
+    statsRow.parentNode.insertBefore(banner, statsRow.nextSibling);
+  } else {
+    document.querySelector('.scroll-area')?.prepend(banner);
   }
 }
 
@@ -622,7 +672,7 @@ function buildHSKPath() {
           </div>
           <div>
             <div class="hsk-label">${hsk.name}</div>
-            <div class="hsk-meta">${hsk.words} words · ${hsk.lessons} lessons${hsk.level===4?" · 📝 Exam Prep":""}</div>
+            <div class="hsk-meta">${hsk.words} words · ${hsk.lessons} lessons${isDone ? ' · 🏆 Exam Passed' : hsk.level === currentLevel && localStorage.getItem(key('hsk_exam_pending')) === String(hsk.level) ? ' · 🎯 Exam Ready!' : ''}</div>
           </div>
         </div>
         <div class="hsk-banner-right">
@@ -702,7 +752,10 @@ function toggleHSK(section, level) {
 function handleNodeClick(level, lesson, state) {
   if (state === 'locked') { showToast('Complete previous lessons first!'); return; }
   if (state === 'done') { showToast('Already completed! Great job ✓'); return; }
-  if (state === 'active') startLesson();
+  if (state === 'active') {
+    if (user.hearts <= 0) { showHeartsModal(); return; }
+    window.location.href = `/app/lesson-10.html?level=${level}&lesson=${lesson}`;
+  }
 }
 
 /* ── LESSON NAVIGATION ── */
@@ -710,7 +763,7 @@ function startLesson() {
   if (user.hearts <= 0) { showHeartsModal(); return; }
   const lv = user.level;
   const ls = user.lesson;
-  window.location.href = `/app/lesson.html?level=${lv}&lesson=${ls}`;
+  window.location.href = `/app/lesson-10.html?level=${lv}&lesson=${ls}`;
 }
 
 function startReview() {
@@ -909,7 +962,8 @@ async function init() {
     renderStats();
     renderContinue();
     renderDaily();
-    renderReview();
+    renderExamBanner();
+    renderReview(); // async — updates card when Supabase responds
     renderSpeed();
     buildHSKPath();
 
