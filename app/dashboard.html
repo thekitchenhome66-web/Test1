@@ -356,6 +356,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="sec-label">Your Path</div>
     <div id="hsk-list"></div>
 
+    <!-- HSK MOCK TEST BUTTON (always visible) -->
+    <div id="mock-test-section">
+      <div class="sec-label">Simulation Exams</div>
+      <div style="display:flex;flex-direction:column;gap:10px" id="mock-test-list"></div>
+    </div>
+
     <!-- 5. SPEED CHALLENGE (unlocks after lesson 10) -->
     <div class="card speed-card" id="speed-card" style="display:none;animation-delay:.11s">
       <div class="sp-top">
@@ -513,16 +519,38 @@ function renderStats() {
 }
 
 /* ── CONTINUE CARD ── */
+// Inline HSK1 lesson titles for the continue card
+const _LESSON_TITLES_HSK1 = {
+  '1-1':'Me & You','1-2':'To Be','1-3':'Greetings','1-4':'Sorry & Please',
+  '1-5':'Eat','1-6':'Drink','1-7':'More Food','1-8':'People','1-9':'Family',
+  '1-10':'My Name','1-11':'Numbers 1–5','1-12':'Numbers 6–10',
+  '1-13':'Today & Tomorrow','1-14':'Now & Morning','1-15':'Year & Month',
+  '1-16':'Come & Go','1-17':'Arrive & Open','1-18':'Have & Want',
+  '1-19':'Like & Think','1-20':'Can & Know How','1-21':'Listen & Speak',
+  '1-22':'Read & Write','1-23':'Study & Work','1-24':'School & Home',
+  '1-25':'Beijing & Shanghai','1-26':'Shop & Hospital','1-27':'Languages',
+  '1-28':'Buy & Find','1-29':'Ask & Tell','1-30':'Help & Return',
+  '1-31':'Big & Small','1-32':'Good & Very','1-33':'Hot & Cold',
+  '1-34':'Happy & Tired','1-35':'Tall & Pretty','1-36':'Weather',
+  '1-37':'This & That','1-38':'Up & Down','1-39':'Also & All',
+  '1-40':'How & Why','1-41':'What & How Many','1-42':'Which & Where',
+  '1-43':'Question Particles','1-44':'Animals','1-45':'Book & Money',
+  '1-46':'Transport','1-47':'At & In','1-48':'Time & Things',
+  '1-49':'Know & Feel','1-50':'HSK 1 Review'
+};
+
 function renderContinue() {
   const lv  = user.level;
   const ls  = user.lesson;
-  const block = Math.ceil(ls / 6);
+
+  // Try to get real lesson title
+  const lessonKey = `${lv}-${ls}`;
+  const FALLBACK_TITLES = ['Introduction','Reinforcement','Expansion','Mixed Practice','Speed Challenge','Checkpoint'];
   const posInBlock = ((ls - 1) % 6) + 1;
+  const block = Math.ceil(ls / 6);
+  const title = (lv === 1 ? _LESSON_TITLES_HSK1[lessonKey] : null) || FALLBACK_TITLES[posInBlock - 1] || `Lesson ${ls}`;
 
-  const LESSON_TITLES = ['Introduction','Reinforcement','Expansion','Mixed Practice','Speed Challenge','Checkpoint'];
-  const title = LESSON_TITLES[posInBlock - 1] || 'Lesson';
-
-  document.getElementById('cc-path').textContent = `HSK ${lv} · Block ${block} · Lesson ${posInBlock} of 6`;
+  document.getElementById('cc-path').textContent = `HSK ${lv} · Lesson ${ls}`;
   document.getElementById('cc-title').textContent = title;
   document.getElementById('cc-level-num').textContent = lv;
 
@@ -644,6 +672,30 @@ const HSK_META = [
   { level:5, name:'Advanced',        words:1302, lessons:60  },
   { level:6, name:'Mastery',         words:2500, lessons:65  },
 ];
+
+/* ── MOCK TEST BUTTONS ── */
+function renderMockTests() {
+  const list = document.getElementById('mock-test-list');
+  if (!list) return;
+  const currentLevel = user.level;
+  list.innerHTML = '';
+  const colors = ['','#3ddb7a','#60a5fa','#f5c842','#fb923c','#a78bfa','#f5c842'];
+  const names  = ['','Beginner','Elementary','Intermediate','Upper-Int.','Advanced','Mastery'];
+  for (let lv = 1; lv <= currentLevel; lv++) {
+    const examPending = localStorage.getItem(key('hsk_exam_pending')) === String(lv);
+    const btn = document.createElement('button');
+    btn.style.cssText = `width:100%;background:var(--card);border:${examPending?'2px solid '+colors[lv]:'1px solid var(--border)'};border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;${examPending?'box-shadow:0 0 0 3px '+colors[lv]+'22':''}`;
+    btn.innerHTML = `
+      <div style="width:40px;height:40px;border-radius:10px;background:${colors[lv]}22;border:1.5px solid ${colors[lv]}44;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:${colors[lv]};flex-shrink:0">${lv}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:var(--ink)">HSK ${lv} — ${names[lv]}</div>
+        <div style="font-size:11px;color:var(--ink2);margin-top:2px">${examPending?'🎯 Exam ready! You finished all lessons':'Full simulation · 300 points · Timed'}</div>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:${colors[lv]};white-space:nowrap">${examPending?'🏆 Take':'▶ Start'}</div>`;
+    btn.onclick = () => { window.location.href = `/app/hsk-exam.html?level=${lv}`; };
+    list.appendChild(btn);
+  }
+}
 
 function buildHSKPath() {
   const list = document.getElementById('hsk-list');
@@ -790,24 +842,32 @@ function showHeartsModal() {
     adsUsedToday = Number(localStorage.getItem(key('ads_used')) || 0);
   }
 
-  document.getElementById('hearts-modal-title').textContent = h > 0 ? `${h} Hearts Left` : 'No Hearts!';
+  document.getElementById('hearts-modal-title').textContent = h > 0 ? `${h} ❤️ Hearts Left` : 'No Hearts!';
   document.getElementById('hearts-modal-desc').textContent = h > 0
-    ? `Hearts regenerate every 30 minutes. Watch an ad to get +1 now.`
-    : `You're out of hearts. Watch an ad to get 1 heart and keep learning.`;
+    ? `You lose 1 heart for every wrong answer. Hearts regenerate 1 every 30 minutes up to 5 max.`
+    : `You're out of hearts. Watch an ad to get 1 heart, or try Premium for unlimited hearts.`;
 
   document.getElementById('ad-bar-wrap').style.display = 'none';
   document.getElementById('ad-label').textContent = '';
 
   const actions = document.getElementById('hearts-modal-actions');
-  if (adsUsedToday >= 5) {
-    actions.innerHTML = `
-      <div style="font-size:13px;color:var(--rose);text-align:center;padding:8px 0">Ad limit reached (5/5 today).<br/>Come back tomorrow!</div>
-      <button class="btn-modal-outline" onclick="closeModal('hearts-overlay')">Close</button>`;
-  } else {
-    actions.innerHTML = `
-      <button class="btn-modal-primary" id="btn-watch-ad" onclick="watchAd()">🎥 Watch Ad for +1 Heart</button>
-      <button class="btn-modal-outline" onclick="closeModal('hearts-overlay')">Not now</button>`;
-  }
+  const adHtml = adsUsedToday >= 5
+    ? `<div style="font-size:13px;color:var(--rose);text-align:center;padding:8px 0;margin-bottom:8px">Ad limit reached (5/5 today). Come back tomorrow!</div>`
+    : `<button class="btn-modal-primary" id="btn-watch-ad" onclick="watchAd()" style="margin-bottom:8px">🎥 Watch Ad for +1 Heart</button>`;
+
+  actions.innerHTML = `
+    ${adHtml}
+    <div style="background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:12px;color:var(--ink2);line-height:1.7">
+      ❤️ You start with <b style="color:var(--ink)">5 hearts</b> per day<br>
+      💔 Wrong answers cost 1 heart<br>
+      🔄 1 heart refills every <b style="color:var(--ink)">30 minutes</b><br>
+      📺 Watch ads to get hearts instantly<br>
+      🌟 Premium = <b style="color:var(--green)">unlimited hearts</b>
+    </div>
+    <button onclick="closeModal('hearts-overlay');openDiamondShop()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--green);background:linear-gradient(135deg,rgba(61,219,122,.15),rgba(61,219,122,.05));color:var(--green);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">
+      🌟 Try Premium Free — 7 Days
+    </button>
+    <button class="btn-modal-outline" onclick="closeModal('hearts-overlay')">Not now</button>`;
   document.getElementById('hearts-overlay').classList.add('show');
 }
 
@@ -963,9 +1023,10 @@ async function init() {
     renderContinue();
     renderDaily();
     renderExamBanner();
-    renderReview(); // async — updates card when Supabase responds
+    renderReview();
     renderSpeed();
     buildHSKPath();
+    renderMockTests();
 
     // Open current level section
     setTimeout(() => {
@@ -1118,9 +1179,9 @@ init();
         <span style="font-size:26px">📺</span>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:700;color:var(--ink)">Watch an ad</div>
-          <div style="font-size:12px;color:var(--ink2)">Get +5 energy free</div>
+          <div style="font-size:12px;color:var(--ink2)">Get +15 energy free</div>
         </div>
-        <div style="font-size:14px;font-weight:800;color:var(--green)">+5 ⚡</div>
+        <div style="font-size:14px;font-weight:800;color:var(--green)">+15 ⚡</div>
       </button>
       <button onclick="buyEnergyFromDash(50, 5)" style="background:var(--bg2);border:2px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;width:100%;cursor:pointer;text-align:left">
         <span style="font-size:26px">💎</span>
@@ -1248,12 +1309,12 @@ function watchAdForEnergy() {
     if (secs <= 0) {
       clearInterval(iv);
       overlay.remove();
-      // Give +5 energy
+      // Give +15 energy
       const uid = (typeof _uid !== 'undefined' && _uid) ? _uid : 'guest';
       let en = Number(localStorage.getItem('energy_' + uid) || 0);
-      en = Math.min(ENERGY_MAX, en + 5);
+      en = Math.min(ENERGY_MAX, en + 15);
       localStorage.setItem('energy_' + uid, en);
-      if (typeof showToast === 'function') showToast('⚡ +5 energy added!');
+      if (typeof showToast === 'function') showToast('⚡ +15 energy added!');
       // Update header
       const pill = document.getElementById('dash-energy-count');
       if (pill) pill.textContent = en;
