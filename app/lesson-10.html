@@ -917,8 +917,24 @@ function loseHeart() {
   localStorage.setItem(key('hearts'), hearts);
   renderHearts();
   if (hearts <= 0) {
-    setTimeout(() => document.getElementById('nh-overlay').classList.add('show'), 600);
+    setTimeout(() => showNoHeartsOverlay(), 600);
   }
+}
+
+function showNoHeartsOverlay() {
+  // Always clear any lingering ad timer before showing overlay
+  clearInterval(nhAdTimer);
+  nhAdTimer = null;
+  // Reset button to initial state
+  const btn = document.getElementById('nh-watch-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '🎥 Watch Ad (+1 Heart, 5s)'; }
+  const barWrap = document.getElementById('nh-ad-bar');
+  const fill    = document.getElementById('nh-ad-fill');
+  const label   = document.getElementById('nh-ad-label');
+  if (barWrap) barWrap.style.display = 'none';
+  if (fill)   fill.style.width = '0%';
+  if (label)  label.textContent = '';
+  document.getElementById('nh-overlay').classList.add('show');
 }
 
 
@@ -4431,23 +4447,25 @@ async function showComplete() {
   if (isCP) earnedXP += 15;
 
   // Save progress
+  const isReplay = params.get('replay') === '1';
   const completedLessons = JSON.parse(localStorage.getItem(key('completed_lessons')) || '[]');
-  if (!completedLessons.includes(plan.lessonNum)) {
+  // In replay mode: still give XP + diamonds but don't advance lesson counter
+  if (!completedLessons.includes(plan.lessonNum) || isReplay) {
     const newXP = Number(localStorage.getItem(key('xp')) || 0) + earnedXP;
     localStorage.setItem(key('xp'), newXP);
     localStorage.setItem(key('completed_lessons'), JSON.stringify([...completedLessons, plan.lessonNum]));
-    // Level advancement
-    // Count lessons from LESSON_VOCAB for this level, fallback to word-based calc
-    const levelLessons = Object.keys(LESSON_VOCAB).filter(k => k.startsWith(plan.levelNum + '-')).length;
-    const totalLessonsInLevel = levelLessons > 0 ? levelLessons : Math.ceil((_wordCache[plan.levelNum]?.length || 0) / 3);
-    const nextLessonNum = plan.lessonNum + 1;
-    if (nextLessonNum > totalLessonsInLevel && plan.levelNum < 6) {
-      // All lessons in this level done → flag for HSK simulation exam before advancing
-      localStorage.setItem(key('hsk_exam_pending'), String(plan.levelNum));
-      localStorage.setItem(key('user_level'), String(plan.levelNum + 1));
-      localStorage.setItem(key('user_lesson'), '1');
-    } else {
-      localStorage.setItem(key('user_lesson'), String(nextLessonNum));
+    // Level advancement — skip in replay mode
+    if (!isReplay) {
+      const levelLessons = Object.keys(LESSON_VOCAB).filter(k => k.startsWith(plan.levelNum + '-')).length;
+      const totalLessonsInLevel = levelLessons > 0 ? levelLessons : Math.ceil((_wordCache[plan.levelNum]?.length || 0) / 3);
+      const nextLessonNum = plan.lessonNum + 1;
+      if (nextLessonNum > totalLessonsInLevel && plan.levelNum < 6) {
+        localStorage.setItem(key('hsk_exam_pending'), String(plan.levelNum));
+        localStorage.setItem(key('user_level'), String(plan.levelNum + 1));
+        localStorage.setItem(key('user_lesson'), '1');
+      } else {
+        localStorage.setItem(key('user_lesson'), String(nextLessonNum));
+      }
     }
 
     // Daily count
@@ -4604,6 +4622,8 @@ function watchAdForHeart() {
     showToast('Max ads reached for this session. Try again later!');
     return;
   }
+  // Guard: prevent double-fire if already running
+  if (nhAdTimer) return;
   const btn = document.getElementById('nh-watch-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Ad playing…'; }
   const barWrap = document.getElementById('nh-ad-bar');
@@ -4621,6 +4641,7 @@ function watchAdForHeart() {
       : 'Done!';
     if (elapsed >= NH_AD_DURATION) {
       clearInterval(nhAdTimer);
+      nhAdTimer = null;
       nhAdsUsedThisSession++;
       hearts = Math.min(5, hearts + 1);
       localStorage.setItem(key('hearts'), hearts);
@@ -4720,7 +4741,7 @@ async function init() {
 
     if (hearts <= 0) {
       clearTimeout(loadingTimeout);
-      document.getElementById('nh-overlay').classList.add('show');
+      showNoHeartsOverlay();
     } else {
       try {
         renderStep(0);
