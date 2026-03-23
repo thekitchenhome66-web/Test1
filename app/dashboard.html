@@ -853,8 +853,77 @@ function handleNodeClick(level, lesson, state) {
   }
   if (state === 'active') {
     if (user.hearts <= 0) { showHeartsModal(); return; }
+    const energyNeeded = 15; // minimum energy for a lesson
+    if (user.energy < energyNeeded) { showLowEnergyModal(level, lesson); return; }
     window.location.href = `/app/lesson-10.html?level=${level}&lesson=${lesson}`;
   }
+}
+
+
+function showLowEnergyModal(level, lesson, isReplay) {
+  const existing = document.getElementById('low-energy-modal');
+  if (existing) existing.remove();
+
+  const currentEnergy = user.energy;
+  const needed = 15;
+  const modal = document.createElement('div');
+  modal.id = 'low-energy-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)';
+  modal.innerHTML = `
+    <div style="background:#0f1923;border:1px solid rgba(251,191,36,.2);border-radius:24px;padding:28px 22px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:16px">
+      <div style="text-align:center">
+        <div style="font-size:40px;margin-bottom:6px">⚡</div>
+        <div style="font-size:19px;font-weight:800;color:#e8f2ee">Not Enough Energy</div>
+        <div style="font-size:13px;color:#9ab8aa;margin-top:6px">This lesson needs at least <span style="color:#fbbf24;font-weight:700">${needed} ⚡</span> to complete</div>
+      </div>
+      <div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;color:#9ab8aa">Your energy</span>
+        <span style="font-size:20px;font-weight:800;color:#fbbf24">${currentEnergy} / 25 ⚡</span>
+      </div>
+      <button id="lem-ad-btn" onclick="dashWatchAdForEnergy(${level},${lesson},${isReplay?'true':'false'})"
+        style="-webkit-appearance:none;appearance:none;width:100%;padding:15px;border-radius:14px;border:none;background:linear-gradient(135deg,#3ddb7a,#2bc968);color:#080f0b;font-size:15px;font-weight:700;cursor:pointer">
+        🎥 Watch Ad → +15 Energy (5s)
+      </button>
+      <button onclick="window.location.href='/app/dashboard.html?energy=open'"
+        style="-webkit-appearance:none;appearance:none;width:100%;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(167,139,250,.2),rgba(167,139,250,.1));color:#a78bfa;font-size:14px;font-weight:700;cursor:pointer">
+        🌟 Try Premium Free — 7 Days
+      </button>
+      <button onclick="document.getElementById('low-energy-modal').remove()"
+        style="-webkit-appearance:none;appearance:none;width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(255,255,255,.08);background:transparent;color:#9ab8aa;font-size:14px;font-weight:600;cursor:pointer">
+        ← Back
+      </button>
+      <div style="font-size:11px;color:#4a6b5a;text-align:center">Energy refills automatically — 1 per 5 minutes</div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function dashWatchAdForEnergy(level, lesson, isReplay) {
+  const btn = document.getElementById('lem-ad-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  let t = 5;
+  btn.textContent = 'Ad playing… ' + t + 's';
+  const iv = setInterval(() => {
+    t--;
+    btn.textContent = t > 0 ? 'Ad playing… ' + t + 's' : '✓ Done!';
+    if (t <= 0) {
+      clearInterval(iv);
+      // Give 15 energy
+      const uid = (typeof _uid !== 'undefined' && _uid) ? _uid : 'guest';
+      const curEnergy = Number(localStorage.getItem('energy_' + uid) || 0);
+      const EMAX = 25;
+      const newEnergy = Math.min(EMAX, curEnergy + 15);
+      localStorage.setItem('energy_' + uid, newEnergy);
+      localStorage.setItem('energy_ts_' + uid, Date.now());
+      document.getElementById('low-energy-modal')?.remove();
+      // Now go to lesson
+      const url = isReplay
+        ? `/app/lesson-10.html?level=${level}&lesson=${lesson}&replay=1`
+        : `/app/lesson-10.html?level=${level}&lesson=${lesson}`;
+      window.location.href = url;
+    }
+  }, 1000);
 }
 
 function showReplayModal(level, lesson) {
@@ -889,6 +958,7 @@ function showReplayModal(level, lesson) {
 
 function replayLesson(level, lesson) {
   document.getElementById('replay-modal')?.remove();
+  if (user.energy < 15) { showLowEnergyModal(level, lesson, true); return; }
   window.location.href = `/app/lesson-10.html?level=${level}&lesson=${lesson}&replay=1`;
 }
 
@@ -897,6 +967,8 @@ function startLesson() {
   if (user.hearts <= 0) { showHeartsModal(); return; }
   const lv = user.level;
   const ls = user.lesson;
+  const energyNeeded = 15;
+  if (user.energy < energyNeeded) { showLowEnergyModal(lv, ls); return; }
   window.location.href = `/app/lesson-10.html?level=${lv}&lesson=${ls}`;
 }
 
