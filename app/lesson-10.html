@@ -225,15 +225,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .options-grid.single{grid-template-columns:1fr}
 .opt-btn{
-  background:var(--card);border:2px solid var(--border);border-radius:14px;
-  padding:14px 12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
-  color:var(--ink);cursor:pointer;transition:all var(--t);text-align:center;line-height:1.4;
-  font-family:'Noto Sans SC',sans-serif;
+  background:var(--card2);border:2px solid var(--border);border-radius:14px;
+  padding:14px 16px;font-family:'Noto Sans SC',sans-serif;font-size:17px;font-weight:600;
+  color:var(--ink);cursor:pointer;transition:all var(--t);text-align:left;line-height:1.4;
+  display:flex;align-items:center;gap:12px;width:100%;
 }
-.opt-btn:hover:not(:disabled){border-color:rgba(61,219,122,.5);background:var(--card2);transform:translateY(-1px)}
+.opt-btn:hover:not(:disabled){border-color:rgba(61,219,122,.4);background:rgba(61,219,122,.06);transform:translateY(-1px)}
 .opt-btn.correct{border-color:var(--green);background:rgba(61,219,122,.12);color:var(--green)}
 .opt-btn.wrong{border-color:var(--rose);background:rgba(248,113,113,.1);color:var(--rose)}
-.opt-btn:disabled{cursor:not-allowed}
+.opt-btn:disabled{cursor:not-allowed;opacity:.85}
 
 /* ── SENTENCE ORDER ── */
 .sentence-display{font-family:'Noto Sans SC',sans-serif;font-size:clamp(20px,5vw,26px);font-weight:700;color:var(--ink);text-align:center;background:var(--card2);border:2px solid var(--border2);border-radius:16px;padding:20px 16px;min-height:64px;line-height:1.5;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
@@ -472,11 +472,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   <div class="nh-card">
     <span class="nh-icon">💔</span>
     <div class="nh-title">Out of Hearts!</div>
-    <div class="nh-desc">Watch a 15-second ad to earn 1 heart. Up to 5 ads per session.</div>
+    <div class="nh-desc">Watch a 5-second ad to earn 1 heart. Up to 5 ads per session.</div>
     <div class="nh-ad-bar" id="nh-ad-bar"><div class="nh-ad-fill" id="nh-ad-fill"></div></div>
     <div class="nh-ad-label" id="nh-ad-label"></div>
     <div class="nh-btns">
-      <button class="btn-primary" id="nh-watch-btn" onclick="watchAdForHeart()">🎥 Watch Ad (+1 Heart, 15s)</button>
+      <button class="btn-primary" id="nh-watch-btn" onclick="watchAdForHeart()">🎥 Watch Ad (+1 Heart, 5s)</button>
       <button style="width:100%;padding:13px;border-radius:14px;background:linear-gradient(135deg,rgba(61,219,122,.15),rgba(167,139,250,.15));border:1.5px solid var(--green);color:var(--green);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer" onclick="tryPremiumFree()">🌟 Try Premium Free — 7 Days</button>
       <button style="width:100%;padding:12px;border-radius:14px;background:transparent;border:1.5px solid var(--border2);color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer" onclick="window.location.href='/app/dashboard.html'">← Back to Dashboard</button>
     </div>
@@ -678,7 +678,7 @@ let sessionMistakes = [];
 let retryQueue  = [];     // wrong answers added to end of lesson
 let answeredStep = false;
 let speedTimer  = null;
-let speedTimeLeft = 8;
+let speedTimeLeft = 10;
 let matchState  = null;
 let wordBankState = null;
 let listenSentState = null;
@@ -2565,10 +2565,15 @@ function renderMCQ(step, mode) {
     <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
 
   const grid = document.getElementById('opts');
-  options.forEach(opt => {
+  const MCQ_LABELS = ['A','B','C','D'];
+  options.forEach((opt, _mcqIdx) => {
     const btn = document.createElement('button');
     btn.className = 'opt-btn';
-    btn.innerHTML = mode === 'hanzi' ? `<span style="font-family:'Noto Sans SC',sans-serif;font-size:22px">${opt}</span>` : opt;
+    const label = MCQ_LABELS[_mcqIdx] || '';
+    const labelSpan = `<span style="background:var(--border);border-radius:8px;padding:3px 9px;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0;font-family:'DM Sans',sans-serif">${label}</span>`;
+    btn.innerHTML = mode === 'hanzi'
+      ? labelSpan + `<span style="font-family:'Noto Sans SC',sans-serif;font-size:22px">${opt}</span>`
+      : labelSpan + `<span>${opt}</span>`;
     btn.addEventListener('click', () => {
       if (answeredStep) return;
       answeredStep = true;
@@ -2707,10 +2712,12 @@ function renderFillBlank(step) {
     <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
   speak(ex.zh);
   const grid = document.getElementById('fill-opts');
-  options.forEach(opt => {
+  const FILL_LABELS = ['A','B','C','D'];
+  options.forEach((opt, _fIdx) => {
     const btn = document.createElement('button');
     btn.className = 'opt-btn';
-    btn.innerHTML = `<span style="font-family:'Noto Sans SC',sans-serif;font-size:20px">${opt}</span>`;
+    const fl = FILL_LABELS[_fIdx] || '';
+    btn.innerHTML = `<span style="background:var(--border);border-radius:8px;padding:3px 9px;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0;font-family:'DM Sans',sans-serif">${fl}</span><span style="font-family:'Noto Sans SC',sans-serif;font-size:20px">${opt}</span>`;
     btn.addEventListener('click', () => {
       if (answeredStep) return;
       answeredStep = true;
@@ -4310,7 +4317,7 @@ function renderUsagePick(step) {
 // SPEED TIMER
 // ══════════════════════════════════════════════════════════
 function startSpeedTimer() {
-  speedTimeLeft = 8;
+  speedTimeLeft = 10;
   const timerWrap = document.createElement('div');
   timerWrap.innerHTML =
     '<div class="speed-bar-wrap"><div class="speed-bar" id="speed-bar" style="width:100%"></div></div>' +
@@ -4322,7 +4329,7 @@ function startSpeedTimer() {
     const bar = document.getElementById('speed-bar');
     const cnt = document.getElementById('speed-counter');
     if (!bar || !cnt) { clearInterval(speedTimer); return; }
-    const pct = (speedTimeLeft / 8) * 100;
+    const pct = (speedTimeLeft / 10) * 100;
     bar.style.width = pct + '%';
     bar.className = 'speed-bar' + (pct < 40 ? ' warning' : '') + (pct < 15 ? ' danger' : '');
     cnt.textContent = Math.ceil(speedTimeLeft) + 's';
@@ -4465,7 +4472,7 @@ async function showComplete() {
     await saveXP(earnedXP);
 
     // Diamonds reward
-    const diamondsEarned = isCP ? 10 : isSpeed ? 5 : 3;
+    const diamondsEarned = isCP ? 15 : isSpeed ? 12 : 10;
     diamonds += diamondsEarned;
     renderDiamonds();
   }
@@ -4590,7 +4597,7 @@ async function saveXP(earned) {
 // ══════════════════════════════════════════════════════════
 let nhAdsUsedThisSession = 0;
 const NH_MAX_ADS = 5;
-const NH_AD_DURATION = 15000;
+const NH_AD_DURATION = 5000;
 
 function watchAdForHeart() {
   if (nhAdsUsedThisSession >= NH_MAX_ADS) {
