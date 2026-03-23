@@ -1737,274 +1737,97 @@ function getErrorStep(levelNum, lessonNum, newWords, allWords) {
 // HSK5+: reading_passage, error_correction
 // HSK6+: pinyin_type replaced with formal writing prompts
 
-const _origGenerateLessonSteps = generateLessonSteps;
+// ── LESSON GENERATOR (variety-based, no repeats) ──────────────────
+// No word gets same exercise type twice. Rotates intro/production
+// types across words. Includes dictation, timed_recall, hanzi_write.
 function generateLessonSteps(levelNum, lessonNum, allWords) {
-  // Use original for HSK1-2
-  if (levelNum <= 2) return _origGenerateLessonSteps(levelNum, lessonNum, allWords);
-
   const key = levelNum + '-' + lessonNum;
   const vocab = LESSON_VOCAB[key];
   if (!vocab) return null;
 
   const newIds   = vocab.new || [];
-  const newWords = newIds
-    .map(id => allWords.find(w=>w.id===id))
-    .filter(Boolean)
-    .filter(w => w && w.zh); // guard: skip if word ID not in HSK data
-
+  const newWords = newIds.map(id => allWords.find(w=>w.id===id)).filter(Boolean);
   if (newWords.length === 0) return null;
 
-  // Review pool from last 15 lessons of same level
   const reviewIds = [];
-  for (let l = Math.max(1, lessonNum-15); l < lessonNum; l++) {
+  for (let l = Math.max(1, lessonNum-8); l < lessonNum; l++) {
     const prev = LESSON_VOCAB[levelNum+'-'+l];
     if (prev) reviewIds.push(...(prev.new||[]));
   }
   const reviewWords = shuffle(
     reviewIds.map(id=>allWords.find(w=>w.id===id)).filter(Boolean)
-  ).slice(0, 10);
+  ).slice(0, 6);
 
   const steps = [];
 
-  // ── PHASE 1: INTRODUCE
+  // PHASE 1: Word cards always first
   newWords.forEach(w => steps.push({type:'word_card', word:w}));
 
-  // ── PHASE 2: RECOGNITION
-  newWords.forEach(w => {
+  // PHASE 2: First contact — each word gets a DIFFERENT recognition type
+  const introPool = shuffle(['audio_char','mcq_meaning','listen_pick','mcq_hanzi','context_pick']);
+  newWords.forEach((w, i) => {
+    const type = introPool[i % introPool.length];
     const d = buildDistractors(w, allWords, 2);
-    steps.push({type:'audio_char',  word:w, distractors:d, pool:allWords});
-    steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
+    steps.push({type, word:w, distractors:d, pool:allWords});
   });
 
-  // ── PHASE 3: ACTIVE RECALL
-  shuffle([...newWords]).slice(0,2).forEach(w => {
-    const d = buildDistractors(w, allWords, 2);
-    steps.push({type:'mcq_hanzi', word:w, distractors:d, pool:allWords});
-  });
-
-  // ── PHASE 4: SENTENCE BUILD
-  newWords.slice(0,2).forEach(w => {
-    if (w.ex?.zh && [...w.ex.zh].length >= 3 && [...w.ex.zh].length <= 10) {
-      steps.push({type:'sentence_build', sentence:w.ex.zh, chars:[...w.ex.zh], extras:[], word:w});
-    }
-  });
-
-  // ── PHASE 5: CONTEXTUAL FILL-BLANK (grammar focus)
-  const blanks = getContextualBlanks(levelNum, lessonNum, newWords, allWords);
-  blanks.slice(0,2).forEach(b => steps.push(b));
-
-  // ── PHASE 6: LEVEL-SPECIFIC EXERCISES
-  if (levelNum >= 3) {
-    // Sentence placement (where does this word fit?)
-    newWords.slice(0,2).forEach(w => {
-      steps.push({type:'sentence_placement', word:w, pool:allWords});
-    });
-  }
-  if (levelNum >= 4) {
-    // Translate order (harder sentence reordering)
-    newWords.slice(0,1).forEach(w => {
-      steps.push({type:'translate_order', word:w});
-    });
-    // Error correction using real HSK patterns
-    newWords.slice(0,1).forEach(w => {
-      steps.push({type:'error_correction', word:w, pool:allWords});
-    });
-  }
-  if (levelNum >= 5) {
-    // Reading passage for context
-    newWords.slice(0,1).forEach(w => {
-      if (w.ex?.zh) steps.push({type:'reading_passage', word:w});
-    });
-  }
-
-  // ── PHASE 7: REVIEW (70% old content)
-  if (reviewWords.length >= 2) {
-    // Match pairs
-    steps.push({type:'match', words:shuffle([...reviewWords]).slice(0,4)});
-    // MCQ review
-    shuffle([...reviewWords]).slice(0,4).forEach(w => {
-      const d = buildDistractors(w, allWords, 2);
-      steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
-    });
-    // Listening review
-    shuffle([...reviewWords]).slice(0,2).forEach(w => {
-      const d = buildDistractors(w, allWords, 2);
-      steps.push({type:'listen_pick', word:w, distractors:d, pool:allWords});
-    });
-  }
-
-  // ── PHASE 8: ERROR DETECTION
-  const errStep = getErrorStep(levelNum, lessonNum, newWords, allWords);
-  if (errStep) steps.push(errStep);
-
-  // Keep word cards at top, shuffle the rest
-  const cards = steps.filter(s => s.type === 'word_card');
-  const rest  = shuffle(steps.filter(s => s.type !== 'word_card'));
-  return [...cards, ...rest];
-}
-
-
-
-
-// ── GRAMMAR PATTERNS (for fill-blank and error exercises) ─────────
-// Each pattern: context sentence, blank position, correct, wrong options
-// ALL blanks are disambiguated by context.
-
-const GRAMMAR_PATTERNS = {
-  // HSK1
-  shi_positive: [
-    { s:'他是___，不是学生。',     a:'老师',  x:['学生','朋友'],   tr:'He is a teacher, not a student.' },
-    { s:'她是___，不是老师。',     a:'学生',  x:['老师','朋友'],   tr:'She is a student, not a teacher.' },
-    { s:'这是___，不是茶。',       a:'水',    x:['茶','咖啡'],     tr:'This is water, not tea.' },
-  ],
-  shi_negative: [
-    { s:'他___学生，他是老师。',   a:'不是',  x:['是','有'],       tr:'He is not a student, he is a teacher.' },
-    { s:'这___水，这是茶。',       a:'不是',  x:['是','有'],       tr:'This is not water, this is tea.' },
-  ],
-  hen_adj: [
-    { s:'今天___冷，昨天不冷。',   a:'很',    x:['太','不'],       tr:'Today is very cold, yesterday was not.' },
-    { s:'这个苹果___大，那个小。', a:'很',    x:['太','不'],       tr:'This apple is very big, that one small.' },
-    { s:'他___累了，需要休息。',   a:'太',    x:['很','不'],       tr:'He is too tired, needs rest.' },
-  ],
-  svo_verb: [
-    { s:'我___水，不吃饭。',       a:'喝',    x:['吃','买'],       tr:'I drink water, not eat.' },
-    { s:'他___书，不看电视。',     a:'看',    x:['买','吃'],       tr:'He reads books, not TV.' },
-    { s:'她___中文，不学英语。',   a:'学习',  x:['说','买'],       tr:'She studies Chinese, not English.' },
-  ],
-  modal_neng_hui: [
-    { s:'他___说中文，不能说英语。', a:'会',  x:['能','要'],       tr:'He can speak Chinese, not English.' },
-    { s:'今天我___来，明天我来。',   a:'不能', x:['不会','不要'],   tr:'Today I can\'t come, tomorrow I will.' },
-  ],
-  modal_yao_xihuan: [
-    { s:'我___吃苹果，不要吃米饭。',a:'要',   x:['喜欢','能'],     tr:'I want to eat apple, not rice.' },
-    { s:'他___喝茶，不喜欢咖啡。',  a:'喜欢', x:['要','能'],       tr:'He likes tea, doesn\'t like coffee.' },
-  ],
-  location_zai: [
-    { s:'他___家，不在学校。',      a:'在',   x:['是','有'],       tr:'He is at home, not at school.' },
-    { s:'书___桌子上，不在椅子上。',a:'在',   x:['是','有'],       tr:'The book is on the desk, not on the chair.' },
-  ],
-  ye_dou: [
-    { s:'他去，我___去，大家都去。', a:'也',  x:['都','很'],       tr:'He goes, I also go, everyone goes.' },
-    { s:'我们___是学生，没有老师。', a:'都',  x:['也','很'],       tr:'We are all students, no teacher.' },
-  ],
-  time_first: [
-    { s:'___我去学校，不去医院。',   a:'今天', x:['我','学校'],    tr:'Today I go to school, not hospital.' },
-    { s:'___他来，我们就开始。',     a:'明天', x:['他','来'],      tr:'Tomorrow when he comes, we start.' },
-  ],
-
-  // HSK2
-  danshi_suoyi: [
-    { s:'他很累，___还在工作。',    a:'但是',  x:['所以','如果'],   tr:'He is tired, but still working.' },
-    { s:'他很累，___他休息了。',    a:'所以',  x:['但是','如果'],   tr:'He is tired, so he rested.' },
-  ],
-  yinwei_suoyi: [
-    { s:'___下雨，我们不去。',      a:'因为',  x:['所以','虽然'],   tr:'Because it rains, we won\'t go.' },
-    { s:'因为下雨，___我们不去。',  a:'所以',  x:['但是','如果'],   tr:'Because of rain, so we won\'t go.' },
-  ],
-  bi_comparison: [
-    { s:'他___我高，我比他矮。',     a:'比',   x:['跟','对'],       tr:'He is taller than me, I am shorter.' },
-    { s:'苹果___香蕉甜，香蕉不甜。',a:'比',   x:['跟','对'],       tr:'Apples are sweeter than bananas.' },
-  ],
-  keyi_yinggai: [
-    { s:'你___休息，不要工作了。',   a:'应该',  x:['可以','必须'],  tr:'You should rest, stop working.' },
-    { s:'你___走，不用等了。',       a:'可以',  x:['应该','必须'],  tr:'You can leave, no need to wait.' },
-    { s:'你___去，这是规定。',       a:'必须',  x:['可以','应该'],  tr:'You must go, it\'s the rule.' },
-  ],
-  xian_zai_ranhou: [
-    { s:'请___坐下，___说话。',      a:'先',   x:['再','然后'],     tr:'Please sit down first, then talk.' },
-    { s:'___吃饭，___我们去公园。', a:'先',   x:['再','然后'],     tr:'First eat, then we go to the park.' },
-  ],
-  frequency: [
-    { s:'他___来，不是第一次了。',   a:'经常',  x:['突然','终于'],  tr:'He comes often, not first time.' },
-    { s:'我___看电影，不是每天看。', a:'有时候',x:['经常','平时'],  tr:'I sometimes watch movies, not every day.' },
-  ],
-};
-
-// Extend GRAMMAR_PATTERNS with HSK3-6 patterns (must be after GRAMMAR_PATTERNS declaration)
-Object.assign(GRAMMAR_PATTERNS, HSK36_GRAMMAR);
-
-// ── LESSON GENERATOR ─────────────────────────────────────────────
-// Builds a lesson's step array from vocabulary and grammar data.
-// Enforces: 30% new, 70% review, no ambiguous blanks.
-
-function generateLessonSteps(levelNum, lessonNum, allWords) {
-  const key = levelNum + '-' + lessonNum;
-  const vocab = LESSON_VOCAB[key];
-  if (!vocab) return null;
-
-  const newIds  = vocab.new || [];
-  const newWords = newIds.map(id => allWords.find(w=>w.id===id)).filter(Boolean);
-  if (newWords.length === 0) return null;
-
-  // Review pool: words from earlier lessons (same level)
-  const reviewIds = [];
-  for (let l = Math.max(1, lessonNum-10); l < lessonNum; l++) {
-    const prevKey = levelNum + '-' + l;
-    const prev = LESSON_VOCAB[prevKey];
-    if (prev) reviewIds.push(...(prev.new||[]));
-  }
-  const reviewWords = shuffle(
-    reviewIds.map(id=>allWords.find(w=>w.id===id)).filter(Boolean)
-  ).slice(0, Math.min(8, reviewIds.length));
-
-  const steps = [];
-
-  // ── PHASE 1: INTRODUCE (word cards for new words only)
-  newWords.forEach(w => steps.push({type:'word_card', word:w}));
-
-  // ── PHASE 2: RECOGNITION (audio + meaning, new words)
-  newWords.forEach(w => {
-    const d = buildDistractors(w, allWords, 2);
-    steps.push({type:'audio_char',  word:w, distractors:d, pool:allWords});
-    steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
-  });
-
-  // ── PHASE 3: ACTIVE RECALL (reverse: meaning → hanzi)
-  shuffle([...newWords]).slice(0, Math.min(2, newWords.length)).forEach(w => {
-    const d = buildDistractors(w, allWords, 2);
-    steps.push({type:'mcq_hanzi', word:w, distractors:d, pool:allWords});
-  });
-
-  // ── PHASE 4: SENTENCE BUILD (new words in sentences)
-  newWords.slice(0, 2).forEach(w => {
-    if (w.ex?.zh) {
+  // PHASE 3: Production — each word gets a DIFFERENT typing/building type
+  const prodPool = shuffle(['pinyin_type','fill_blank','sentence_build','word_position','hanzi_write','timed_recall']);
+  newWords.forEach((w, i) => {
+    const type = prodPool[i % prodPool.length];
+    if (type === 'fill_blank' && w.ex?.zh?.includes(w.zh)) {
+      steps.push({type:'fill_blank', word:w});
+    } else if (type === 'sentence_build' && w.ex?.zh) {
       const chars = [...w.ex.zh];
-      if (chars.length >= 3 && chars.length <= 8) {
+      if (chars.length >= 3 && chars.length <= 8)
         steps.push({type:'sentence_build', sentence:w.ex.zh, chars, extras:[], word:w});
-      }
+      else steps.push({type:'pinyin_type', word:w});
+    } else if (type === 'timed_recall') {
+      steps.push({type:'timed_recall', word:w});
+    } else if (type === 'hanzi_write') {
+      steps.push({type:'hanzi_write', word:w});
+    } else if (type === 'word_position') {
+      steps.push({type:'word_position', word:w});
+    } else {
+      steps.push({type:'pinyin_type', word:w});
     }
   });
 
-  // ── PHASE 5: FILL-IN-THE-BLANK (grammar, always with context)
+  // PHASE 4: One dictation per lesson (listen → type exact sentence)
+  const dictWord = newWords.find(w => w.ex?.zh && w.ex.zh.length >= 4);
+  if (dictWord) steps.push({type:'dictation', word:dictWord});
+
+  // PHASE 5: One grammar fill-in max
   const blanks = getContextualBlanks(levelNum, lessonNum, newWords, allWords);
-  blanks.slice(0, 2).forEach(b => steps.push(b));
+  if (blanks.length > 0) steps.push(blanks[0]);
 
-  // ── PHASE 6: LISTENING (new words)
-  shuffle([...newWords]).slice(0, 2).forEach(w => {
-    const d = buildDistractors(w, allWords, 2);
-    steps.push({type:'listen_pick', word:w, distractors:d, pool:allWords});
-  });
-
-  // ── PHASE 7: REVIEW (old words — 70% of exercises must touch old vocab)
+  // PHASE 6: Review with variety — 4 review words, each gets different type
   if (reviewWords.length >= 2) {
-    // Match pairs from review pool
-    const matchWords = shuffle([...reviewWords]).slice(0, 4);
-    if (matchWords.length >= 2) steps.push({type:'match', words:matchWords});
-
-    // MCQ review
-    shuffle([...reviewWords]).slice(0, 3).forEach(w => {
+    const revPool = shuffle(['mcq_meaning','mcq_hanzi','tf_sentence','listen_pick','pinyin_type','context_pick']);
+    shuffle([...reviewWords]).slice(0,4).forEach((w, i) => {
       const d = buildDistractors(w, allWords, 2);
-      steps.push({type:'mcq_meaning', word:w, distractors:d, pool:allWords});
+      steps.push({type: revPool[i % revPool.length], word:w, distractors:d, pool:allWords});
     });
+    const matchW = shuffle([...reviewWords]).slice(0, Math.min(4, reviewWords.length));
+    if (matchW.length >= 2) steps.push({type:'match', words:matchW});
   }
 
-  // ── PHASE 8: ERROR DETECTION
+  // Error detection
   const errStep = getErrorStep(levelNum, lessonNum, newWords, allWords);
   if (errStep) steps.push(errStep);
 
-  // Keep word_cards at top, shuffle the rest
-  const cards = steps.filter(s => s.type === 'word_card');
-  const rest  = shuffle(steps.filter(s => s.type !== 'word_card'));
+  // Dedupe: no word gets same exercise type twice in one lesson
+  const seen = new Map();
+  const deduped = [];
+  for (const step of steps) {
+    if (!step.word?.id) { deduped.push(step); continue; }
+    if (!seen.has(step.word.id)) seen.set(step.word.id, new Set());
+    const used = seen.get(step.word.id);
+    if (!used.has(step.type)) { used.add(step.type); deduped.push(step); }
+  }
+
+  const cards = deduped.filter(s => s.type === 'word_card');
+  const rest  = shuffle(deduped.filter(s => s.type !== 'word_card'));
   return [...cards, ...rest];
 }
 
@@ -2152,22 +1975,74 @@ function buildSteps(plan) {
 }
 
 function buildDynamicSteps(plan) {
-  const {newWords,reviewWords,grammarItem,levelNum} = plan;
+  const {newWords, reviewWords, grammarItem, levelNum, lessonNum} = plan;
   const allWords = _wordCache[levelNum] || [];
-  const nw = newWords, rw = reviewWords?.length>0 ? reviewWords : allWords.slice(0,4);
-  let s = [];
-  nw.forEach(w=>s.push({type:'word_card',word:w}));
-  if(grammarItem) s.push({type:'grammar',grammar:grammarItem});
-  nw.forEach(w=>{ const d=buildDistractors(w,allWords,2); s.push({type:'mcq_meaning',word:w,distractors:d,pool:allWords}); });
-  nw.forEach(w=>{ const d=buildDistractors(w,allWords,2); s.push({type:'mcq_hanzi',word:w,distractors:d,pool:allWords}); });
-  nw.slice(0,3).forEach(w=>s.push({type:'word_position',word:w}));
-  nw.forEach(w=>s.push({type:'tf_sentence',word:w,pool:allWords}));
-  nw.slice(0,2).forEach(w=>s.push({type:'fill_blank',word:w}));
-  nw.slice(0,2).forEach(w=>s.push({type:'sentence_order',word:w}));
-  pick(rw,2).forEach(w=>{ const d=buildDistractors(w,allWords,2); s.push({type:'mcq_meaning',word:w,distractors:d,pool:allWords}); });
-  s.push({type:'match',words:shuffle([...nw]).slice(0,4)});
-  const fixed=s.filter(x=>x.type==='word_card'||x.type==='grammar');
-  return [...fixed,...shuffle(s.filter(x=>x.type!=='word_card'&&x.type!=='grammar'))].filter(Boolean);
+  const nw = newWords || [];
+  const rw = reviewWords?.length > 0 ? reviewWords : allWords.slice(0, 4);
+  const ln = lessonNum || 1;
+
+  const steps = [];
+
+  // Word cards first
+  nw.forEach(w => steps.push({type:'word_card', word:w}));
+  if (grammarItem) steps.push({type:'grammar', grammar:grammarItem});
+
+  // First contact — rotate types per word
+  const introTypes = shuffle(['audio_char','mcq_meaning','listen_pick','mcq_hanzi']);
+  nw.forEach((w, i) => {
+    const type = introTypes[i % introTypes.length];
+    const d = buildDistractors(w, allWords, 2);
+    steps.push({type, word:w, distractors:d, pool:allWords});
+  });
+
+  // Production — rotate types per word
+  const prodTypes = shuffle(['pinyin_type','fill_blank','sentence_build','word_position']);
+  nw.forEach((w, i) => {
+    const type = prodTypes[i % prodTypes.length];
+    if (type === 'fill_blank' && w.ex?.zh?.includes(w.zh)) {
+      steps.push({type:'fill_blank', word:w});
+    } else if (type === 'sentence_build' && w.ex?.zh) {
+      const chars = [...w.ex.zh];
+      if (chars.length >= 3 && chars.length <= 8) {
+        steps.push({type:'sentence_build', sentence:w.ex.zh, chars, extras:[], word:w});
+      } else steps.push({type:'pinyin_type', word:w});
+    } else if (type === 'word_position') {
+      steps.push({type:'word_position', word:w});
+    } else {
+      steps.push({type:'pinyin_type', word:w});
+    }
+  });
+
+  // One context step
+  if (nw.length > 0) {
+    steps.push({type: ln % 2 === 0 ? 'tf_sentence' : 'listen_pick',
+      word:nw[0], distractors:buildDistractors(nw[0],allWords,2), pool:allWords});
+  }
+
+  // Review — rotate types
+  const reviewTypePool = shuffle(['mcq_meaning','mcq_hanzi','tf_sentence','pinyin_type']);
+  shuffle([...rw]).slice(0,3).forEach((w,i) => {
+    const type = reviewTypePool[i % reviewTypePool.length];
+    const d = buildDistractors(w, allWords, 2);
+    steps.push({type, word:w, distractors:d, pool:allWords});
+  });
+
+  // Match at end
+  const matchWords = shuffle([...rw,...nw]).slice(0,4);
+  if (matchWords.length >= 2) steps.push({type:'match', words:matchWords});
+
+  // Dedupe: no word gets same type twice
+  const seen = new Map();
+  const deduped = [];
+  for (const step of steps) {
+    if (!step.word?.id) { deduped.push(step); continue; }
+    if (!seen.has(step.word.id)) seen.set(step.word.id, new Set());
+    const usedTypes = seen.get(step.word.id);
+    if (!usedTypes.has(step.type)) { usedTypes.add(step.type); deduped.push(step); }
+  }
+
+  const cards = deduped.filter(s => s.type === 'word_card' || s.type === 'grammar');
+  return [...cards, ...shuffle(deduped.filter(s => s.type !== 'word_card' && s.type !== 'grammar'))].filter(Boolean);
 }
 
 function buildCheckpointSteps(plan) {
@@ -2254,6 +2129,10 @@ function renderStep(idx) {
     case 'sentence_build':renderSentenceBuild(step); break;
     case 'fill_blank_hc': renderFillBlankHC(step); break;
     case 'error_hc':      renderErrorHC(step); break;
+    case 'dictation':     renderDictation(step); break;
+    case 'timed_recall':  renderTimedRecall(step); break;
+    case 'hanzi_write':   renderHanziWrite(step); break;
+    case 'context_pick':  renderContextPick(step); break;
     default: nextStep();
   }
 
@@ -3700,6 +3579,271 @@ function checkPinyin() {
 }
 
 // ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+// NEW EXERCISE RENDERERS
+// ══════════════════════════════════════════════════════════
+
+// ── DICTATION: hear sentence → type it exactly ─────────────────
+function renderDictation(step) {
+  const w = step.word;
+  const sentence = w.ex?.zh || w.zh;
+  const pinyin   = w.ex?.py  || w.py;
+  const english  = w.ex?.en  || w.en;
+
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:16px';
+  card.innerHTML = `
+    <div class="q-label listen">🎧 Dictation</div>
+    <div style="font-size:14px;color:var(--ink2);text-align:center;line-height:1.6">
+      Listen and type the <strong style="color:var(--ink)">exact Chinese sentence</strong>.
+    </div>
+    <button id="dict-play" style="background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(96,165,250,.05));border:1.5px solid rgba(96,165,250,.3);border-radius:16px;padding:18px;color:var(--blue);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;width:100%">
+      <span style="font-size:24px">🔊</span> Play Audio
+    </button>
+    <div style="font-size:12px;color:var(--ink3);text-align:center;font-style:italic">"${english}"</div>
+    <div class="typing-wrap">
+      <input class="typing-input" id="dict-input" type="text" placeholder="Type the sentence in Chinese…"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+        style="font-family:'Noto Sans SC',sans-serif;font-size:18px"/>
+    </div>
+    <div class="typing-hint">Punctuation not required. Tap Play again to replay.</div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.appendChild(card);
+
+  const playBtn = document.getElementById('dict-play');
+  const input   = document.getElementById('dict-input');
+
+  const doPlay = () => { speak(sentence, 0.75); playBtn.innerHTML = '<span style="font-size:24px">🔊</span> Play Again'; };
+  playBtn.addEventListener('click', () => { doPlay(); if (input) input.focus(); });
+  setTimeout(doPlay, 400);
+  input?.addEventListener('keydown', e => { if (e.key === 'Enter') checkDictation(sentence, pinyin); });
+
+  bottomArea.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.className = 'btn-primary'; btn.textContent = 'Check →';
+  btn.addEventListener('click', () => checkDictation(sentence, pinyin));
+  bottomArea.appendChild(btn);
+}
+
+function checkDictation(sentence, pinyin) {
+  if (answeredStep) return;
+  const input = document.getElementById('dict-input');
+  if (!input) return;
+  const w = steps[currentStep].word;
+  const clean = s => s.replace(/[，。！？、：；""''（）\s]/g,'');
+  const isCorrect = clean(input.value.trim()) === clean(sentence);
+  answeredStep = true;
+  input.style.borderColor = isCorrect ? 'var(--green)' : 'var(--rose)';
+  input.disabled = true;
+  consumeEnergy();
+  if (!isCorrect) {
+    loseHeart();
+    sessionMistakes.push({word:w, type:'dictation'});
+    addToRetry(steps[currentStep]);
+    const fb = document.getElementById('feedback');
+    if (fb) { fb.className='feedback show err'; fb.innerHTML=`<div class="fb-icon">✗</div><div><div class="fb-main">Correct:</div><div class="fb-hint" style="font-family:'Noto Sans SC',sans-serif;font-size:16px;margin-top:4px">${sentence}</div><div class="fb-hint" style="font-size:12px;color:var(--ink3)">${pinyin}</div></div>`; }
+  } else {
+    sessionXP += 4;
+    const fb = document.getElementById('feedback');
+    if (fb) { fb.className='feedback show ok'; fb.innerHTML=`<div class="fb-icon">✓</div><div><div class="fb-main">Perfect! +4 XP</div></div>`; }
+  }
+  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+  handleAnswer(isCorrect, w);
+  bottomArea.innerHTML='';
+  const btn=document.createElement('button'); btn.className='btn-primary';
+  btn.textContent=isCorrect?'Continue →':'I understand →';
+  btn.addEventListener('click',nextStep); bottomArea.appendChild(btn);
+}
+
+// ── TIMED RECALL: see meaning → type hanzi in 5 seconds ────────
+let _trTimer = null;
+
+function renderTimedRecall(step) {
+  const w = step.word;
+  clearInterval(_trTimer);
+
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:16px';
+  card.innerHTML = `
+    <div class="q-label speed" style="justify-content:space-between">
+      <span>⚡ Timed Recall</span>
+      <span id="tr-timer" style="font-size:22px;font-weight:900;color:var(--gold)">5</span>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:6px">Type the Chinese for:</div>
+      <div style="font-size:28px;font-weight:700;color:var(--ink)">${w.en}</div>
+      <div style="font-size:14px;color:var(--green);margin-top:6px">${w.py}</div>
+    </div>
+    <div style="background:rgba(245,200,66,.1);border-radius:12px;height:6px;overflow:hidden">
+      <div id="tr-bar" style="height:100%;width:100%;background:var(--gold);transition:width .1s linear;border-radius:12px"></div>
+    </div>
+    <div class="typing-wrap">
+      <input class="typing-input" id="tr-input" type="text" placeholder="Type in Chinese…"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+        style="font-family:'Noto Sans SC',sans-serif;font-size:24px;text-align:center"/>
+    </div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.appendChild(card);
+
+  const input = document.getElementById('tr-input');
+  if (input) { input.focus(); input.addEventListener('keydown', e => { if(e.key==='Enter') submitTimedRecall(); }); }
+
+  let left = 5;
+  _trTimer = setInterval(() => {
+    left = Math.max(0, left - 0.1);
+    const pct = (left / 5) * 100;
+    const te = document.getElementById('tr-timer');
+    const be = document.getElementById('tr-bar');
+    if (te) { te.textContent = Math.ceil(left); te.style.color = pct < 40 ? 'var(--rose)' : 'var(--gold)'; }
+    if (be) { be.style.width = pct + '%'; be.style.background = pct < 40 ? 'var(--rose)' : 'var(--gold)'; }
+    if (left <= 0) {
+      clearInterval(_trTimer);
+      if (!answeredStep) {
+        answeredStep = true; consumeEnergy(); loseHeart();
+        const w2 = steps[currentStep]?.word;
+        if (w2) { sessionMistakes.push({word:w2,type:'timed_recall'}); addToRetry(steps[currentStep]); }
+        const fb = document.getElementById('feedback');
+        if (fb) { fb.className='feedback show err'; fb.innerHTML=`<div class="fb-icon">⏱</div><div><div class="fb-main">Time up! Answer: <span style="font-family:'Noto Sans SC',sans-serif">${w2?.zh||''}</span></div></div>`; }
+        handleAnswer(false, w2);
+        bottomArea.innerHTML=''; const btn=document.createElement('button'); btn.className='btn-primary'; btn.textContent='Next →';
+        btn.addEventListener('click',nextStep); bottomArea.appendChild(btn);
+      }
+    }
+  }, 100);
+
+  bottomArea.innerHTML='';
+  const btn=document.createElement('button'); btn.className='btn-primary'; btn.textContent='Submit →';
+  btn.addEventListener('click', submitTimedRecall); bottomArea.appendChild(btn);
+}
+
+function submitTimedRecall() {
+  if (answeredStep) return;
+  clearInterval(_trTimer);
+  const input = document.getElementById('tr-input');
+  if (!input) return;
+  const w = steps[currentStep].word;
+  const isCorrect = input.value.trim() === w.zh;
+  answeredStep = true;
+  input.style.borderColor = isCorrect ? 'var(--green)' : 'var(--rose)';
+  input.disabled = true;
+  consumeEnergy();
+  if (!isCorrect) {
+    loseHeart(); sessionMistakes.push({word:w,type:'timed_recall'}); addToRetry(steps[currentStep]);
+  } else { sessionXP += 3; }
+  const fb = document.getElementById('feedback');
+  if (fb) { fb.className=`feedback show ${isCorrect?'ok':'err'}`; fb.innerHTML=isCorrect?`<div class="fb-icon">✓</div><div><div class="fb-main">Correct! ⚡ +3 XP</div></div>`:`<div class="fb-icon">✗</div><div><div class="fb-main">Answer: <span style="font-family:'Noto Sans SC',sans-serif;font-size:20px">${w.zh}</span></div></div>`; }
+  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+  handleAnswer(isCorrect, w);
+  bottomArea.innerHTML=''; const btn=document.createElement('button'); btn.className='btn-primary';
+  btn.textContent=isCorrect?'Continue →':'I understand →';
+  btn.addEventListener('click',nextStep); bottomArea.appendChild(btn);
+}
+
+// ── HANZI WRITE: see pinyin+meaning → type the hanzi ──────────
+function renderHanziWrite(step) {
+  const w = step.word;
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:16px';
+  card.innerHTML = `
+    <div class="q-label write">✍️ Write in Chinese</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:22px;font-weight:700;color:var(--green)">${w.py}</div>
+      <div style="font-size:17px;color:var(--ink)">${w.en}</div>
+    </div>
+    <div style="font-size:13px;color:var(--ink3);text-align:center">Type the Chinese character(s):</div>
+    <div class="typing-wrap">
+      <input class="typing-input" id="hz-input" type="text" placeholder="Type in Chinese…"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+        style="font-family:'Noto Sans SC',sans-serif;font-size:28px;text-align:center;letter-spacing:4px"/>
+    </div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.appendChild(card);
+  const input = document.getElementById('hz-input');
+  if (input) { input.focus(); input.addEventListener('keydown', e => { if(e.key==='Enter') checkHanziWrite(); }); }
+  bottomArea.innerHTML=''; const btn=document.createElement('button'); btn.className='btn-primary'; btn.textContent='Check →';
+  btn.addEventListener('click', checkHanziWrite); bottomArea.appendChild(btn);
+}
+
+function checkHanziWrite() {
+  if (answeredStep) return;
+  const input = document.getElementById('hz-input');
+  if (!input) return;
+  const w = steps[currentStep].word;
+  const isCorrect = input.value.trim() === w.zh;
+  answeredStep = true;
+  input.style.borderColor = isCorrect ? 'var(--green)' : 'var(--rose)';
+  input.disabled = true;
+  consumeEnergy();
+  if (!isCorrect) { loseHeart(); sessionMistakes.push({word:w,type:'hanzi_write'}); addToRetry(steps[currentStep]); }
+  else { sessionXP += 3; }
+  const fb = document.getElementById('feedback');
+  if (fb) { fb.className=`feedback show ${isCorrect?'ok':'err'}`; fb.innerHTML=isCorrect?`<div class="fb-icon">✓</div><div><div class="fb-main">Correct! +3 XP</div></div>`:`<div class="fb-icon">✗</div><div><div class="fb-main">Correct: <span style="font-family:'Noto Sans SC',sans-serif;font-size:22px">${w.zh}</span></div></div>`; }
+  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+  handleAnswer(isCorrect, w);
+  bottomArea.innerHTML=''; const btn=document.createElement('button'); btn.className='btn-primary';
+  btn.textContent=isCorrect?'Continue →':'I understand →';
+  btn.addEventListener('click',nextStep); bottomArea.appendChild(btn);
+}
+
+// ── CONTEXT PICK: sentence with blank → pick the correct word ──
+function renderContextPick(step) {
+  const w = step.word;
+  const sentence = w.ex?.zh;
+  if (!sentence || !sentence.includes(w.zh)) { renderMCQ(step, 'meaning'); return; }
+
+  const pool = step.pool || _wordCache[lesson?.plan?.levelNum] || [];
+  const distractors = buildDistractors(w, pool, 3);
+  const options = shuffle([w, ...distractors.slice(0,3)]);
+  const display = sentence.replace(w.zh, '<span style="color:var(--gold);font-weight:900;font-size:1.1em">___</span>');
+
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:16px';
+  card.innerHTML = `
+    <div class="q-label read">📖 Fill in the Blank</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px">
+      <div style="font-size:11px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Choose the correct word:</div>
+      <div style="font-family:'Noto Sans SC',sans-serif;font-size:20px;line-height:1.8;color:var(--ink)">${display}</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:8px;font-style:italic">${w.ex?.en||''}</div>
+    </div>
+    <div id="ctx-opts" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.appendChild(card);
+
+  const optCont = document.getElementById('ctx-opts');
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.style.cssText = "font-family:'Noto Sans SC',sans-serif;font-size:20px;letter-spacing:2px;padding:16px;";
+    btn.innerHTML = `<span class="opt-letter">${['A','B','C','D'][i]}</span><span>${opt.zh}</span>`;
+    btn.addEventListener('click', () => {
+      if (answeredStep) return;
+      const isCorrect = opt.id === w.id;
+      answeredStep = true; consumeEnergy();
+      document.querySelectorAll('#ctx-opts .opt').forEach((b,j) => {
+        if (options[j].id === w.id) b.classList.add('correct');
+        else if (j === i && !isCorrect) b.classList.add('wrong');
+        b.disabled = true;
+      });
+      if (!isCorrect) { loseHeart(); sessionMistakes.push({word:w,type:'context_pick'}); addToRetry(steps[currentStep]); }
+      else { sessionXP += 2; }
+      const fb = document.getElementById('feedback');
+      if (fb) { fb.className=`feedback show ${isCorrect?'ok':'err'}`; fb.innerHTML=isCorrect?`<div class="fb-icon">✓</div><div><div class="fb-main">Correct!</div></div>`:`<div class="fb-icon">✗</div><div><div class="fb-main">Answer: <span style="font-family:'Noto Sans SC',sans-serif">${w.zh}</span> — ${w.en}</div></div>`; }
+      if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+      handleAnswer(isCorrect, w);
+      bottomArea.innerHTML=''; const nb=document.createElement('button'); nb.className='btn-primary';
+      nb.textContent=isCorrect?'Continue →':'I understand →';
+      nb.addEventListener('click',nextStep); bottomArea.appendChild(nb);
+    });
+    optCont.appendChild(btn);
+  });
+  bottomArea.innerHTML='';
+}
+
 // SPEED TIMER
 // ══════════════════════════════════════════════════════════
 function startSpeedTimer() {
