@@ -1485,6 +1485,71 @@ const HSK6_LESSONS = {
 // Merge all lesson vocabs into the global LESSON_VOCAB
 Object.assign(LESSON_VOCAB, HSK3_LESSONS, HSK4_LESSONS, HSK5_LESSONS, HSK6_LESSONS);
 
+// ── GRAMMAR PATTERNS (HSK 1–2 core, extended below for HSK3–6) ──
+const GRAMMAR_PATTERNS = {
+  shi_positive: [
+    {s:'我___学生，不是老师。',      a:'是', x:['有','在'],  tr:'I am a student, not a teacher.'},
+    {s:'他___我的朋友。',            a:'是', x:['有','叫'],  tr:'He is my friend.'},
+  ],
+  shi_negative: [
+    {s:'这___我的书，是他的。',      a:'不是', x:['没有','不在'], tr:'This is not my book, it is his.'},
+    {s:'她___老师，她是学生。',      a:'不是', x:['没是','不有'], tr:'She is not a teacher, she is a student.'},
+  ],
+  hen_adj: [
+    {s:'今天天气___冷。',            a:'很', x:['是','非常是'],  tr:'Today\'s weather is very cold.'},
+    {s:'这个苹果___甜。',            a:'很', x:['是','都'],      tr:'This apple is very sweet.'},
+  ],
+  svo_verb: [
+    {s:'我每天___中文。',            a:'学', x:['学习是','在学是'], tr:'I study Chinese every day.'},
+    {s:'她喜欢___书。',              a:'看', x:['看是','在看是'],   tr:'She likes to read books.'},
+  ],
+  modal_neng_hui: [
+    {s:'他___说中文，学了三年了。',  a:'会', x:['能','可以'],  tr:'He can speak Chinese, studied 3 years.'},
+    {s:'我身体不好，___去。',        a:'不能', x:['不会','没有'], tr:'I am unwell, I cannot go.'},
+  ],
+  modal_yao_xihuan: [
+    {s:'我___喝水，很渴。',          a:'要', x:['喜欢','想要是'], tr:'I want to drink water, I am thirsty.'},
+    {s:'他___打篮球，每天都打。',    a:'喜欢', x:['要','会'],   tr:'He likes to play basketball, plays every day.'},
+  ],
+  location_zai: [
+    {s:'我妈妈___家里。',            a:'在', x:['是','有'],    tr:'My mom is at home.'},
+    {s:'书___桌子上。',              a:'在', x:['是','有'],    tr:'The book is on the table.'},
+  ],
+  ye_dou: [
+    {s:'我去，他___去。',            a:'也', x:['都','还是'],  tr:'I am going, he is also going.'},
+    {s:'他们___是学生。',            a:'都', x:['也','还'],    tr:'They are all students.'},
+  ],
+  time_first: [
+    {s:'___我去学校，不去医院。',    a:'今天', x:['我','学校'],  tr:'Today I go to school, not hospital.'},
+    {s:'___他来，我们就开始。',      a:'明天', x:['他','来'],    tr:'Tomorrow when he comes, we start.'},
+  ],
+  danshi_suoyi: [
+    {s:'他很累，___还在工作。',      a:'但是', x:['所以','如果'],  tr:'He is tired, but still working.'},
+    {s:'他很累，___他休息了。',      a:'所以', x:['但是','如果'],  tr:'He is tired, so he rested.'},
+  ],
+  yinwei_suoyi: [
+    {s:'___下雨，我们不去。',        a:'因为', x:['所以','虽然'],  tr:'Because it rains, we won\'t go.'},
+    {s:'因为下雨，___我们不去。',    a:'所以', x:['但是','如果'],  tr:'Because of rain, so we won\'t go.'},
+  ],
+  bi_comparison: [
+    {s:'他___我高，我比他矮。',      a:'比', x:['跟','对'],    tr:'He is taller than me, I am shorter.'},
+    {s:'苹果___香蕉甜，香蕉不甜。', a:'比', x:['跟','对'],    tr:'Apples are sweeter than bananas.'},
+  ],
+  keyi_yinggai: [
+    {s:'你___休息，不要工作了。',    a:'应该', x:['可以','必须'], tr:'You should rest, stop working.'},
+    {s:'你___走，不用等了。',        a:'可以', x:['应该','必须'], tr:'You can leave, no need to wait.'},
+    {s:'你___去，这是规定。',        a:'必须', x:['可以','应该'], tr:'You must go, it\'s the rule.'},
+  ],
+  xian_zai_ranhou: [
+    {s:'请___坐下，___说话。',       a:'先',  x:['再','然后'],  tr:'Please sit down first, then talk.'},
+    {s:'___吃饭，___我们去公园。',   a:'先',  x:['再','然后'],  tr:'First eat, then we go to the park.'},
+  ],
+  frequency: [
+    {s:'他___来，不是第一次了。',    a:'经常', x:['突然','终于'], tr:'He comes often, not first time.'},
+    {s:'我___看电影，不是每天看。',  a:'有时候',x:['经常','平时'],tr:'I sometimes watch movies, not every day.'},
+  ],
+};
+
 // ── EXTENDED GRAMMAR PATTERNS FOR HSK 3–6 ───────────────────────
 // All patterns follow the NO-AMBIGUITY rule:
 // Every blank has exactly ONE correct answer given the context.
@@ -1583,6 +1648,7 @@ const HSK36_GRAMMAR = {
 };
 
 // Extend GRAMMAR_PATTERNS with HSK3-6 patterns
+Object.assign(GRAMMAR_PATTERNS, HSK36_GRAMMAR);
 // ── WORD CATEGORIES FOR HSK 3–6 ─────────────────────────────────
 const HSK36_CATS = {
   conj3:     ['3-73','3-94','3-28','3-67','3-251','3-192'],  // 所以因为而且如果然而或者
