@@ -550,11 +550,16 @@ async function loadWords(level = 1) {
 // SRS WORD SELECTION — Real spaced repetition from Supabase
 // ══════════════════════════════════════════════════════════
 
-async function getDueWords(limit = 10) {
+async function getDueWords(level = 1, limit = 10) {
   try {
     const sb = window._sb;
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return [];
+
+    // Get word IDs for this level from cache
+    await loadWords(level);
+    const levelWordIds = (_wordCache[level] || []).map(w => w.id);
+    if (levelWordIds.length === 0) return [];
 
     const { data, error } = await sb
       .from("word_progress")
@@ -572,6 +577,7 @@ async function getDueWords(limit = 10) {
         )
       `)
       .eq("user_id", user.id)
+      .in("word_id", levelWordIds)
       .lte("next_review", new Date().toISOString())
       .order("next_review", { ascending: true })
       .limit(limit);
@@ -629,7 +635,7 @@ async function getNewWords(level = 1, limit = 5) {
 
 async function generateSmartWords(level = 1) {
   try {
-    const due   = await getDueWords(10);
+    const due   = await getDueWords(level, 10);
     const fresh = await getNewWords(level, 5);
 
     // Deduplicate: due words first, then new words not already in due list
