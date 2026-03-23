@@ -2125,6 +2125,14 @@ function generateLessonSteps(levelNum, lessonNum, allWords) {
   // PHASE 1: Word cards always first
   newWords.forEach(w => steps.push({type:'word_card', word:w}));
 
+  // PHASE 1b: New word context — fill sentence blank with the new word
+  // Each new word that has an example sentence gets this exercise
+  newWords.forEach((w, i) => {
+    if (w.ex?.zh && w.ex.zh.includes(w.zh) && w.ex.zh.length >= 4) {
+      steps.push({type:'new_word_ctx', word:w, newWords, _idx:i});
+    }
+  });
+
   // PHASE 2: First contact — each word gets a DIFFERENT recognition type
   const introPool = shuffle(['audio_char','mcq_meaning','listen_pick','mcq_hanzi','context_pick','translate_en']);
   newWords.forEach((w, i) => {
@@ -2178,6 +2186,10 @@ function generateLessonSteps(levelNum, lessonNum, allWords) {
     });
     const matchW = shuffle([...reviewWords]).slice(0, Math.min(4, reviewWords.length));
     if (matchW.length >= 2) steps.push({type:'match', words:matchW});
+    // Reading cloze: short passage with blanks (every 3 lessons)
+    if (lessonNum % 3 === 0 && reviewWords.length >= 3) {
+      steps.push({type:'reading_cloze', words:shuffle([...reviewWords]).slice(0,3), levelNum});
+    }
   }
 
   // Error detection
@@ -2594,6 +2606,8 @@ function renderStep(idx) {
     case 'translate_en':  renderTranslateEN(step); break;
     case 'usage_pick':    renderUsagePick(step); break;
     case 'word_order':    renderWordOrder(step); break;
+    case 'new_word_ctx':  renderNewWordCtx(step); break;
+    case 'reading_cloze': renderReadingCloze(step); break;
     default: nextStep();
   }
 
@@ -3474,7 +3488,7 @@ function renderAudioChar(step) {
   opts.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'opt-btn';
-    btn.style.cssText = 'font-size:26px;font-weight:800;min-height:72px;letter-spacing:2px';
+    btn.style.cssText = '-webkit-appearance:none;appearance:none;background:#162218;background:var(--card2);border:2px solid rgba(74,222,128,.13);border:2px solid var(--border);border-radius:14px;font-size:26px;font-weight:800;min-height:72px;letter-spacing:2px;color:#e8f2ee;color:var(--ink);width:100%;cursor:pointer;';
     btn.textContent = opt.zh;
     btn.addEventListener('click', () => {
       if (answeredStep) return;
@@ -4308,14 +4322,14 @@ function renderContextPick(step) {
   const optCont = document.getElementById('ctx-opts');
   options.forEach((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = 'opt';
-    btn.style.cssText = "font-family:'Noto Sans SC',sans-serif;font-size:20px;letter-spacing:2px;padding:16px;";
+    btn.className = 'opt-btn';
+    btn.style.cssText = "-webkit-appearance:none;appearance:none;";
     btn.innerHTML = `<span class="opt-letter">${['A','B','C','D'][i]}</span><span>${opt.zh}</span>`;
     btn.addEventListener('click', () => {
       if (answeredStep) return;
       const isCorrect = opt.id === w.id;
       answeredStep = true; consumeEnergy();
-      document.querySelectorAll('#ctx-opts .opt').forEach((b,j) => {
+      document.querySelectorAll('#ctx-opts .opt-btn').forEach((b,j) => {
         if (options[j].id === w.id) b.classList.add('correct');
         else if (j === i && !isCorrect) b.classList.add('wrong');
         b.disabled = true;
@@ -4640,6 +4654,208 @@ function renderWordOrder(step) {
   render();
 }
 
+
+// ── NEW WORD CONTEXT: fill sentence blank with the correct new word ─
+// Shows the example sentence with blank — options are all new words in lesson
+function renderNewWordCtx(step) {
+  const w = step.word;
+  const newWords = step.newWords || [w];
+  const sentence = w.ex?.zh;
+  if (!sentence || !sentence.includes(w.zh)) { nextStep(); return; }
+
+  const blank = sentence.replace(w.zh, '<span style="color:var(--gold);font-weight:900;border-bottom:2px solid var(--gold)">___</span>');
+  // Options: the correct word + other new words as distractors (max 4)
+  const distractors = newWords.filter(nw => nw.id !== w.id).slice(0, 3);
+  const options = shuffle([w, ...distractors]);
+
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:14px';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'q-label read';
+  lbl.textContent = '📖 Which word fits?';
+  card.appendChild(lbl);
+
+  // Sentence card
+  const sentCard = document.createElement('div');
+  sentCard.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px';
+  sentCard.innerHTML = `
+    <div style="font-size:11px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Complete the sentence:</div>
+    <div style="font-family:'Noto Sans SC',sans-serif;font-size:20px;line-height:1.8;color:var(--ink)">${blank}</div>
+    <div style="font-size:12px;color:var(--ink3);margin-top:8px;font-style:italic">${w.ex?.en || ''}</div>`;
+  card.appendChild(sentCard);
+
+  // Options
+  const optsWrap = document.createElement('div');
+  optsWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+  optsWrap.id = 'nwc-opts';
+  const labels = ['A','B','C','D'];
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span style="background:var(--border);border-radius:8px;padding:3px 9px;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0">${labels[i]}</span><span style="font-family:'Noto Sans SC',sans-serif;font-size:19px">${opt.zh}</span><span style="font-size:12px;color:var(--ink3);margin-left:4px">${opt.py || ''}</span>`;
+    btn.addEventListener('click', () => {
+      if (answeredStep) return;
+      const isCorrect = opt.id === w.id;
+      answeredStep = true; consumeEnergy();
+      document.querySelectorAll('#nwc-opts .opt-btn').forEach((b,j) => {
+        if (options[j].id === w.id) b.classList.add('correct');
+        else if (j === i && !isCorrect) b.classList.add('wrong');
+        b.disabled = true;
+      });
+      if (!isCorrect) { loseHeart(); sessionMistakes.push({word:w, type:'new_word_ctx'}); addToRetry(steps[currentStep]); }
+      else { sessionXP += 2; }
+      const fb = document.getElementById('feedback');
+      if (fb) { fb.className=`feedback show ${isCorrect?'ok':'err'}`; fb.innerHTML=isCorrect ? `<div class="fb-icon">✓</div><div><div class="fb-main">Correct!</div><div class="fb-hint" style="font-family:'Noto Sans SC',sans-serif">${sentence}</div></div>` : `<div class="fb-icon">✗</div><div><div class="fb-main">Answer: <span style="font-family:'Noto Sans SC',sans-serif">${w.zh}</span> — ${w.en}</div></div>`; }
+      if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+      handleAnswer(isCorrect, w);
+      bottomArea.innerHTML=''; const nb=document.createElement('button'); nb.className='btn-primary';
+      nb.textContent=isCorrect?'Continue →':'I understand →'; nb.addEventListener('click',nextStep); bottomArea.appendChild(nb);
+    });
+    optsWrap.appendChild(btn);
+  });
+  card.appendChild(optsWrap);
+
+  const fb = document.createElement('div');
+  fb.className='feedback'; fb.id='feedback';
+  fb.innerHTML='<div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div>';
+  card.appendChild(fb);
+  stepArea.appendChild(card);
+  bottomArea.innerHTML='';
+}
+
+// ── READING CLOZE: short passage with 3 blanks (like real HSK reading) ─
+const READING_PASSAGES = [
+  {
+    text: '我每天坚持___步，身体越来越好。朋友们都说我___了很多，看起来很___。',
+    blanks: [{pos:0,a:'跑',opts:['跑','走','骑','游']},{pos:1,a:'瘦',opts:['瘦','胖','高','矮']},{pos:2,a:'健康',opts:['健康','快乐','聪明','努力']}],
+    en: 'I persist in ___ every day, my body is getting better. Friends say I ___ a lot, I look very ___.'
+  },
+  {
+    text: '他___来学校已经三年了。虽然学习很___，但他从来没有___过。',
+    blanks: [{pos:0,a:'来',opts:['来','去','到','回']},{pos:1,a:'难',opts:['难','好','快','慢']},{pos:2,a:'放弃',opts:['放弃','休息','努力','学习']}],
+    en: 'He has ___ to school for three years. Although studying is very ___, he has never ___ before.'
+  },
+  {
+    text: '这家餐厅的菜___很好吃，___贵了一点。不过来这里吃饭的人___很多。',
+    blanks: [{pos:0,a:'虽然',opts:['虽然','因为','如果','尽管']},{pos:1,a:'但是',opts:['但是','所以','而且','或者']},{pos:2,a:'还是',opts:['还是','已经','突然','刚才']}],
+    en: 'The food at this restaurant ___ tastes good, ___ is a bit expensive. Still, the people eating here are ___ many.'
+  },
+  {
+    text: '小明今天___到了学校，老师批评了他。他___很难过，下定___以后不再迟到。',
+    blanks: [{pos:0,a:'迟',opts:['迟','早','快','慢']},{pos:1,a:'感到',opts:['感到','看到','听到','想到']},{pos:2,a:'决心',opts:['决心','注意','办法','时间']}],
+    en: 'Xiao Ming ___ arrived at school today and the teacher criticized him. He ___ very sad and made up his ___ not to be late again.'
+  },
+  {
+    text: '她___了很多年钢琴，现在水平很高。每次演出观众都___热烈地鼓掌，她___自己的努力没有白费。',
+    blanks: [{pos:0,a:'练',opts:['练','学','玩','弹']},{pos:1,a:'会',opts:['会','要','能','应该']},{pos:2,a:'觉得',opts:['觉得','认为','看到','知道']}],
+    en: 'She has ___ piano for many years and is now very skilled. Every performance the audience ___ applaud warmly, she ___ her effort was not wasted.'
+  },
+];
+
+function renderReadingCloze(step) {
+  const levelNum = step.levelNum || 1;
+  const lessonNum = lesson?.plan?.lessonNum || 1;
+  const passage = READING_PASSAGES[lessonNum % READING_PASSAGES.length];
+
+  let currentBlank = 0;
+  const userAnswers = new Array(passage.blanks.length).fill(null);
+
+  const buildPassageHTML = () => {
+    let html = passage.text;
+    passage.blanks.forEach((b, i) => {
+      const filled = userAnswers[i];
+      const slotStyle = filled
+        ? `color:var(--green);font-weight:800;font-family:'Noto Sans SC',sans-serif`
+        : (i === currentBlank ? `color:var(--gold);font-weight:900` : `color:var(--ink3)`);
+      const display = filled ? filled : `(${i+1})`;
+      html = html.replace('___', `<span style="${slotStyle}" data-blank="${i}">${display}</span>`);
+    });
+    return html;
+  };
+
+  const render = () => {
+    stepArea.innerHTML = '';
+    const card = document.createElement('div');
+    card.style.cssText = 'display:flex;flex-direction:column;gap:14px';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'q-label read';
+    lbl.textContent = '📄 Reading: Fill in the Blanks';
+    card.appendChild(lbl);
+
+    const prog = document.createElement('div');
+    prog.style.cssText = 'font-size:12px;color:var(--ink3);text-align:right';
+    prog.textContent = `Question ${currentBlank+1} of ${passage.blanks.length}`;
+    card.appendChild(prog);
+
+    // Passage
+    const passageEl = document.createElement('div');
+    passageEl.style.cssText = "background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;font-family:'Noto Sans SC',sans-serif;font-size:17px;line-height:2;color:var(--ink)";
+    passageEl.innerHTML = buildPassageHTML();
+    card.appendChild(passageEl);
+
+    // English hint
+    const enHint = document.createElement('div');
+    enHint.style.cssText = 'font-size:12px;color:var(--ink3);font-style:italic;line-height:1.6';
+    enHint.textContent = passage.en;
+    card.appendChild(enHint);
+
+    // Current blank options
+    const b = passage.blanks[currentBlank];
+    const optsLabel = document.createElement('div');
+    optsLabel.style.cssText = 'font-size:12px;color:var(--ink2);font-weight:700';
+    optsLabel.textContent = `Choose the word for blank (${currentBlank+1}):`;
+    card.appendChild(optsLabel);
+
+    const optsWrap = document.createElement('div');
+    optsWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+    const labels = ['A','B','C','D'];
+    shuffle([...b.opts]).forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.innerHTML = `<span style="background:var(--border);border-radius:8px;padding:3px 9px;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0">${labels[i]}</span><span style="font-family:'Noto Sans SC',sans-serif;font-size:18px">${opt}</span>`;
+      btn.addEventListener('click', () => {
+        userAnswers[currentBlank] = opt;
+        const isCorrect = opt === b.a;
+        if (!isCorrect) loseHeart();
+        else sessionXP += 2;
+        currentBlank++;
+        if (currentBlank < passage.blanks.length) {
+          render();
+        } else {
+          // All blanks done — show result
+          const allCorrect = userAnswers.every((a,i) => a === passage.blanks[i].a);
+          answeredStep = true; consumeEnergy();
+          handleAnswer(allCorrect, step.words?.[0] || null);
+          if (!allCorrect) sessionMistakes.push({word:step.words?.[0]||{id:'rc',zh:'阅读',en:'reading'}, type:'reading_cloze'});
+
+          stepArea.innerHTML = '';
+          const done = document.createElement('div');
+          done.style.cssText = 'display:flex;flex-direction:column;gap:14px';
+          done.innerHTML = `
+            <div class="q-label read">📄 Reading Complete</div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;font-family:'Noto Sans SC',sans-serif;font-size:17px;line-height:2;color:var(--ink)">${buildPassageHTML()}</div>
+            <div class="feedback show ${allCorrect?'ok':'err'}">
+              <div class="fb-icon">${allCorrect?'✓':'✗'}</div>
+              <div><div class="fb-main">${allCorrect?'Perfect reading!':'Check the answers above'}</div></div>
+            </div>`;
+          stepArea.appendChild(done);
+          bottomArea.innerHTML=''; const nb=document.createElement('button'); nb.className='btn-primary';
+          nb.textContent='Continue →'; nb.addEventListener('click',nextStep); bottomArea.appendChild(nb);
+        }
+      });
+      optsWrap.appendChild(btn);
+    });
+    card.appendChild(optsWrap);
+    stepArea.appendChild(card);
+    bottomArea.innerHTML='';
+  };
+
+  render();
+}
+
 // SPEED TIMER
 // ══════════════════════════════════════════════════════════
 function startSpeedTimer() {
@@ -4927,6 +5143,30 @@ let nhAdsUsedThisSession = 0;
 const NH_MAX_ADS = 5;
 const NH_AD_DURATION = 5000;
 
+function lessonWatchAdForEnergy(needed) {
+  // Simulate 5-second ad then give 15 energy and reload lesson
+  const sa = document.getElementById('step-area');
+  if (sa) {
+    let t = 5;
+    const btn = sa.querySelector('button');
+    if (btn) btn.textContent = 'Ad playing… ' + t + 's';
+    const iv = setInterval(() => {
+      t--;
+      const b = sa.querySelector('button');
+      if (b) b.textContent = t > 0 ? 'Ad playing… ' + t + 's' : 'Done! Loading…';
+      if (t <= 0) {
+        clearInterval(iv);
+        energy = Math.min(MAX_ENERGY, energy + 15);
+        renderEnergy();
+        localStorage.setItem(key('energy'), energy);
+        localStorage.setItem(key('energy_ts'), Date.now());
+        // Reload the lesson now
+        window.location.reload();
+      }
+    }, 1000);
+  }
+}
+
 function watchAdForHeart() {
   if (nhAdsUsedThisSession >= NH_MAX_ADS) {
     showToast('Max ads reached for this session. Try again later!');
@@ -5027,6 +5267,28 @@ async function init() {
     }
     lesson = { plan };
     steps  = buildSteps(plan);
+
+    // Energy check: need at least as much energy as there are steps
+    const energyNeeded = Math.min(25, Math.max(10, steps ? steps.length : 15));
+    if (energy < energyNeeded) {
+      clearTimeout(loadingTimeout);
+      const sa = document.getElementById('step-area');
+      if (sa) sa.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:28px 20px;text-align:center">
+          <div style="font-size:48px">⚡</div>
+          <div style="font-size:18px;font-weight:800;color:#e8f2ee">Not Enough Energy</div>
+          <div style="font-size:13px;color:#9ab8aa;line-height:1.7">
+            This lesson needs <strong style="color:#fbbf24">${energyNeeded} energy</strong> to complete.<br/>
+            You currently have <strong style="color:#fbbf24">${energy} energy</strong>.
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:8px">
+            <button onclick="lessonWatchAdForEnergy(${energyNeeded})" style="-webkit-appearance:none;appearance:none;width:100%;padding:15px;border-radius:14px;border:none;background:linear-gradient(135deg,#3ddb7a,#2bc968);color:#080f0b;font-size:15px;font-weight:700;cursor:pointer">🎥 Watch Ad → +15 Energy</button>
+            <button onclick="window.location.href='/app/dashboard.html'" style="-webkit-appearance:none;appearance:none;width:100%;padding:13px;border-radius:14px;border:1.5px solid rgba(74,222,128,.2);background:transparent;color:#9ab8aa;font-size:14px;font-weight:600;cursor:pointer">← Back to Dashboard</button>
+          </div>
+          <div style="font-size:11px;color:#4a6b5a;margin-top:4px">Energy refills 1 per 5 minutes automatically</div>
+        </div>`;
+      return;
+    }
 
     if (!steps || steps.length === 0) {
       clearTimeout(loadingTimeout);
