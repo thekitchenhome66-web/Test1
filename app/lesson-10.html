@@ -556,18 +556,15 @@ async function getDueWords(level = 1, limit = 10) {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return [];
 
-    // Get word IDs for this level from cache
-    await loadWords(level);
-    const levelWordIds = (_wordCache[level] || []).map(w => w.id);
-    if (levelWordIds.length === 0) return [];
-
+    // Filter by hsk_level via join instead of sending hundreds of IDs in .in()
     const { data, error } = await sb
       .from("word_progress")
       .select(`
         word_id,
         next_review,
-        vocabulary:words (
+        vocabulary:words!inner (
           id,
+          hsk_level,
           zh,
           pinyin,
           english,
@@ -577,7 +574,7 @@ async function getDueWords(level = 1, limit = 10) {
         )
       `)
       .eq("user_id", user.id)
-      .in("word_id", levelWordIds)
+      .eq("vocabulary.hsk_level", level)
       .lte("next_review", new Date().toISOString())
       .order("next_review", { ascending: true })
       .limit(limit);
@@ -605,27 +602,33 @@ async function getDueWords(level = 1, limit = 10) {
 
 async function getNewWords(level = 1, limit = 5) {
   try {
-    // CRITICAL: ensure word cache is populated before filtering
     if (!_wordCache[level] || _wordCache[level].length === 0) {
       await loadWords(level);
     }
+    const levelWords = _wordCache[level] || [];
+    if (levelWords.length === 0) return [];
 
     const sb = window._sb;
     const { data: { user } } = await sb.auth.getUser();
-    if (!user) return (_wordCache[level] || []).slice(0, limit);
+    if (!user) return levelWords.slice(0, limit);
 
-    // Get IDs the user has already seen
-    const { data: seen } = await sb
-      .from("word_progress")
-      .select("word_id")
-      .eq("user_id", user.id);
+    // Chunk IDs into batches of 80 to stay under URL limits
+    const levelIds = levelWords.map(w => w.id);
+    const chunks = [];
+    for (let i = 0; i < levelIds.length; i += 80) chunks.push(levelIds.slice(i, i + 80));
 
-    const seenIds = new Set((seen || []).map(d => d.word_id));
+    const seenIds = new Set();
+    for (const chunk of chunks) {
+      const { data: seen } = await sb
+        .from("word_progress")
+        .select("word_id")
+        .eq("user_id", user.id)
+        .in("word_id", chunk);
+      (seen || []).forEach(d => seenIds.add(d.word_id));
+    }
 
-    // Return unseen words from the cached level
-    const unseen = (_wordCache[level] || []).filter(w => !seenIds.has(w.id));
-    // Fallback: if all words seen, cycle from beginning so lesson never runs empty
-    const source = unseen.length > 0 ? unseen : (_wordCache[level] || []);
+    const unseen = levelWords.filter(w => !seenIds.has(w.id));
+    const source = unseen.length > 0 ? unseen : levelWords;
     return source.slice(0, limit);
   } catch(e) {
     console.warn("getNewWords error:", e);
@@ -965,7 +968,7 @@ const SENTENCE_TEMPLATES = {
   // Subject + 很 + adj
   'S很Adj': {
     ctx:  '今天天气{W}，不冷。',
-    tr:   'Today\'s weather is {W}, not cold.',
+    tr:   "Today\'s weather is {W}, not cold.",
     blank:'今天天气___，不冷。',
     good: '{W}',
     bad:  ['冷','大'],
@@ -1496,7 +1499,7 @@ const GRAMMAR_PATTERNS = {
     {s:'她___老师，她是学生。',      a:'不是', x:['没是','不有'], tr:'She is not a teacher, she is a student.'},
   ],
   hen_adj: [
-    {s:'今天天气___冷。',            a:'很', x:['是','非常是'],  tr:'Today\'s weather is very cold.'},
+    {s:'今天天气___冷。',            a:'很', x:['是','非常是'],  tr:"Today\'s weather is very cold."},
     {s:'这个苹果___甜。',            a:'很', x:['是','都'],      tr:'This apple is very sweet.'},
   ],
   svo_verb: [
@@ -1528,8 +1531,8 @@ const GRAMMAR_PATTERNS = {
     {s:'他很累，___他休息了。',      a:'所以', x:['但是','如果'],  tr:'He is tired, so he rested.'},
   ],
   yinwei_suoyi: [
-    {s:'___下雨，我们不去。',        a:'因为', x:['所以','虽然'],  tr:'Because it rains, we won\'t go.'},
-    {s:'因为下雨，___我们不去。',    a:'所以', x:['但是','如果'],  tr:'Because of rain, so we won\'t go.'},
+    {s:'___下雨，我们不去。',        a:'因为', x:['所以','虽然'],  tr:"Because it rains, we won\'t go."},
+    {s:'因为下雨，___我们不去。',    a:'所以', x:['但是','如果'],  tr:"Because of rain, so we won\'t go."},
   ],
   bi_comparison: [
     {s:'他___我高，我比他矮。',      a:'比', x:['跟','对'],    tr:'He is taller than me, I am shorter.'},
@@ -1538,7 +1541,7 @@ const GRAMMAR_PATTERNS = {
   keyi_yinggai: [
     {s:'你___休息，不要工作了。',    a:'应该', x:['可以','必须'], tr:'You should rest, stop working.'},
     {s:'你___走，不用等了。',        a:'可以', x:['应该','必须'], tr:'You can leave, no need to wait.'},
-    {s:'你___去，这是规定。',        a:'必须', x:['可以','应该'], tr:'You must go, it\'s the rule.'},
+    {s:'你___去，这是规定。',        a:'必须', x:['可以','应该'], tr:"You must go, it\'s the rule."},
   ],
   xian_zai_ranhou: [
     {s:'请___坐下，___说话。',       a:'先',  x:['再','然后'],  tr:'Please sit down first, then talk.'},
@@ -1547,6 +1550,114 @@ const GRAMMAR_PATTERNS = {
   frequency: [
     {s:'他___来，不是第一次了。',    a:'经常', x:['突然','终于'], tr:'He comes often, not first time.'},
     {s:'我___看电影，不是每天看。',  a:'有时候',x:['经常','平时'],tr:'I sometimes watch movies, not every day.'},
+    {s:'她___去图书馆，几乎每天都去。', a:'经常', x:['偶尔','有时候'], tr:'She often goes to the library, almost every day.'},
+    {s:'我___去旅游，不是每年都去。',   a:'偶尔', x:['经常','总是'],   tr:'I occasionally travel, not every year.'},
+  ],
+
+  // ── ADJECTIVE USAGE (adjectival predicates, degree adverbs) ──
+  adj_degree: [
+    {s:'这道菜___辣，我不能吃。',    a:'太', x:['很','非常'], tr:'This dish is too spicy, I cannot eat it.', ex:'太 means excessively (negative implication)'},
+    {s:'他___高兴，笑了起来。',      a:'非常', x:['太','有点'], tr:'He was very happy and started laughing.', ex:'非常 = very, no negative feeling'},
+    {s:'天气___冷，穿件外套吧。',    a:'有点', x:['太','很'], tr:'The weather is a little cold, wear a coat.', ex:'有点 = slightly (mild degree)'},
+    {s:'她唱歌唱得___好。',          a:'很', x:['太','有点'], tr:'She sings very well.', ex:'很 is neutral "very"'},
+    {s:'这个包___贵了，我买不起。',  a:'太', x:['非常','相当'], tr:'This bag is too expensive, I cannot afford it.'},
+    {s:'他___累，需要休息一下。',    a:'有点', x:['太','非常'], tr:'He is a little tired and needs a rest.'},
+  ],
+
+  // ── ADVERB POSITION (where adverbs go in a sentence) ──────────
+  adv_position: [
+    {s:'他___不去，我怎么办？',      a:'如果', x:['虽然','因为'], tr:"If he doesn't go, what should I do?", ex:"如果 (if) starts conditional clauses"},
+    {s:'我___很忙，但我来了。',      a:'虽然', x:['如果','因为'], tr:'Although I was very busy, I came.', ex:'虽然 (although) concedes a point'},
+    {s:'她___学习好，___很努力。',   a:'不但', x:['虽然','如果'], tr:'She is not only academically good, but also hardworking.', ex:'不但…而且 = not only...but also'},
+    {s:'我___去，___有时间。',       a:'才', x:['就','还'], tr:'I will only go if I have time.', ex:'才 = only then/under that condition'},
+    {s:'你___努力，___能成功。',     a:'只有', x:['因为','虽然'], tr:'Only by working hard can you succeed.', ex:'只有…才 = only if...then'},
+  ],
+
+  // ── PREPOSITION USAGE ─────────────────────────────────────────
+  prep_duiyu: [
+    {s:'___学习，他很认真。',        a:'对于', x:['在','跟'], tr:'Regarding study, he is very serious.', ex:'对于 = regarding/concerning'},
+    {s:'这件事___我来说很重要。',    a:'对', x:['在','跟'], tr:'This matter is very important to me.', ex:'对 = to/for (someone)'},
+    {s:'我___他一起去。',            a:'跟', x:['对','在'], tr:'I go together with him.', ex:'跟 = with (accompaniment)'},
+    {s:'书___桌子上面。',            a:'在', x:['对','跟'], tr:'The book is on top of the table.', ex:'在 = at/in/on (location)'},
+    {s:'他___公司工作了三年。',      a:'在', x:['对','跟'], tr:'He has worked at the company for three years.'},
+    {s:'___天气原因，活动取消了。',  a:'由于', x:['对于','关于'], tr:'Due to weather reasons, the activity was cancelled.', ex:'由于 = due to/because of'},
+    {s:'这本书___历史很有帮助。',    a:'对', x:['在','跟'], tr:'This book is very helpful for history.'},
+  ],
+
+  // ── COMPLEMENT STRUCTURES ─────────────────────────────────────
+  result_comp: [
+    {s:'他把作业写___了。',          a:'完', x:['好','到'], tr:'He finished writing his homework.', ex:'写完 = finish writing (result complement)'},
+    {s:'她听___了老师说的话。',      a:'懂', x:['完','到'], tr:'She understood what the teacher said.', ex:'听懂 = understand by listening'},
+    {s:'请把门关___。',              a:'好', x:['完','到'], tr:'Please close the door properly.', ex:'关好 = close properly'},
+    {s:'他跑___终点了。',            a:'到', x:['完','好'], tr:'He ran to the finish line.', ex:'跑到 = run to (a place)'},
+    {s:'这道题我做___了。',          a:'对', x:['完','好'], tr:'I got this question right.', ex:'做对 = do correctly'},
+  ],
+
+  // ── 把 STRUCTURE ──────────────────────────────────────────────
+  ba_structure: [
+    {s:'请___书放在桌子上。',        a:'把', x:['让','被'], tr:'Please put the book on the table.', ex:'把+object+verb+location'},
+    {s:'他___窗户关上了。',          a:'把', x:['被','让'], tr:'He closed the window.', ex:'把 marks the object being disposed of'},
+    {s:'我___作业做完了。',          a:'把', x:['被','让'], tr:'I finished the homework.', ex:'把+作业+做完'},
+    {s:'请你___这个问题解决。',      a:'把', x:['让','对'], tr:'Please resolve this problem.'},
+  ],
+
+  // ── 被 PASSIVE ────────────────────────────────────────────────
+  bei_passive: [
+    {s:'蛋糕___孩子吃完了。',        a:'被', x:['把','让'], tr:'The cake was eaten up by the child.', ex:'被 introduces the agent in passives'},
+    {s:'这本书___很多人喜欢。',      a:'被', x:['把','让'], tr:'This book is liked by many people.'},
+    {s:'他___老师批评了。',          a:'被', x:['把','让'], tr:'He was criticized by the teacher.', ex:'被+agent+verb'},
+  ],
+
+  // ── COMPARISON PATTERNS ───────────────────────────────────────
+  comparison: [
+    {s:'今天___昨天冷。',            a:'比', x:['跟','像'], tr:'Today is colder than yesterday.', ex:'比+compared thing+adj'},
+    {s:'他跑得___我快。',            a:'比', x:['跟','像'], tr:'He runs faster than me.'},
+    {s:'这里___图书馆一样安静。',    a:'跟', x:['比','像'], tr:'It is as quiet here as the library.', ex:'跟…一样+adj = as...as'},
+    {s:'他长得___他爸爸。',          a:'像', x:['比','跟'], tr:'He looks like his father.', ex:'像 = to resemble'},
+    {s:'A比B___，所以A更贵。',      a:'好', x:['差','坏'], tr:'A is better than B, so A is more expensive.'},
+  ],
+
+  // ── TIME EXPRESSIONS ──────────────────────────────────────────
+  time_expr: [
+    {s:'他___学了三年中文了。',      a:'已经', x:['刚','就'], tr:'He has already studied Chinese for three years.', ex:'已经 = already (completed state)'},
+    {s:'她___到家，就接到电话了。',  a:'刚', x:['已经','才'], tr:'She had just arrived home when the phone rang.', ex:'刚 = just (very recently)'},
+    {s:'我们___出发，不用担心。',    a:'马上', x:['已经','刚'], tr:"We are about to set off, don't worry.", ex:"马上 = immediately/about to"},
+    {s:'他等了很久___来。',          a:'才', x:['就','已经'], tr:'He waited a long time before coming.', ex:'才 = only then (after delay)'},
+    {s:'她一听到消息___哭了。',      a:'就', x:['才','已经'], tr:'She cried as soon as she heard the news.', ex:'就 = right away (immediate)'},
+  ],
+
+  // ── MODAL NUANCES ─────────────────────────────────────────────
+  modal_nuance: [
+    {s:'这件事你___告诉我，但你没有。', a:'应该', x:['会','能'], tr:"You should have told me, but you didn't."},
+    {s:'他___游泳，学了很多年了。',     a:'会', x:['能','可以'], tr:'He can swim, he has learned for many years.', ex:'会 = learned ability'},
+    {s:'他的腿受伤了，___走路。',       a:'不能', x:['不会','不应该'], tr:'His leg is injured, he cannot walk.', ex:'能 = physical ability'},
+    {s:'这里___拍照。',                 a:'不可以', x:['不会','不能'], tr:'Photography is not allowed here.', ex:'可以 = permission'},
+    {s:'你___多喝水，对身体好。',       a:'应该', x:['可以','会'], tr:"You should drink more water, it's good for your body."},
+  ],
+
+  // ── SENTENCE STRUCTURE PROBLEMS (error correction material) ───
+  word_order: [
+    {s:'我___朋友一起去了北京。',    a:'和', x:['对','让'], tr:'I went to Beijing together with my friend.', ex:'和 = and/with (conjunction)'},
+    {s:'她昨天___去了医院。',        a:'没有', x:['不','别'], tr:'She did not go to the hospital yesterday.', ex:'没有 = did not (past negation)'},
+    {s:'这个问题___回答。',          a:'很难', x:['太难很','难得很'], tr:'This question is very hard to answer.', ex:'Adjective goes before the verb phrase'},
+  ],
+
+  // ── HSK3 SPECIFIC ─────────────────────────────────────────────
+  hsk3_suiran: [
+    {s:'___很贵，我还是买了。',      a:'虽然', x:['因为','如果'], tr:'Although expensive, I still bought it.', ex:'虽然…还是/但是 = although...still'},
+    {s:'___下雨，他们还是去了。',    a:'虽然', x:['因为','所以'], tr:'Although it rained, they still went.'},
+    {s:'她___很忙，___来帮我了。',   a:'虽然', x:['如果','因为'], tr:'Although she was very busy, she still came to help me.'},
+  ],
+
+  hsk3_yuelaiyue: [
+    {s:'天气___冷了。',              a:'越来越', x:['有点','非常'], tr:'The weather is getting colder and colder.', ex:'越来越+adj = more and more'},
+    {s:'他的汉语___好了。',          a:'越来越', x:['经常','已经'], tr:'His Chinese is getting better and better.'},
+    {s:'生活___方便了。',            a:'越来越', x:['已经','总是'], tr:'Life is becoming more and more convenient.'},
+  ],
+
+  hsk3_yibian: [
+    {s:'他___唱歌，___跳舞。',       a:'一边', x:['一起','一直'], tr:'He sings while dancing at the same time.', ex:'一边…一边 = while doing A, also doing B'},
+    {s:'她喜欢___听音乐，___做作业。', a:'一边', x:['一直','一起'], tr:'She likes to listen to music while doing homework.'},
   ],
 };
 
@@ -1577,7 +1688,7 @@ const HSK36_GRAMMAR = {
   // HSK3: 有点儿 vs 一点儿
   youdianr: [
     {s:'这道题___难，但我能做。',          a:'有点儿', x:['一点儿','比较'], tr:'This question is a bit difficult, but I can do it.'},
-    {s:'请等___，我马上来。',              a:'一下', x:['有点儿','一点儿'], tr:'Please wait a moment, I\'ll be right there.'},
+    {s:'请等___，我马上来。',              a:'一下', x:['有点儿','一点儿'], tr:"Please wait a moment, I\'ll be right there."},
   ],
 
   // HSK3: 对…来说 (for sb / from sb's perspective)
@@ -1619,7 +1730,7 @@ const HSK36_GRAMMAR = {
   // HSK5: 既然…就 (since… then)
   jiran_jiu: [
     {s:'___你已经决定了，___去做吧。',     a:'既然', x:['因为','虽然'], tr:'Since you have already decided, just go do it.'},
-    {s:'既然来了，___多待几天吧。',        a:'就',   x:['也','都'], tr:'Since you\'re here, just stay a few more days.'},
+    {s:'既然来了，___多待几天吧。',        a:'就',   x:['也','都'], tr:"Since you\'re here, just stay a few more days."},
   ],
 
   // HSK5: 尽管…还是 (despite… still)
@@ -1830,7 +1941,7 @@ function generateLessonSteps(levelNum, lessonNum, allWords) {
   newWords.forEach(w => steps.push({type:'word_card', word:w}));
 
   // PHASE 2: First contact — each word gets a DIFFERENT recognition type
-  const introPool = shuffle(['audio_char','mcq_meaning','listen_pick','mcq_hanzi','context_pick']);
+  const introPool = shuffle(['audio_char','mcq_meaning','listen_pick','mcq_hanzi','context_pick','translate_en']);
   newWords.forEach((w, i) => {
     const type = introPool[i % introPool.length];
     const d = buildDistractors(w, allWords, 2);
@@ -1838,7 +1949,7 @@ function generateLessonSteps(levelNum, lessonNum, allWords) {
   });
 
   // PHASE 3: Production — each word gets a DIFFERENT typing/building type
-  const prodPool = shuffle(['pinyin_type','fill_blank','sentence_build','word_position','hanzi_write','timed_recall']);
+  const prodPool = shuffle(['pinyin_type','fill_blank','sentence_build','word_position','hanzi_write','timed_recall','translate_cn','usage_pick']);
   newWords.forEach((w, i) => {
     const type = prodPool[i % prodPool.length];
     if (type === 'fill_blank' && w.ex?.zh?.includes(w.zh)) {
@@ -1854,6 +1965,10 @@ function generateLessonSteps(levelNum, lessonNum, allWords) {
       steps.push({type:'hanzi_write', word:w});
     } else if (type === 'word_position') {
       steps.push({type:'word_position', word:w});
+    } else if (type === 'translate_cn') {
+      steps.push({type:'translate_cn', word:w});
+    } else if (type === 'usage_pick') {
+      steps.push({type:'usage_pick', word:w, pool:allWords});
     } else {
       steps.push({type:'pinyin_type', word:w});
     }
@@ -1915,50 +2030,64 @@ function buildDistractors(word, allWords, count=2) {
 // Get fill-in-the-blank steps with unambiguous context
 function getContextualBlanks(levelNum, lessonNum, newWords, allWords) {
   const steps = [];
-
-  // Determine which grammar patterns apply to this lesson
   const key = levelNum + '-' + lessonNum;
   const topic = LESSON_VOCAB[key]?.topic || '';
 
-  let patterns = [];
-  if (topic === 'grammar_shi' || topic === 'identity') {
-    patterns = [...GRAMMAR_PATTERNS.shi_positive, ...GRAMMAR_PATTERNS.shi_negative];
-  } else if (topic === 'adj' || topic === 'adj_weather' || topic === 'adj_feeling') {
-    patterns = GRAMMAR_PATTERNS.hen_adj;
-  } else if (topic === 'food' || topic === 'study') {
-    patterns = GRAMMAR_PATTERNS.svo_verb;
-  } else if (topic === 'modal') {
-    patterns = [...GRAMMAR_PATTERNS.modal_neng_hui, ...GRAMMAR_PATTERNS.modal_yao_xihuan];
-  } else if (topic === 'location') {
-    patterns = GRAMMAR_PATTERNS.location_zai;
-  } else if (topic === 'adverb') {
-    patterns = GRAMMAR_PATTERNS.ye_dou;
-  } else if (topic === 'time') {
-    patterns = GRAMMAR_PATTERNS.time_first;
-  } else if (topic === 'connectors') {
-    patterns = [...GRAMMAR_PATTERNS.danshi_suoyi, ...GRAMMAR_PATTERNS.yinwei_suoyi];
-  } else if (topic === 'prepositions') {
-    patterns = GRAMMAR_PATTERNS.bi_comparison;
-  } else if (topic === 'modal2') {
-    patterns = GRAMMAR_PATTERNS.keyi_yinggai;
-  } else if (topic === 'sequence') {
-    patterns = GRAMMAR_PATTERNS.xian_zai_ranhou;
-  } else if (topic === 'freq') {
-    patterns = GRAMMAR_PATTERNS.frequency;
+  // Topic → pattern key mapping (expanded)
+  const TOPIC_MAP = {
+    grammar_shi: ['shi_positive','shi_negative'],
+    identity:    ['shi_positive','shi_negative'],
+    adj:         ['hen_adj','adj_degree'],
+    adj_weather: ['hen_adj','adj_degree'],
+    adj_feeling: ['hen_adj','adj_degree'],
+    food:        ['svo_verb','ba_structure'],
+    study:       ['svo_verb','time_expr'],
+    modal:       ['modal_neng_hui','modal_yao_xihuan','modal_nuance'],
+    modal2:      ['keyi_yinggai','modal_nuance'],
+    location:    ['location_zai','prep_duiyu'],
+    adverb:      ['ye_dou','adv_position','time_expr'],
+    time:        ['time_first','time_expr'],
+    connectors:  ['danshi_suoyi','yinwei_suoyi','adv_position'],
+    prepositions:['bi_comparison','prep_duiyu','comparison'],
+    sequence:    ['xian_zai_ranhou','time_expr'],
+    freq:        ['frequency','adv_position'],
+    comparison3: ['comparison','bi_comparison'],
+    change:      ['hsk3_yuelaiyue','time_expr'],
+    connectors3: ['danshi_suoyi','yinwei_suoyi','hsk3_suiran'],
+    emotions:    ['adj_degree','modal_nuance'],
+    time3:       ['time_expr','time_first'],
+    ba_structure:['ba_structure','result_comp'],
+    bei_passive: ['bei_passive','ba_structure'],
+    concession4: ['hsk3_suiran','adv_position'],
+    condition4:  ['adv_position','modal_nuance'],
+    causation4:  ['danshi_suoyi','yinwei_suoyi'],
+    grammar4:    ['ba_structure','bei_passive','result_comp'],
+    passive4:    ['bei_passive','ba_structure'],
+  };
+
+  const patternKeys = TOPIC_MAP[topic] || [];
+  let pool = patternKeys.flatMap(k => GRAMMAR_PATTERNS[k] || []);
+
+  // Level-based fallback pool (escalating complexity)
+  if (pool.length === 0) {
+    if (levelNum <= 1) pool = [...GRAMMAR_PATTERNS.svo_verb, ...GRAMMAR_PATTERNS.hen_adj, ...GRAMMAR_PATTERNS.location_zai];
+    else if (levelNum === 2) pool = [...GRAMMAR_PATTERNS.danshi_suoyi, ...GRAMMAR_PATTERNS.modal_nuance, ...GRAMMAR_PATTERNS.time_expr];
+    else if (levelNum === 3) pool = [...GRAMMAR_PATTERNS.hsk3_suiran, ...GRAMMAR_PATTERNS.hsk3_yuelaiyue, ...GRAMMAR_PATTERNS.comparison, ...GRAMMAR_PATTERNS.adv_position];
+    else pool = [...GRAMMAR_PATTERNS.ba_structure, ...GRAMMAR_PATTERNS.bei_passive, ...GRAMMAR_PATTERNS.result_comp, ...GRAMMAR_PATTERNS.prep_duiyu];
   }
 
-  // Fall back to general patterns if none match
-  if (patterns.length === 0) {
-    patterns = [...GRAMMAR_PATTERNS.svo_verb, ...GRAMMAR_PATTERNS.hen_adj];
-  }
+  // Use lesson number as seed to rotate patterns — same topic gets different patterns each lesson
+  const offset = (lessonNum * 3) % Math.max(pool.length, 1);
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
 
-  shuffle(patterns).slice(0, 2).forEach(p => {
+  rotated.slice(0, 1).forEach(p => {
     steps.push({
       type:'fill_blank_hc',
       sentence:    p.s,
       answer:      p.a,
-      options:     shuffle([p.a, ...p.x]).slice(0, 3),
+      options:     shuffle([p.a, ...p.x]).slice(0, 4),
       translation: p.tr,
+      explanation: p.ex || null,
     });
   });
 
@@ -1970,22 +2099,97 @@ function getErrorStep(levelNum, lessonNum, newWords, allWords) {
   const topic = LESSON_VOCAB[levelNum+'-'+lessonNum]?.topic || '';
 
   const ERRORS = {
-    grammar_shi:  [{bad:'我学生是',        good:'我是学生',       tip:'Subject + 是 + Noun order'}],
-    adj:          [{bad:'今天是很冷',       good:'今天很冷',       tip:'No 是 before 很 + adjective'}],
-    food:         [{bad:'我水喝',           good:'我喝水',         tip:'Subject + Verb + Object order'}],
-    modal:        [{bad:'我能会说中文',     good:'我会说中文',     tip:'Use 会 for learned skills, not 能+会 together'}],
-    location:     [{bad:'我在是家',         good:'我在家',         tip:'在 is the verb here, no 是 needed'}],
-    adverb:       [{bad:'我都也去',         good:'我也去',         tip:'也 and 都 have different uses'}],
-    time:         [{bad:'我今天昨天去',     good:'我今天去',       tip:'Use only one time word per clause'}],
-    motion:       [{bad:'我学校去',         good:'我去学校',       tip:'Verb before destination'}],
-    connectors:   [{bad:'因为下雨，但是我们不去', good:'因为下雨，所以我们不去', tip:'因为 pairs with 所以, not 但是'}],
-    modal2:       [{bad:'你可以应该休息',   good:'你应该休息',     tip:'Use one modal verb at a time'}],
-    grammar_ba:   [{bad:'我把书在桌子放',   good:'我把书放在桌子上',tip:'把 structure: 把+object+verb+location'}],
+    grammar_shi:  [
+      {bad:'我学生是',            good:'我是学生',                tip:'Subject + 是 + Noun: S+是+N'},
+      {bad:'他是一个学生好',      good:'他是一个好学生',          tip:'Adjective comes BEFORE the noun it modifies'},
+      {bad:'你是哪里人？我中国人是。', good:'我是中国人。',        tip:'是 must come between subject and predicate'},
+    ],
+    identity:     [
+      {bad:'我学生是',            good:'我是学生',                tip:'Subject + 是 + Noun order'},
+      {bad:'他不是老师很好',      good:'他不是很好的老师',        tip:'Adjective modifies the noun — put it before'},
+    ],
+    adj:          [
+      {bad:'今天是很冷',          good:'今天很冷',                tip:'No 是 before 很+adjective — 很 already links adj to subject'},
+      {bad:'她是漂亮',            good:'她很漂亮',                tip:'Use 很 (not 是) before a standalone adjective'},
+      {bad:'这苹果甜是',          good:'这苹果很甜',              tip:'Adjective predicate: Subject + 很 + Adj'},
+    ],
+    food:         [
+      {bad:'我水喝',              good:'我喝水',                  tip:'Chinese SVO order: Subject + Verb + Object'},
+      {bad:'他饭吃了',            good:'他吃饭了',                tip:'Verb comes before the object'},
+      {bad:'我们昨天饺子吃了',    good:'我们昨天吃饺子了',        tip:'Even with time words, verb comes before object'},
+    ],
+    modal:        [
+      {bad:'我能会说中文',        good:'我会说中文',              tip:"会 = learned skill. 能 = physical ability. Don't combine them."},
+      {bad:'他不会能跑步',        good:'他不能跑步',              tip:'Choose one modal: 不能 for physical inability'},
+      {bad:'你可以会游泳吗？',    good:'你会游泳吗？',            tip:'会 = learned ability; no need to add 可以'},
+    ],
+    modal2:       [
+      {bad:'你可以应该休息',      good:'你应该休息',              tip:'Use one modal verb at a time'},
+      {bad:'她必须要去',          good:'她必须去 / 她要去',       tip:'必须 and 要 are similar — pick one'},
+      {bad:'不可以你不能进',      good:'你不可以进',              tip:'Only one modal per clause, before the verb'},
+    ],
+    location:     [
+      {bad:'我在是家',            good:'我在家',                  tip:'在 already acts as the verb here — no 是 needed'},
+      {bad:'书桌子在上',          good:'书在桌子上',              tip:'Location: Subject + 在 + Place + Direction word'},
+      {bad:'他在工作公司',        good:'他在公司工作',            tip:'在+place comes BEFORE the main verb'},
+    ],
+    adverb:       [
+      {bad:'我都也去',            good:'我也去',                  tip:"也 = too/also. 都 = all/both. Don't stack them."},
+      {bad:'她不也来',            good:'她也不来',                tip:'也 comes before the negative 不'},
+      {bad:'他们都也是学生',      good:'他们都是学生',            tip:'都 already means "all" — 也 is redundant here'},
+    ],
+    time:         [
+      {bad:'我今天昨天去',        good:'我昨天去',                tip:'Use only one time word per clause'},
+      {bad:'昨天他了去',          good:'昨天他去了',              tip:'了 comes after the verb, not between subject and verb'},
+      {bad:'我去了昨天',          good:'我昨天去了',              tip:'Time words come before the verb (or at sentence start)'},
+    ],
+    motion:       [
+      {bad:'我学校去',            good:'我去学校',                tip:'Verb before destination: 去+place'},
+      {bad:'他来北京了从上海',    good:'他从上海来北京了',        tip:'从 (from) + place comes before 来/去 + destination'},
+    ],
+    connectors:   [
+      {bad:'因为下雨，但是我们不去', good:'因为下雨，所以我们不去', tip:'因为 (because) pairs with 所以 (therefore), not 但是'},
+      {bad:'虽然累，因为他工作',     good:'虽然累，但是他工作',     tip:'虽然 (although) pairs with 但是/还是, not 因为'},
+      {bad:'不但聪明，因为努力',     good:'不但聪明，而且努力',     tip:'不但 (not only) pairs with 而且 (but also)'},
+    ],
+    ba_structure: [
+      {bad:'我把书在桌子放',      good:'我把书放在桌子上',        tip:'把 structure: 把+Object+Verb+Complement'},
+      {bad:'把他批评了老师',      good:'老师把他批评了',          tip:'Subject + 把 + Object + Verb — subject comes first'},
+      {bad:'我把水喝',            good:'我把水喝完了',            tip:'把 needs a result or complement after the verb'},
+    ],
+    bei_passive:  [
+      {bad:'蛋糕被了孩子吃',      good:'蛋糕被孩子吃了',         tip:'被 structure: Object + 被 + Agent + Verb + 了'},
+      {bad:'他被批评老师了',      good:'他被老师批评了',          tip:'被 + agent (who did it) + verb'},
+    ],
+    comparison3:  [
+      {bad:'他高比我',            good:'他比我高',                tip:'比 comparison: A + 比 + B + Adjective'},
+      {bad:'苹果比香蕉更甜一点',  good:'苹果比香蕉甜一点',       tip:"After 比, don't add 更 — the comparison is already implied"},
+    ],
+    connectors3:  [
+      {bad:'虽然很忙，所以他来了',  good:'虽然很忙，但是他来了',  tip:'虽然 pairs with 但是/还是, not 所以'},
+      {bad:'因为很好，虽然他喜欢', good:'因为很好，所以他喜欢',   tip:'因为 pairs with 所以'},
+    ],
+    time3:        [
+      {bad:'他已经去了刚',        good:'他刚去了',                tip:'刚 (just now) and 已经 (already) have different timing — choose one'},
+      {bad:'我就到家了马上',      good:'我马上就到家了',          tip:'马上 (immediately) + 就 go before the verb'},
+    ],
+    prepositions: [
+      {bad:'我对他跟去',          good:'我跟他去',                tip:'跟 = with (accompaniment). 对 = to/towards (relationship)'},
+      {bad:'关于他，我对他说了',  good:'关于他，我跟他说了',      tip:'跟 = with/to someone. 关于 = about a topic.'},
+    ],
+    default:      [
+      {bad:'我水喝',              good:'我喝水',                  tip:'Subject + Verb + Object order in Chinese'},
+      {bad:'今天是很热',          good:'今天很热',                tip:'No 是 before adjective predicates — use 很'},
+      {bad:'他去了昨天',          good:'他昨天去了',              tip:'Time words go before the verb'},
+      {bad:'我们很努力学习',      good:'我们努力地学习',          tip:'Adverbs modifying verbs use 地: Adj+地+Verb'},
+      {bad:'她不来也',            good:'她也不来',                tip:'也 goes before the negative: 也不/也没'},
+    ],
   };
 
-  const pool = ERRORS[topic] || ERRORS['food'];
+  const pool = ERRORS[topic] || ERRORS['default'];
   if (!pool || pool.length === 0) return null;
-  const e = pool[Math.floor(Math.random() * pool.length)];
+  // Rotate by lessonNum so same topic gives different error each lesson
+  const e = pool[lessonNum % pool.length];
   return {type:'error_hc', wrong:e.bad, correct:e.good, tip:e.tip};
 }
 
@@ -2199,6 +2403,9 @@ function renderStep(idx) {
     case 'timed_recall':  renderTimedRecall(step); break;
     case 'hanzi_write':   renderHanziWrite(step); break;
     case 'context_pick':  renderContextPick(step); break;
+    case 'translate_cn':  renderTranslateCN(step); break;
+    case 'translate_en':  renderTranslateEN(step); break;
+    case 'usage_pick':    renderUsagePick(step); break;
     default: nextStep();
   }
 
@@ -3264,63 +3471,83 @@ function checkSentenceBuild() {
 // FILL BLANK HC — Handcrafted fill-in-the-blank
 // ══════════════════════════════════════════════════════════
 function renderFillBlankHC(step) {
-  const { sentence, answer, options, translation } = step;
+  const { sentence, answer, options, translation, explanation } = step;
   if (!sentence) { nextStep(); return; }
   const shuffled = shuffle([...options].slice(0,4));
 
-  stepArea.innerHTML = `
-    <div class="q-label write">✍️ Fill in the blank</div>
-    ${translation ? `<div style="font-size:13px;color:var(--ink2);margin-bottom:10px">${translation}</div>` : ''}
-    <div id="blank-sentence" style="font-size:22px;font-weight:700;color:var(--ink);margin-bottom:20px;letter-spacing:1px;line-height:1.8"></div>
-    <div class="opt-grid" id="opt-grid"></div>
-    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:14px';
 
-  // Render sentence with blank slot
-  const sentEl = document.getElementById('blank-sentence');
+  // Label
+  const lbl = document.createElement('div');
+  lbl.className = 'q-label write';
+  lbl.textContent = '✍️ Fill in the Blank';
+  card.appendChild(lbl);
+
+  // Sentence with blank
+  const sentWrap = document.createElement('div');
+  sentWrap.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px';
+  const sentEl = document.createElement('div');
+  sentEl.style.cssText = "font-family:'Noto Sans SC',sans-serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.8";
   const parts = sentence.split('___');
   if (parts.length === 2) {
     sentEl.appendChild(document.createTextNode(parts[0]));
     const slot = document.createElement('span');
     slot.id = 'blank-slot';
-    slot.style.cssText = 'display:inline-block;min-width:2em;border-bottom:3px solid var(--green);padding:0 6px;color:transparent;vertical-align:bottom';
+    slot.style.cssText = 'display:inline-block;min-width:2.5em;border-bottom:3px solid var(--gold);padding:0 6px;color:transparent;vertical-align:bottom;margin:0 2px';
     slot.textContent = answer;
     sentEl.appendChild(slot);
     sentEl.appendChild(document.createTextNode(parts[1]));
-  } else {
-    sentEl.textContent = sentence;
+  } else { sentEl.textContent = sentence; }
+  sentWrap.appendChild(sentEl);
+  if (translation) {
+    const tr = document.createElement('div');
+    tr.style.cssText = 'font-size:12px;color:var(--ink3);margin-top:8px;font-style:italic';
+    tr.textContent = translation;
+    sentWrap.appendChild(tr);
   }
+  card.appendChild(sentWrap);
 
-  const grid = document.getElementById('opt-grid');
-  shuffled.forEach(opt => {
+  // Options
+  const optsWrap = document.createElement('div');
+  optsWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+  optsWrap.id = 'hc-opts';
+  const labels = ['A','B','C','D'];
+  shuffled.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = 'opt-btn';
-    btn.textContent = opt;
+    btn.style.cssText = "display:flex;align-items:center;gap:12px;text-align:left;padding:14px 16px";
+    btn.innerHTML = `<span style="background:var(--border);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0">${labels[i]}</span><span style="font-family:'Noto Sans SC',sans-serif;font-size:19px;font-weight:600">${opt}</span>`;
     btn.addEventListener('click', () => {
       if (answeredStep) return;
       answeredStep = true;
       consumeEnergy();
       const ok = opt === answer;
-      if (ok) sessionXP += 3; else loseHeart();
+      if (ok) sessionXP += 3; else { loseHeart(); if(step.word) { sessionMistakes.push({word:step.word,type:'fill_blank_hc'}); addToRetry(step); } }
       handleAnswer(ok, step.word || null);
-      // Fill in the blank visually
       const slot = document.getElementById('blank-slot');
-      if (slot) {
-        slot.style.color = ok ? 'var(--green)' : 'var(--rose)';
-        slot.style.borderBottomColor = ok ? 'var(--green)' : 'var(--rose)';
-        slot.textContent = ok ? answer : opt;
-        if (!ok) {
-          setTimeout(() => { slot.textContent = answer; slot.style.color='var(--green)'; slot.style.borderBottomColor='var(--green)'; }, 800);
-        }
-      }
-      grid.querySelectorAll('.opt-btn').forEach(b => {
-        if (b.textContent === answer) b.classList.add('correct');
-        else if (b.textContent === opt && !ok) b.classList.add('wrong');
+      if (slot) { slot.style.color = ok ? 'var(--green)' : 'var(--rose)'; slot.style.borderBottomColor = ok?'var(--green)':'var(--rose)'; slot.textContent = opt; if(!ok) setTimeout(()=>{slot.textContent=answer;slot.style.color='var(--green)';slot.style.borderBottomColor='var(--green)'},900); }
+      document.querySelectorAll('#hc-opts .opt-btn').forEach(b => {
+        const bOpt = b.querySelector('span:last-child')?.textContent;
+        if (bOpt === answer) b.classList.add('correct');
+        else if (bOpt === opt && !ok) b.classList.add('wrong');
+        b.disabled = true;
       });
-      showFeedback(ok, null, ok ? null : answer);
-      bottomArea.innerHTML = '<button class="btn-primary" onclick="nextStep()">Continue →</button>';
+      const fb = document.getElementById('feedback');
+      if (fb) { fb.className=`feedback show ${ok?'ok':'err'}`; fb.innerHTML=ok?`<div class="fb-icon">✓</div><div><div class="fb-main">Correct!</div>${explanation?`<div class="fb-hint">${explanation}</div>`:''}</div>`:`<div class="fb-icon">✗</div><div><div class="fb-main">Answer: <span style="font-family:'Noto Sans SC',sans-serif">${answer}</span></div>${explanation?`<div class="fb-hint">${explanation}</div>`:''}</div>`; }
+      bottomArea.innerHTML=''; const nb=document.createElement('button'); nb.className='btn-primary'; nb.textContent=ok?'Continue →':'I understand →'; nb.addEventListener('click',nextStep); bottomArea.appendChild(nb);
     });
-    grid.appendChild(btn);
+    optsWrap.appendChild(btn);
   });
+  card.appendChild(optsWrap);
+
+  const fb = document.createElement('div');
+  fb.className='feedback'; fb.id='feedback';
+  fb.innerHTML='<div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div>';
+  card.appendChild(fb);
+  stepArea.appendChild(card);
+  bottomArea.innerHTML='';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3910,6 +4137,176 @@ function renderContextPick(step) {
   bottomArea.innerHTML='';
 }
 
+
+// ── TRANSLATE TO CHINESE: see English → type Chinese ───────────
+function renderTranslateCN(step) {
+  const w = step.word;
+  // Sentence-level for higher levels, word-level for HSK1-2
+  const isWord = !w.ex?.zh || (lesson?.plan?.levelNum || 1) <= 2;
+  const prompt  = isWord ? w.en : (w.ex?.en || w.en);
+  const answer  = isWord ? w.zh : (w.ex?.zh || w.zh);
+  const hint    = isWord ? w.py : null;
+
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:14px';
+  card.innerHTML = `
+    <div class="q-label write">✍️ Translate to Chinese</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;text-align:center">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:8px">Translate this into Chinese:</div>
+      <div style="font-size:${isWord?'26px':'20px'};font-weight:700;color:var(--ink);line-height:1.5">${prompt}</div>
+      ${hint ? `<div style="font-size:13px;color:var(--green);margin-top:6px">Pinyin: ${hint}</div>` : ''}
+    </div>
+    <div class="typing-wrap">
+      <input class="typing-input" id="tcn-input" type="text" placeholder="Type in Chinese…"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+        style="font-family:'Noto Sans SC',sans-serif;font-size:${isWord?'26px':'18px'};text-align:center"/>
+    </div>
+    <div class="typing-hint">Type the Chinese characters</div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.appendChild(card);
+
+  const input = document.getElementById('tcn-input');
+  if (input) { input.focus(); input.addEventListener('keydown', e => { if(e.key==='Enter') checkTranslateCN(answer, w); }); }
+  bottomArea.innerHTML=''; const btn=document.createElement('button'); btn.className='btn-primary'; btn.textContent='Check →';
+  btn.addEventListener('click', () => checkTranslateCN(answer, w)); bottomArea.appendChild(btn);
+}
+
+function checkTranslateCN(answer, w) {
+  if (answeredStep) return;
+  const input = document.getElementById('tcn-input');
+  if (!input) return;
+  // Strip punctuation for comparison
+  const clean = s => s.replace(/[，。！？、\s]/g,'');
+  const isCorrect = clean(input.value.trim()) === clean(answer);
+  answeredStep = true;
+  input.style.borderColor = isCorrect ? 'var(--green)' : 'var(--rose)';
+  input.disabled = true;
+  consumeEnergy();
+  if (!isCorrect) { loseHeart(); sessionMistakes.push({word:w,type:'translate_cn'}); addToRetry(steps[currentStep]); }
+  else { sessionXP += 4; }
+  const fb = document.getElementById('feedback');
+  if (fb) { fb.className=`feedback show ${isCorrect?'ok':'err'}`; fb.innerHTML=isCorrect?`<div class="fb-icon">✓</div><div><div class="fb-main">Correct! +4 XP</div></div>`:`<div class="fb-icon">✗</div><div><div class="fb-main">Answer: <span style="font-family:'Noto Sans SC',sans-serif;font-size:18px">${answer}</span></div></div>`; }
+  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+  handleAnswer(isCorrect, w);
+  bottomArea.innerHTML=''; const nb=document.createElement('button'); nb.className='btn-primary';
+  nb.textContent=isCorrect?'Continue →':'I understand →'; nb.addEventListener('click',nextStep); bottomArea.appendChild(nb);
+}
+
+// ── TRANSLATE TO ENGLISH: see Chinese → type English ───────────
+function renderTranslateEN(step) {
+  const w = step.word;
+  const levelNum = lesson?.plan?.levelNum || 1;
+  const isWord  = levelNum <= 2;
+  const prompt  = isWord ? w.zh : (w.ex?.zh || w.zh);
+  const answer  = isWord ? w.en : (w.ex?.en || w.en);
+
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:14px';
+  card.innerHTML = `
+    <div class="q-label read">📖 Translate to English</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;text-align:center">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:8px">What does this mean in English?</div>
+      <div style="font-family:'Noto Sans SC',sans-serif;font-size:${isWord?'32px':'20px'};font-weight:800;color:var(--green);line-height:1.5">${prompt}</div>
+      ${w.py && isWord ? `<div style="font-size:14px;color:var(--ink2);margin-top:6px">${w.py}</div>` : ''}
+      ${!isWord ? `<button id="ten-play" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:10px;padding:6px 14px;color:var(--blue);cursor:pointer;font-size:13px">🔊 Listen</button>` : ''}
+    </div>
+    <div class="typing-wrap">
+      <input class="typing-input" id="ten-input" type="text" placeholder="Type in English…"
+        autocomplete="off" spellcheck="false" style="font-size:17px"/>
+    </div>
+    <div class="typing-hint">Type the English meaning</div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.appendChild(card);
+
+  document.getElementById('ten-play')?.addEventListener('click', () => speak(prompt, 0.8));
+  const input = document.getElementById('ten-input');
+  if (input) { input.focus(); input.addEventListener('keydown', e => { if(e.key==='Enter') checkTranslateEN(answer, w); }); }
+  bottomArea.innerHTML=''; const btn=document.createElement('button'); btn.className='btn-primary'; btn.textContent='Check →';
+  btn.addEventListener('click', () => checkTranslateEN(answer, w)); bottomArea.appendChild(btn);
+}
+
+function checkTranslateEN(answer, w) {
+  if (answeredStep) return;
+  const input = document.getElementById('ten-input');
+  if (!input) return;
+  const userAns = input.value.trim().toLowerCase();
+  // Accept if user answer contains key words from the answer
+  const keyWords = answer.toLowerCase().replace(/[\/\(\)]/g,' ').split(/[\s,]+/).filter(x=>x.length>2);
+  const isCorrect = keyWords.length > 0 && keyWords.some(kw => userAns.includes(kw));
+  answeredStep = true;
+  input.style.borderColor = isCorrect ? 'var(--green)' : 'var(--rose)';
+  input.disabled = true;
+  consumeEnergy();
+  if (!isCorrect) { loseHeart(); sessionMistakes.push({word:w,type:'translate_en'}); addToRetry(steps[currentStep]); }
+  else { sessionXP += 3; }
+  const fb = document.getElementById('feedback');
+  if (fb) { fb.className=`feedback show ${isCorrect?'ok':'err'}`; fb.innerHTML=isCorrect?`<div class="fb-icon">✓</div><div><div class="fb-main">Correct! +3 XP</div><div class="fb-hint">${answer}</div></div>`:`<div class="fb-icon">✗</div><div><div class="fb-main">Answer: ${answer}</div></div>`; }
+  if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+  handleAnswer(isCorrect, w);
+  bottomArea.innerHTML=''; const nb=document.createElement('button'); nb.className='btn-primary';
+  nb.textContent=isCorrect?'Continue →':'I understand →'; nb.addEventListener('click',nextStep); bottomArea.appendChild(nb);
+}
+
+// ── USAGE PICK: which sentence uses the word CORRECTLY? ────────
+function renderUsagePick(step) {
+  const w = step.word;
+  const pool = step.pool || _wordCache[lesson?.plan?.levelNum] || [];
+
+  // Build a correct sentence and 2-3 wrong ones
+  const correctSentence = w.ex?.zh || `他很${w.zh}。`;
+  // Generate wrong sentences by misplacing the word
+  const wrongs = [
+    w.ex?.zh ? `${w.zh}他很。` : `他${w.zh}很。`,   // wrong word order
+    w.ex?.zh ? `他是${w.zh}很。` : `他是很${w.zh}。`, // added 是 wrongly
+  ].filter(s => s !== correctSentence);
+
+  const options = shuffle([correctSentence, ...wrongs.slice(0,2)]);
+  const labels  = ['A','B','C','D'];
+
+  stepArea.innerHTML = '';
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;flex-direction:column;gap:14px';
+  card.innerHTML = `
+    <div class="q-label read">📖 Correct Usage</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px">
+      <div style="font-size:12px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Which sentence uses <span style="font-family:'Noto Sans SC',sans-serif;color:var(--gold)">${w.zh}</span> correctly?</div>
+      <div style="font-size:13px;color:var(--ink2)">Meaning: ${w.en} (${w.py})</div>
+    </div>
+    <div id="usage-opts" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="feedback" id="feedback"><div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div></div>`;
+  stepArea.appendChild(card);
+
+  const optCont = document.getElementById('usage-opts');
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.style.cssText = "display:flex;align-items:center;gap:12px;text-align:left;padding:14px 16px";
+    btn.innerHTML = `<span style="background:var(--border);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:800;color:var(--ink2);flex-shrink:0">${labels[i]}</span><span style="font-family:'Noto Sans SC',sans-serif;font-size:18px">${opt}</span>`;
+    btn.addEventListener('click', () => {
+      if (answeredStep) return;
+      const isCorrect = opt === correctSentence;
+      answeredStep = true; consumeEnergy();
+      document.querySelectorAll('#usage-opts .opt-btn').forEach((b,j) => {
+        if (options[j] === correctSentence) b.classList.add('correct');
+        else if (j === i && !isCorrect) b.classList.add('wrong');
+        b.disabled = true;
+      });
+      if (!isCorrect) { loseHeart(); sessionMistakes.push({word:w,type:'usage_pick'}); addToRetry(steps[currentStep]); }
+      else { sessionXP += 2; }
+      const fb = document.getElementById('feedback');
+      if (fb) { fb.className=`feedback show ${isCorrect?'ok':'err'}`; fb.innerHTML=isCorrect?`<div class="fb-icon">✓</div><div><div class="fb-main">Correct!</div></div>`:`<div class="fb-icon">✗</div><div><div class="fb-main">Correct: <span style="font-family:'Noto Sans SC',sans-serif">${correctSentence}</span></div></div>`; }
+      if (steps[currentStep].section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+      handleAnswer(isCorrect, w);
+      bottomArea.innerHTML=''; const nb=document.createElement('button'); nb.className='btn-primary';
+      nb.textContent=isCorrect?'Continue →':'I understand →'; nb.addEventListener('click',nextStep); bottomArea.appendChild(nb);
+    });
+    optCont.appendChild(btn);
+  });
+  bottomArea.innerHTML='';
+}
+
 // SPEED TIMER
 // ══════════════════════════════════════════════════════════
 function startSpeedTimer() {
@@ -4252,6 +4649,14 @@ function showToast(msg) {
 // INIT
 // ══════════════════════════════════════════════════════════
 async function init() {
+  // Safety: if loading takes > 12s, show error instead of spinning forever
+  const loadingTimeout = setTimeout(() => {
+    const sa = document.getElementById('step-area');
+    if (sa && sa.querySelector('.spinner')) {
+      sa.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--rose);font-size:14px"><strong>Loading timed out</strong><br/>Please check your connection.<br/><br/><a href="/app/dashboard.html" style="color:var(--green)">← Back</a></div>';
+    }
+  }, 12000);
+
   try {
     const { data } = await sb.auth.getSession();
     const user = data?.session?.user;
@@ -4307,6 +4712,7 @@ async function init() {
     if (eoQuitBtn) eoQuitBtn.addEventListener('click', loseAllPointsAndQuit);
 
     if (hearts <= 0) {
+      clearTimeout(loadingTimeout);
       document.getElementById('nh-overlay').classList.add('show');
     } else {
       try {
@@ -4318,6 +4724,7 @@ async function init() {
     }
 
   } catch(e) {
+    clearTimeout(loadingTimeout);
     const sa = document.getElementById('step-area');
     if (sa) sa.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--rose);font-size:14px;word-break:break-all"><strong>Init Error:</strong><br/>' + e.message + '<br/><br/><a href="/app/dashboard.html" style="color:var(--green)">← Back</a></div>';
   }
