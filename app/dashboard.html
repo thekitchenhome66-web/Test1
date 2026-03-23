@@ -255,6 +255,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+.node-replay{position:absolute;top:-4px;right:-4px;background:#3ddb7a;color:#080f0b;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:900;line-height:1}
+.lesson-node.done:hover .node-replay{transform:rotate(180deg);transition:transform .3s}
 </style>
 </head>
 <body>
@@ -678,22 +681,61 @@ function renderMockTests() {
   const list = document.getElementById('mock-test-list');
   if (!list) return;
   const currentLevel = user.level;
+  const currentLesson = user.lesson;
   list.innerHTML = '';
   const colors = ['','#3ddb7a','#60a5fa','#f5c842','#fb923c','#a78bfa','#f5c842'];
   const names  = ['','Beginner','Elementary','Intermediate','Upper-Int.','Advanced','Mastery'];
-  for (let lv = 1; lv <= currentLevel; lv++) {
+  const totalLessons = [0, 50, 50, 45, 55, 60, 65];
+
+  for (let lv = 1; lv <= 6; lv++) {
+    const isUnlocked  = lv <= currentLevel;
     const examPending = localStorage.getItem(key('hsk_exam_pending')) === String(lv);
-    const btn = document.createElement('button');
-    btn.style.cssText = `width:100%;background:var(--card);border:${examPending?'2px solid '+colors[lv]:'1px solid var(--border)'};border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;${examPending?'box-shadow:0 0 0 3px '+colors[lv]+'22':''}`;
-    btn.innerHTML = `
-      <div style="width:40px;height:40px;border-radius:10px;background:${colors[lv]}22;border:1.5px solid ${colors[lv]}44;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:${colors[lv]};flex-shrink:0">${lv}</div>
-      <div style="flex:1">
-        <div style="font-size:14px;font-weight:700;color:var(--ink)">HSK ${lv} — ${names[lv]}</div>
-        <div style="font-size:11px;color:var(--ink2);margin-top:2px">${examPending?'🎯 Exam ready! You finished all lessons':'Full simulation · 300 points · Timed'}</div>
+    const isActive    = lv === currentLevel;
+    const isDone      = lv < currentLevel;
+    const lessonsLeft = isActive ? (totalLessons[lv] - currentLesson + 1) : 0;
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:var(--card);
+      border:${examPending ? '2px solid '+colors[lv] : isDone ? '1px solid rgba(61,219,122,.2)' : isActive ? '1.5px solid var(--border2)' : '1px solid var(--border)'};
+      border-radius:16px;padding:16px;
+      display:flex;align-items:center;gap:14px;
+      ${examPending ? 'box-shadow:0 0 0 3px '+colors[lv]+'22' : ''}
+      ${!isUnlocked ? 'opacity:0.45' : ''}
+    `;
+
+    let statusTag = '';
+    if (examPending) {
+      statusTag = `<div style="background:${colors[lv]};color:#000;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;margin-top:4px;display:inline-block">🏆 EXAM READY</div>`;
+    } else if (isDone) {
+      statusTag = `<div style="background:rgba(61,219,122,.12);color:var(--green);font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;margin-top:4px;display:inline-block">✓ Completed</div>`;
+    } else if (isActive) {
+      statusTag = `<div style="background:rgba(255,255,255,.06);color:var(--ink2);font-size:10px;font-weight:600;padding:3px 8px;border-radius:999px;margin-top:4px;display:inline-block">Lesson ${currentLesson} / ${totalLessons[lv]}</div>`;
+    } else {
+      statusTag = `<div style="background:rgba(255,255,255,.04);color:var(--ink3);font-size:10px;font-weight:600;padding:3px 8px;border-radius:999px;margin-top:4px;display:inline-block">🔒 Locked</div>`;
+    }
+
+    let actionBtn = '';
+    if (!isUnlocked) {
+      actionBtn = `<div style="font-size:20px">🔒</div>`;
+    } else if (examPending) {
+      actionBtn = `<button onclick="window.location.href='/app/hsk-exam.html?level=${lv}'" style="background:${colors[lv]};color:#000;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Take Exam →</button>`;
+    } else {
+      actionBtn = `<button onclick="window.location.href='/app/hsk-exam.html?level=${lv}'" style="background:transparent;color:${colors[lv]};border:1.5px solid ${colors[lv]}44;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ Practice</button>`;
+    }
+
+    card.innerHTML = `
+      <div style="width:44px;height:44px;border-radius:12px;background:${colors[lv]}18;border:1.5px solid ${colors[lv]}44;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-size:20px;font-weight:900;color:${colors[lv]}">${lv}</span>
       </div>
-      <div style="font-size:13px;font-weight:800;color:${colors[lv]};white-space:nowrap">${examPending?'🏆 Take':'▶ Start'}</div>`;
-    btn.onclick = () => { window.location.href = `/app/hsk-exam.html?level=${lv}`; };
-    list.appendChild(btn);
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--ink)">HSK ${lv} — ${names[lv]}</div>
+        <div style="font-size:11px;color:var(--ink2)">300 pts · Listening + Reading + Writing</div>
+        ${statusTag}
+      </div>
+      ${actionBtn}
+    `;
+    list.appendChild(card);
   }
 }
 
@@ -780,10 +822,11 @@ function buildLessonNodes(hsk, currentLevel, currentLesson, isDone) {
       <div class="lesson-node ${state} ${isCheckpoint ? 'checkpoint' : ''}"
         onclick="handleNodeClick(${hsk.level}, ${i}, '${state}')"
         title="Block ${block} · Lesson ${posInBlock+1}">
-        ${state === 'done'   ? `<span class="node-icon">✓</span>` :
+        ${state === 'done'   ? `<span class="node-icon" title="Tap to replay">✓</span>` :
           state === 'active' ? `<span class="node-num">${i}</span>` :
           state === 'locked' ? `<span class="node-icon">🔒</span>` : ''}
         <span class="node-label">${isCheckpoint ? '✓ Check' : `B${block}·L${posInBlock+1}`}</span>
+        ${state === 'done' ? '<span class="node-replay">↺</span>' : ''}
       </div>
     </div>`;
   }
@@ -802,12 +845,51 @@ function toggleHSK(section, level) {
 }
 
 function handleNodeClick(level, lesson, state) {
-  if (state === 'locked') { showToast('Complete previous lessons first!'); return; }
-  if (state === 'done') { showToast('Already completed! Great job ✓'); return; }
+  if (state === 'locked') { showToast('Complete previous lessons first! 🔒'); return; }
+  if (state === 'done') {
+    // Show replay modal instead of toast
+    showReplayModal(level, lesson);
+    return;
+  }
   if (state === 'active') {
     if (user.hearts <= 0) { showHeartsModal(); return; }
     window.location.href = `/app/lesson-10.html?level=${level}&lesson=${lesson}`;
   }
+}
+
+function showReplayModal(level, lesson) {
+  // Remove existing if any
+  const existing = document.getElementById('replay-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'replay-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  modal.innerHTML = `
+    <div style="background:#162235;border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:28px 24px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:16px">
+      <div style="text-align:center">
+        <div style="font-size:36px;margin-bottom:8px">🔄</div>
+        <div style="font-size:18px;font-weight:800;color:#fff">Replay Lesson</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:4px">HSK ${level} · Lesson ${lesson}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:14px;font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;text-align:center">
+        You already completed this lesson! Replaying will re-teach the same vocabulary and grammar — great for review. Progress will <em style="color:#f5c842">not</em> be overwritten.
+      </div>
+      <button onclick="replayLesson(${level},${lesson})" style="width:100%;padding:15px;border-radius:14px;border:none;background:linear-gradient(135deg,#3ddb7a,#2bc968);color:#080f0b;font-size:16px;font-weight:700;cursor:pointer">
+        ▶ Replay Lesson
+      </button>
+      <button onclick="document.getElementById('replay-modal').remove()" style="width:100%;padding:13px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.6);font-size:14px;font-weight:600;cursor:pointer">
+        Cancel
+      </button>
+    </div>`;
+  // Close on backdrop click
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function replayLesson(level, lesson) {
+  document.getElementById('replay-modal')?.remove();
+  window.location.href = `/app/lesson-10.html?level=${level}&lesson=${lesson}&replay=1`;
 }
 
 /* ── LESSON NAVIGATION ── */
