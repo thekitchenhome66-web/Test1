@@ -225,10 +225,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .options-grid{display:flex;flex-direction:column;gap:10px}
 .options-grid.single{flex-direction:column}
 .opt-btn{
-  background:var(--card2);border:2px solid var(--border);border-radius:14px;
-  padding:14px 16px;font-family:'Noto Sans SC',sans-serif;font-size:17px;font-weight:600;
-  color:var(--ink);cursor:pointer;transition:all var(--t);text-align:left;line-height:1.4;
+  -webkit-appearance:none;appearance:none;
+  background:#162218;background:var(--card2);
+  border:2px solid rgba(74,222,128,.13);border:2px solid var(--border);
+  border-radius:14px;padding:14px 16px;
+  font-family:'Noto Sans SC',sans-serif;font-size:17px;font-weight:600;
+  color:#e8f2ee;color:var(--ink);
+  cursor:pointer;transition:all var(--t);text-align:left;line-height:1.4;
   display:flex;align-items:center;gap:12px;width:100%;
+  box-sizing:border-box;
 }
 .opt-btn:hover:not(:disabled){border-color:rgba(61,219,122,.4);background:rgba(61,219,122,.06);transform:translateY(-1px)}
 .opt-btn.correct{border-color:var(--green);background:rgba(61,219,122,.12);color:var(--green)}
@@ -1568,6 +1573,56 @@ const GRAMMAR_PATTERNS = {
     {s:'我___看电影，不是每天看。',  a:'有时候',x:['经常','平时'],tr:'I sometimes watch movies, not every day.'},
     {s:'她___去图书馆，几乎每天都去。', a:'经常', x:['偶尔','有时候'], tr:'She often goes to the library, almost every day.'},
     {s:'我___去旅游，不是每年都去。',   a:'偶尔', x:['经常','总是'],   tr:'I occasionally travel, not every year.'},
+    {s:'他___锻炼，每天早上都跑步。',   a:'坚持', x:['偶尔','有时候'], tr:'He persists in exercising, runs every morning.'},
+    {s:'我们___联系，保持着友谊。',     a:'经常', x:['突然','刚才'],   tr:'We often keep in touch, maintaining friendship.'},
+  ],
+
+  // ── NEGATION PATTERNS ─────────────────────────────────────────
+  negation: [
+    {s:'他___是学生，是老师。',      a:'不', x:['没','别'],   tr:'He is not a student, he is a teacher.', ex:'不 negates 是'},
+    {s:'我___去过北京。',            a:'没有', x:['不','别'],  tr:'I have never been to Beijing.', ex:'没有 negates completed actions'},
+    {s:'请___在这里吸烟。',          a:'别', x:['不','没'],   tr:'Please do not smoke here.', ex:"别 = imperative don't"},
+    {s:'他___来，他生病了。',        a:'没有', x:['不','别'],  tr:'He did not come, he was sick.'},
+    {s:'你___说话，老师在讲课。',    a:'别', x:['不','没'],   tr:"Don't talk, the teacher is lecturing."},
+    {s:'这件事我___同意。',          a:'不', x:['没','别'],   tr:'I do not agree with this matter.'},
+  ],
+
+  // ── ASPECT PARTICLES (了/过/着) ───────────────────────────────
+  aspect: [
+    {s:'他吃___饭，走了。',          a:'了', x:['过','着'],  tr:'He ate and left.', ex:'了 marks completed action'},
+    {s:'我___北京旅游过。',          a:'去', x:['来','到'],  tr:'I have traveled to Beijing.'},
+    {s:'她穿___一件红色的衣服。',    a:'着', x:['了','过'],  tr:'She is wearing a red outfit.', ex:'着 = ongoing state'},
+    {s:'他去___北京三次。',          a:'过', x:['了','着'],  tr:'He has been to Beijing three times.', ex:'过 = experiential'},
+    {s:'门开___呢，快关上。',        a:'着', x:['了','过'],  tr:'The door is open, close it quickly.'},
+    {s:'我已经做___作业了。',        a:'好', x:['完了','着'],tr:'I have already finished the homework.'},
+  ],
+
+  // ── DEGREE COMPLEMENTS ────────────────────────────────────────
+  degree_comp: [
+    {s:'他跑___很快。',              a:'得', x:['的','地'],  tr:'He runs very fast.', ex:'Verb+得+Complement'},
+    {s:'她说中文说___很好。',        a:'得', x:['的','地'],  tr:'She speaks Chinese very well.'},
+    {s:'他高兴___跳了起来。',        a:'得', x:['地','的'],  tr:'He was so happy he jumped up.'},
+    {s:'这道题难___我做不出来。',    a:'得', x:['地','的'],  tr:'This question is so hard I cannot solve it.'},
+    {s:'她唱___非常好听。',          a:'得', x:['的','地'],  tr:'She sings extremely beautifully.'},
+  ],
+
+  // ── QUESTION WORDS ────────────────────────────────────────────
+  question_words: [
+    {s:'你___去？',                  a:'去哪里', x:['哪里去','去哪'],  tr:'Where are you going?', ex:'去哪里 is the standard order'},
+    {s:'这___书？',                  a:'是谁的', x:['谁是的','是的谁'],tr:'Whose book is this?'},
+    {s:'他___来的？',                a:'怎么', x:['如何','怎'],        tr:'How did he come?'},
+    {s:'你___想吃什么？',            a:'最', x:['很','太'],            tr:'What do you most want to eat?'},
+    {s:'这件衣服___？',              a:'多少钱', x:['几元钱','多钱'],   tr:'How much is this piece of clothing?'},
+  ],
+
+  // ── CONDITIONAL II ────────────────────────────────────────────
+  conditional2: [
+    {s:'___下雨，我们就不去了。',    a:'要是', x:['虽然','因为'], tr:'If it rains, we will not go.', ex:'要是 = if (colloquial)'},
+    {s:'___你同意，我们就开始。',    a:'只要', x:['虽然','即使'], tr:'As long as you agree, we will start.'},
+    {s:'___努力，我也能做到。',      a:'只要', x:['虽然','尽管'], tr:'As long as I work hard, I can do it.'},
+    {s:'___天气好，我们去爬山。',    a:'如果', x:['虽然','因为'], tr:'If the weather is good, we will go hiking.'},
+    {s:'___你去，我也去。',          a:'如果', x:['虽然','不管'], tr:'If you go, I will go too.'},
+    {s:'___你不努力，就会失败。',    a:'如果', x:['虽然','因为'], tr:'If you do not work hard, you will fail.'},
   ],
 
   // ── ADJECTIVE USAGE (adjectival predicates, degree adverbs) ──
@@ -1676,6 +1731,120 @@ const GRAMMAR_PATTERNS = {
     {s:'她喜欢___听音乐，___做作业。', a:'一边', x:['一直','一起'], tr:'She likes to listen to music while doing homework.'},
   ],
 };
+
+
+// ═══════════════════════════════════════════════════════════════
+// WORD ORDER EXERCISE BANK — difficulty scales by level
+// Each entry: words[] to arrange, answer (correct order), english
+// ═══════════════════════════════════════════════════════════════
+const WORD_ORDER_BANK = {
+  // ── HSK 1 (3-4 words, simple SVO) ───────────────────────────
+  1: [
+    {w:['我','是','学生'],       a:'我是学生',           en:'I am a student'},
+    {w:['她','喝','水'],         a:'她喝水',             en:'She drinks water'},
+    {w:['他','吃','饭'],         a:'他吃饭',             en:'He eats rice'},
+    {w:['我','有','书'],         a:'我有书',             en:'I have a book'},
+    {w:['猫','在','家'],         a:'猫在家',             en:'The cat is at home'},
+    {w:['我','爱','你'],         a:'我爱你',             en:'I love you'},
+    {w:['她','是','老师'],       a:'她是老师',           en:'She is a teacher'},
+    {w:['我','去','学校'],       a:'我去学校',           en:'I go to school'},
+    {w:['他','有','钱'],         a:'他有钱',             en:'He has money'},
+    {w:['我','不','去'],         a:'我不去',             en:'I am not going'},
+    {w:['你','好','吗'],         a:'你好吗',             en:'How are you?'},
+    {w:['书','在','桌子上'],     a:'书在桌子上',         en:'The book is on the table'},
+    {w:['我','很','高兴'],       a:'我很高兴',           en:'I am very happy'},
+    {w:['他','不','是','学生'],  a:'他不是学生',         en:'He is not a student'},
+    {w:['我','喝','咖啡'],       a:'我喝咖啡',           en:'I drink coffee'},
+    {w:['她','吃','苹果'],       a:'她吃苹果',           en:'She eats an apple'},
+    {w:['我们','是','朋友'],     a:'我们是朋友',         en:'We are friends'},
+    {w:['他','叫','小明'],       a:'他叫小明',           en:'His name is Xiao Ming'},
+    {w:['这','是','我的','书'],  a:'这是我的书',         en:'This is my book'},
+    {w:['那','是','什么'],       a:'那是什么',           en:'What is that?'},
+  ],
+
+  // ── HSK 2 (4-5 words, time/location/modal) ──────────────────
+  2: [
+    {w:['我','昨天','去','北京'],         a:'我昨天去北京',           en:'I went to Beijing yesterday'},
+    {w:['她','今天','很','忙'],           a:'她今天很忙',             en:'She is very busy today'},
+    {w:['我','想','喝','茶'],             a:'我想喝茶',               en:'I want to drink tea'},
+    {w:['他','能','说','中文'],           a:'他能说中文',             en:'He can speak Chinese'},
+    {w:['我','每天','跑步'],             a:'我每天跑步',             en:'I run every day'},
+    {w:['书','在','桌子','上面'],         a:'书在桌子上面',           en:'The book is on top of the table'},
+    {w:['他','明天','来','吗'],           a:'他明天来吗',             en:'Is he coming tomorrow?'},
+    {w:['我','不','想','去'],             a:'我不想去',               en:'I do not want to go'},
+    {w:['她','会','唱歌'],               a:'她会唱歌',               en:'She can sing'},
+    {w:['我','已经','吃','了'],           a:'我已经吃了',             en:'I have already eaten'},
+    {w:['他','在','图书馆','学习'],       a:'他在图书馆学习',         en:'He studies in the library'},
+    {w:['妈妈','在','厨房','做饭'],       a:'妈妈在厨房做饭',         en:'Mom is cooking in the kitchen'},
+    {w:['我','喜欢','吃','饺子'],         a:'我喜欢吃饺子',           en:'I like to eat dumplings'},
+    {w:['他','比','我','高'],             a:'他比我高',               en:'He is taller than me'},
+    {w:['你','应该','多','休息'],         a:'你应该多休息',           en:'You should rest more'},
+    {w:['我','要','买','东西'],           a:'我要买东西',             en:'I want to buy things'},
+    {w:['他','从来','不','迟到'],         a:'他从来不迟到',           en:'He never arrives late'},
+    {w:['我','刚','回来'],               a:'我刚回来',               en:'I just came back'},
+    {w:['她','马上','就来'],             a:'她马上就来',             en:'She is coming right away'},
+    {w:['这里','很','安静'],             a:'这里很安静',             en:'It is very quiet here'},
+  ],
+
+  // ── HSK 3 (5-6 words, connectors/adverbs/complements) ───────
+  3: [
+    {w:['虽然','他','很忙','但是','来了'],           a:'虽然他很忙，但是来了',       en:'Although he was busy, he still came'},
+    {w:['因为','下雨','所以','我们','不去'],          a:'因为下雨，所以我们不去',     en:'Because it rained, we did not go'},
+    {w:['他','不但','聪明','而且','努力'],            a:'他不但聪明，而且努力',       en:'He is not only smart but also hardworking'},
+    {w:['我','一边','听音乐','一边','做作业'],        a:'我一边听音乐，一边做作业',   en:'I listen to music while doing homework'},
+    {w:['天气','越来越','冷了'],                     a:'天气越来越冷了',             en:'The weather is getting colder and colder'},
+    {w:['只有','努力','才能','成功'],                a:'只有努力，才能成功',         en:'Only by working hard can you succeed'},
+    {w:['他','终于','通过','了','考试'],              a:'他终于通过了考试',           en:'He finally passed the exam'},
+    {w:['我','对','中国历史','很','感兴趣'],          a:'我对中国历史很感兴趣',       en:'I am very interested in Chinese history'},
+    {w:['这个','问题','很','容易','解决'],            a:'这个问题很容易解决',         en:'This problem is very easy to solve'},
+    {w:['他','把','书','放','在桌子上'],              a:'他把书放在桌子上',           en:'He put the book on the table'},
+    {w:['书','被','他','拿走','了'],                  a:'书被他拿走了',               en:'The book was taken away by him'},
+    {w:['她','越来越','喜欢','学','中文'],            a:'她越来越喜欢学中文',         en:'She likes learning Chinese more and more'},
+    {w:['如果','你','努力','就','成功'],              a:'如果你努力，就成功',         en:'If you work hard, you will succeed'},
+    {w:['他','的','汉语','水平','很高'],              a:'他的汉语水平很高',           en:'His Chinese level is very high'},
+    {w:['我','昨天','差点','迟到','了'],              a:'我昨天差点迟到了',           en:'I almost arrived late yesterday'},
+    {w:['他','突然','站','了','起来'],                a:'他突然站了起来',             en:'He suddenly stood up'},
+    {w:['这个','城市','发展','得','很快'],            a:'这个城市发展得很快',         en:'This city is developing very fast'},
+    {w:['请','把','门','关','好'],                   a:'请把门关好',                 en:'Please close the door properly'},
+    {w:['她','对','工作','非常','认真'],              a:'她对工作非常认真',           en:'She is very serious about her work'},
+    {w:['我','需要','好好','复习','一下'],            a:'我需要好好复习一下',         en:'I need to review carefully'},
+  ],
+
+  // ── HSK 4 (6-7 words, complex grammar) ──────────────────────
+  4: [
+    {w:['无论','发生','什么','我','都','支持你'],     a:'无论发生什么，我都支持你',     en:'No matter what happens, I support you'},
+    {w:['尽管','很累','他','还是','坚持','下去了'],   a:'尽管很累，他还是坚持下去了',   en:'Although tired, he still persisted'},
+    {w:['既然','决定了','就','要','坚持','到底'],     a:'既然决定了，就要坚持到底',     en:'Since you decided, you must see it through'},
+    {w:['随着','科技','的','发展','生活','越来越','方便'], a:'随着科技的发展，生活越来越方便', en:'With the development of technology, life is more convenient'},
+    {w:['这','不','仅仅','是','一个','问题'],         a:'这不仅仅是一个问题',           en:'This is not just one problem'},
+    {w:['他','竟然','一个人','完成','了','这件事'],   a:'他竟然一个人完成了这件事',     en:'He surprisingly completed this alone'},
+    {w:['由于','天气','原因','活动','取消','了'],     a:'由于天气原因，活动取消了',     en:'Due to weather, the activity was cancelled'},
+    {w:['对于','这个','问题','我','有','不同','看法'], a:'对于这个问题，我有不同看法',   en:'Regarding this issue, I have a different view'},
+    {w:['他','把','这件事','处理','得','很','好'],    a:'他把这件事处理得很好',         en:'He handled this matter very well'},
+    {w:['这本书','值得','每个人','认真','阅读'],      a:'这本书值得每个人认真阅读',     en:'This book is worth everyone reading carefully'},
+    {w:['正是','因为','努力','他','才','成功了'],     a:'正是因为努力，他才成功了',     en:'It is precisely because of hard work that he succeeded'},
+    {w:['这个','方案','有','很多','优点','和','缺点'], a:'这个方案有很多优点和缺点',     en:'This plan has many advantages and disadvantages'},
+    {w:['只有','不断','努力','才能','取得','进步'],   a:'只有不断努力，才能取得进步',   en:'Only by constantly working hard can you make progress'},
+    {w:['他','之所以','成功','是因为','从不','放弃'],  a:'他之所以成功，是因为从不放弃', en:'The reason he succeeded is that he never gave up'},
+    {w:['无论','多么','困难','都','要','坚持下去'],   a:'无论多么困难，都要坚持下去',   en:'No matter how difficult, you must keep going'},
+  ],
+
+  // ── HSK 5-6 (7-9 words, formal/literary) ───────────────────
+  5: [
+    {w:['在','经济','全球化','的','背景下','各国','加强','了','合作'], a:'在经济全球化的背景下，各国加强了合作', en:'Against the backdrop of economic globalization, countries have strengthened cooperation'},
+    {w:['这项','研究','对于','推动','社会','发展','具有','重要','意义'], a:'这项研究对于推动社会发展具有重要意义', en:'This research has important significance for promoting social development'},
+    {w:['只有','深刻','理解','文化','差异','才能','有效','沟通'],       a:'只有深刻理解文化差异，才能有效沟通', en:'Only by deeply understanding cultural differences can one communicate effectively'},
+    {w:['尽管','面临','重重','困难','他','仍然','坚持','了','自己的','立场'], a:'尽管面临重重困难，他仍然坚持了自己的立场', en:'Despite facing many difficulties, he still maintained his position'},
+    {w:['随着','人口','老龄化','的','加剧','社会','保障','问题','日益','突出'], a:'随着人口老龄化的加剧，社会保障问题日益突出', en:'As population aging intensifies, social security issues become more prominent'},
+    {w:['这','不','是','单纯','的','经济','问题','而是','涉及','多个','层面'], a:'这不是单纯的经济问题，而是涉及多个层面', en:'This is not a simple economic issue, but involves multiple dimensions'},
+    {w:['要','从','根本上','解决','这个','问题','需要','各方','共同','努力'], a:'要从根本上解决这个问题，需要各方共同努力', en:'To fundamentally solve this problem requires joint efforts from all parties'},
+    {w:['他','的','观点','虽然','有些','偏激','但','不无','道理'],     a:'他的观点虽然有些偏激，但不无道理',     en:'His view is somewhat extreme, but not without reason'},
+    {w:['这项','政策','的','实施','在一定程度上','促进了','经济','发展'], a:'这项政策的实施在一定程度上促进了经济发展', en:'The implementation of this policy promoted economic development to some extent'},
+    {w:['面对','挑战','我们','应当','积极','寻求','解决','方案'],       a:'面对挑战，我们应当积极寻求解决方案',     en:'Facing challenges, we should actively seek solutions'},
+  ],
+};
+// HSK6 uses same bank as HSK5
+WORD_ORDER_BANK[6] = WORD_ORDER_BANK[5];
 
 // ── EXTENDED GRAMMAR PATTERNS FOR HSK 3–6 ───────────────────────
 // All patterns follow the NO-AMBIGUITY rule:
@@ -1965,7 +2134,7 @@ function generateLessonSteps(levelNum, lessonNum, allWords) {
   });
 
   // PHASE 3: Production — each word gets a DIFFERENT typing/building type
-  const prodPool = shuffle(['pinyin_type','fill_blank','sentence_build','word_position','hanzi_write','timed_recall','translate_cn','usage_pick']);
+  const prodPool = shuffle(['pinyin_type','fill_blank','sentence_build','word_position','hanzi_write','timed_recall','translate_cn','usage_pick','word_order']);
   newWords.forEach((w, i) => {
     const type = prodPool[i % prodPool.length];
     if (type === 'fill_blank' && w.ex?.zh?.includes(w.zh)) {
@@ -1985,6 +2154,8 @@ function generateLessonSteps(levelNum, lessonNum, allWords) {
       steps.push({type:'translate_cn', word:w});
     } else if (type === 'usage_pick') {
       steps.push({type:'usage_pick', word:w, pool:allWords});
+    } else if (type === 'word_order') {
+      steps.push({type:'word_order', word:w, _bankOffset:i});
     } else {
       steps.push({type:'pinyin_type', word:w});
     }
@@ -2422,6 +2593,7 @@ function renderStep(idx) {
     case 'translate_cn':  renderTranslateCN(step); break;
     case 'translate_en':  renderTranslateEN(step); break;
     case 'usage_pick':    renderUsagePick(step); break;
+    case 'word_order':    renderWordOrder(step); break;
     default: nextStep();
   }
 
@@ -4331,6 +4503,141 @@ function renderUsagePick(step) {
     optCont.appendChild(btn);
   });
   bottomArea.innerHTML='';
+}
+
+
+// ── WORD ORDER: tap shuffled words into correct sentence ───────
+// Difficulty scales with level (3-4 words for HSK1, 7-9 for HSK5-6)
+function renderWordOrder(step) {
+  const levelNum = lesson?.plan?.levelNum || 1;
+  const lessonNum = lesson?.plan?.lessonNum || 1;
+  const bank = WORD_ORDER_BANK[levelNum] || WORD_ORDER_BANK[1];
+
+  // Pick sentence based on lesson number to avoid repeats
+  const entry = bank[(lessonNum + (step._bankOffset || 0)) % bank.length];
+  if (!entry) { nextStep(); return; }
+
+  const shuffled = shuffle([...entry.w]);
+  let placed = [];
+  let answered = false;
+
+  const render = () => {
+    stepArea.innerHTML = '';
+    const card = document.createElement('div');
+    card.style.cssText = 'display:flex;flex-direction:column;gap:14px';
+
+    // Label
+    const lbl = document.createElement('div');
+    lbl.className = 'q-label write';
+    lbl.textContent = '📝 Put in Correct Order';
+    card.appendChild(lbl);
+
+    // Translation hint
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:14px;color:var(--ink2);font-style:italic';
+    hint.textContent = '"' + entry.en + '"';
+    card.appendChild(hint);
+
+    // Drop zone — where placed words go
+    const dropZone = document.createElement('div');
+    dropZone.style.cssText = 'background:var(--card);border:2px solid var(--border2);border-radius:16px;padding:16px 14px;min-height:58px;display:flex;flex-wrap:wrap;gap:8px;align-items:center';
+    if (placed.length === 0) {
+      const ph = document.createElement('span');
+      ph.style.cssText = 'color:var(--ink3);font-size:13px;font-style:italic';
+      ph.textContent = 'Tap words below to build the sentence';
+      dropZone.appendChild(ph);
+    } else {
+      placed.forEach((word, idx) => {
+        const chip = document.createElement('div');
+        chip.style.cssText = "background:var(--green);color:#080f0b;border-radius:10px;padding:7px 14px;font-family:'Noto Sans SC',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:all .15s";
+        chip.textContent = word;
+        chip.title = 'Tap to remove';
+        chip.addEventListener('click', () => {
+          if (answered) return;
+          placed.splice(idx, 1);
+          render();
+        });
+        dropZone.appendChild(chip);
+      });
+      // Clear all button
+      const clearBtn = document.createElement('button');
+      clearBtn.style.cssText = '-webkit-appearance:none;appearance:none;background:none;border:none;color:var(--rose);font-size:11px;font-weight:700;cursor:pointer;padding:4px 8px;margin-left:auto';
+      clearBtn.textContent = '✕ Clear';
+      clearBtn.addEventListener('click', () => { placed = []; render(); });
+      dropZone.appendChild(clearBtn);
+    }
+    card.appendChild(dropZone);
+
+    // Word bank — shuffled words to tap
+    const bank = document.createElement('div');
+    bank.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:4px 0';
+    shuffled.forEach(word => {
+      const used = placed.includes(word) && placed.filter(w => w === word).length >= entry.w.filter(w => w === word).length;
+      const btn = document.createElement('button');
+      btn.style.cssText = `-webkit-appearance:none;appearance:none;background:${used ? 'var(--border)' : 'var(--card2)'};border:2px solid ${used ? 'var(--border)' : 'var(--border2)'};border-radius:12px;padding:10px 16px;font-family:'Noto Sans SC',sans-serif;font-size:18px;font-weight:700;color:${used ? 'var(--ink3)' : 'var(--ink)'};cursor:${used ? 'default' : 'pointer'};transition:all .15s`;
+      btn.textContent = word;
+      btn.disabled = used || answered;
+      btn.addEventListener('click', () => {
+        if (answered || used) return;
+        placed.push(word);
+        render();
+        // Auto-check when all words placed
+        if (placed.length === shuffled.length) checkWordOrder();
+      });
+      bank.appendChild(btn);
+    });
+    card.appendChild(bank);
+
+    // Feedback
+    const fb = document.createElement('div');
+    fb.className = 'feedback'; fb.id = 'feedback';
+    fb.innerHTML = '<div class="fb-icon"></div><div><div class="fb-main"></div><div class="fb-hint"></div></div>';
+    card.appendChild(fb);
+
+    stepArea.appendChild(card);
+
+    // Show check button only when all placed
+    bottomArea.innerHTML = '';
+    if (placed.length === shuffled.length && !answered) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-primary'; btn.textContent = 'Check →';
+      btn.addEventListener('click', checkWordOrder);
+      bottomArea.appendChild(btn);
+    }
+  };
+
+  const checkWordOrder = () => {
+    if (answered) return;
+    answered = true;
+    answeredStep = true;
+    consumeEnergy();
+
+    const userAnswer = placed.join('');
+    // Strip punctuation for comparison
+    const clean = s => s.replace(/[，。！？、]/g, '');
+    const isCorrect = clean(userAnswer) === clean(entry.a);
+
+    const fb = document.getElementById('feedback');
+    if (isCorrect) {
+      sessionXP += 3;
+      if (fb) { fb.className='feedback show ok'; fb.innerHTML=`<div class="fb-icon">✓</div><div><div class="fb-main">Correct!</div><div class="fb-hint" style="font-family:'Noto Sans SC',sans-serif">${entry.a}</div></div>`; }
+    } else {
+      loseHeart();
+      sessionMistakes.push({word: step.word || {id:'wo_'+Date.now(), zh:entry.a, en:entry.en}, type:'word_order'});
+      addToRetry(steps[currentStep]);
+      if (fb) { fb.className='feedback show err'; fb.innerHTML=`<div class="fb-icon">✗</div><div><div class="fb-main">Correct order:</div><div class="fb-hint" style="font-family:'Noto Sans SC',sans-serif;font-size:16px;margin-top:4px">${entry.a}</div></div>`; }
+    }
+
+    if (steps[currentStep]?.section) updateCheckpointScore(steps[currentStep].section, isCorrect);
+    handleAnswer(isCorrect, step.word || null);
+
+    bottomArea.innerHTML = '';
+    const nb = document.createElement('button'); nb.className='btn-primary';
+    nb.textContent = isCorrect ? 'Continue →' : 'I understand →';
+    nb.addEventListener('click', nextStep); bottomArea.appendChild(nb);
+  };
+
+  render();
 }
 
 // SPEED TIMER
