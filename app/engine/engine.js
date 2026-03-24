@@ -306,71 +306,77 @@ const MaobaiEngine = (() => {
 
   async function _buildExerciseSequence(newWords, reviewWords, distractors, unlockedTypes, mode, isGrammarLesson) {
     const exercises = [];
+    const TARGET    = CFG.EXERCISES_PER_LESSON; // 20
 
-    // ── PART 1: NEW WORDS (6 exercises) — fixed psychological order ──
-    // Each new word gets: intro → gap_fill → hanzi_to_english → audio → translate_cn_en → english_to_hanzi
-    const newWordTypes = [
-      'word_intro',        // see the word in context, no pressure
-      'gap_fill',          // first active use — fill the blank
-      'hanzi_to_english',  // meaning recall
-      'audio_choice',      // hear it
-      'translate_cn_en',   // full sentence translation
-      'english_to_hanzi',  // hardest — reverse recall
+    // All exercise types in learning-psychology order — repeat types are intentional
+    // (repetition with different words deepens memory)
+    const ALL_TYPES = [
+      'word_intro',       // 1  — always first for new words
+      'gap_fill',         // 2
+      'hanzi_to_english', // 3
+      'audio_choice',     // 4
+      'gap_fill',         // 5  — repeat with different word
+      'english_to_hanzi', // 6
+      'hanzi_to_english', // 7
+      'translate_cn_en',  // 8
+      'audio_choice',     // 9
+      'gap_fill',         // 10
+      'english_to_hanzi', // 11
+      'translate_en_cn',  // 12
+      'hanzi_to_english', // 13
+      'word_order',       // 14
+      'gap_fill',         // 15
+      'negation',         // 16
+      'translate_cn_en',  // 17
+      'audio_choice',     // 18
+      'question_builder', // 19
+      'error_correction', // 20
     ].filter(t => unlockedTypes.includes(t));
 
-    // Spread across new words (if 3 new words and 6 slots: each word gets 2 type slots)
-    const shuffledNew = _shuffle([...newWords]);
-    for (let i = 0; i < newWordTypes.length && i < CFG.NEW_WORD_EXERCISES; i++) {
-      const type    = newWordTypes[i];
-      const word    = shuffledNew[i % shuffledNew.length];
+    // Grammar lesson: boost grammar types to front
+    const typeQueue = isGrammarLesson
+      ? [...new Set(['word_order','negation','question_builder','error_correction',...ALL_TYPES])]
+      : ALL_TYPES;
+
+    // Word pool: new words first, then review words (fallback to new words repeated if no review)
+    const reviewPool  = reviewWords.length > 0 ? reviewWords : newWords;
+    const allWordPool = [...newWords, ...reviewPool];
+
+    // Track which words have had 'word_intro' so we don't intro the same word twice
+    const introducedIds = new Set();
+
+    let wordIdx = 0;
+    for (let i = 0; exercises.length < TARGET; i++) {
+      // Cycle through type queue indefinitely until we hit TARGET
+      const type = typeQueue[i % typeQueue.length];
       const handler = _exerciseRegistry[type];
-      if (!handler) continue;
-      const ex = await handler.build(word, [...newWords, ...reviewWords], distractors);
-      if (ex) exercises.push({ ...ex, type, wordId: word.id, index: exercises.length, isNew: true });
+      if (!handler) { if (i > typeQueue.length * 3) break; continue; }
+
+      // word_intro: only use NEW words, each word introduced once
+      let word;
+      if (type === 'word_intro') {
+        const notYetIntroduced = newWords.filter(w => !introducedIds.has(w.id));
+        if (notYetIntroduced.length === 0) continue; // skip if all new words introduced
+        word = notYetIntroduced[0];
+        introducedIds.add(word.id);
+      } else {
+        // Bias toward new words for first 6 slots, review words after
+        const isNewSlot = exercises.length < CFG.NEW_WORD_EXERCISES;
+        const pool = isNewSlot ? newWords : reviewPool;
+        word = pool[wordIdx % pool.length];
+        wordIdx++;
+      }
+
+      const ex = await handler.build(word, allWordPool, distractors);
+      if (ex) exercises.push({
+        ...ex, type, wordId: word.id,
+        index: exercises.length,
+        isNew: newWords.some(w => w.id === word.id)
+      });
+
+      // Safety: stop infinite loop
+      if (i > TARGET * 5) break;
     }
-
-    // ── PART 2: REVIEW WORDS (14 exercises) — varied types, SRS-driven ──
-    // Cycle through all unlocked types to keep it varied. Never repeat same (word+type) pair.
-    const reviewTypes = [
-      'gap_fill',
-      'hanzi_to_english',
-      'audio_choice',
-      'english_to_hanzi',
-      'translate_cn_en',
-      'gap_fill',
-      'hanzi_to_english',
-      'translate_en_cn',
-      'word_order',
-      'negation',
-      'audio_choice',
-      'translate_cn_en',
-      'question_builder',
-      'error_correction',
-    ].filter(t => unlockedTypes.includes(t));
-
-    // Grammar lesson bonus: replace 2 review slots with grammar-focused types
-    const effectiveReviewTypes = isGrammarLesson
-      ? ['word_order', 'negation', 'question_builder', 'error_correction', ...reviewTypes].slice(0, CFG.REVIEW_WORD_EXERCISES)
-      : reviewTypes.slice(0, CFG.REVIEW_WORD_EXERCISES);
-
-    const shuffledReview = reviewWords.length > 0
-      ? _shuffle([...reviewWords])
-      : _shuffle([...newWords]); // fallback: first lesson has no prior words
-
-    let rIdx = 0;
-    for (let i = 0; i < effectiveReviewTypes.length; i++) {
-      const type    = effectiveReviewTypes[i];
-      const word    = shuffledReview[rIdx % shuffledReview.length];
-      rIdx++;
-      const handler = _exerciseRegistry[type];
-      if (!handler) continue;
-      const ex = await handler.build(word, [...newWords, ...shuffledReview], distractors);
-      if (ex) exercises.push({ ...ex, type, wordId: word.id, index: exercises.length, isNew: false });
-    }
-
-    // Final: interleave new and review so they're not all new first, all review last.
-    // Pattern: new, review, review, new, review, review, review...
-    // (naturally achieved since we just concatenated; UI shows progress bar so order is transparent)
 
     return exercises;
   }
@@ -1645,20 +1651,25 @@ const MaobaiUI = (() => {
     const result   = await E.processAnswer(exercise, userAnswer);
 
     if (result.correct) _correctCount++;
-    _showFeedback(result.correct, result.explanation, result);
 
-    // Update HUD
+    // word_intro has no feedback/next divs — advance directly
+    if (exercise.uiHint === 'intro') {
+      _renderProgress();
+      const gotItBtn = document.querySelector('.btn-got-it');
+      if (gotItBtn) {
+        gotItBtn.textContent = '+' + result.xpGained + ' XP ✓';
+        gotItBtn.disabled = true;
+        gotItBtn.style.background = 'linear-gradient(135deg,#2ab862,#1a8a45)';
+      }
+      setTimeout(() => _next(), 800);
+      return;
+    }
+
+    _showFeedback(result.correct, result.explanation, result);
     _renderProgress();
 
-    // Show next button
     const btnNext = document.getElementById('btn-next');
-    if (btnNext) {
-      btnNext.style.display = 'block';
-      if (exercise.uiHint === 'intro') {
-        // Auto-advance intro after 1.5s
-        setTimeout(() => _next(), 1500);
-      }
-    }
+    if (btnNext) btnNext.style.display = 'block';
   }
 
   function _showFeedback(correct, explanation, result) {
