@@ -670,10 +670,10 @@ function renderSpeed() {
 const HSK_META = [
   { level:1, name:'Beginner',        words:150,  lessons:50  },
   { level:2, name:'Elementary',      words:150,  lessons:50  },
-  { level:3, name:'Intermediate',    words:300,  lessons:45  },
-  { level:4, name:'Upper-Int.',      words:600,  lessons:55  },
-  { level:5, name:'Advanced',        words:1302, lessons:60  },
-  { level:6, name:'Mastery',         words:2500, lessons:65  },
+  { level:3, name:'Intermediate',    words:300,  lessons:75  },
+  { level:4, name:'Upper-Int.',      words:600,  lessons:150 },
+  { level:5, name:'Advanced',        words:1302, lessons:325 },
+  { level:6, name:'Mastery',         words:2500, lessons:625 },
 ];
 
 /* ── MOCK TEST BUTTONS ── */
@@ -685,7 +685,7 @@ function renderMockTests() {
   list.innerHTML = '';
   const colors = ['','#3ddb7a','#60a5fa','#f5c842','#fb923c','#a78bfa','#f5c842'];
   const names  = ['','Beginner','Elementary','Intermediate','Upper-Int.','Advanced','Mastery'];
-  const totalLessons = [0, 50, 50, 45, 55, 60, 65];
+  const totalLessons = [0, 50, 50, 75, 150, 325, 625];
 
   for (let lv = 1; lv <= 6; lv++) {
     const isUnlocked  = lv <= currentLevel;
@@ -853,9 +853,7 @@ function handleNodeClick(level, lesson, state) {
   }
   if (state === 'active') {
     if (user.hearts <= 0) { showHeartsModal(); return; }
-    const energyNeeded = 15; // minimum energy for a lesson
-    if (user.energy < energyNeeded) { showLowEnergyModal(level, lesson); return; }
-    window.location.href = `/app/lesson-10.html?level=${level}&lesson=${lesson}`;
+    window.location.href = `engine/lesson.html?level=${level}&lesson=${lesson}`;
   }
 }
 
@@ -919,8 +917,8 @@ function dashWatchAdForEnergy(level, lesson, isReplay) {
       document.getElementById('low-energy-modal')?.remove();
       // Now go to lesson
       const url = isReplay
-        ? `/app/lesson-10.html?level=${level}&lesson=${lesson}&replay=1`
-        : `/app/lesson-10.html?level=${level}&lesson=${lesson}`;
+        ? `engine/lesson.html?level=${level}&lesson=${lesson}&replay=1`
+        : `engine/lesson.html?level=${level}&lesson=${lesson}`;
       window.location.href = url;
     }
   }, 1000);
@@ -958,8 +956,7 @@ function showReplayModal(level, lesson) {
 
 function replayLesson(level, lesson) {
   document.getElementById('replay-modal')?.remove();
-  if (user.energy < 15) { showLowEnergyModal(level, lesson, true); return; }
-  window.location.href = `/app/lesson-10.html?level=${level}&lesson=${lesson}&replay=1`;
+  window.location.href = `engine/lesson.html?level=${level}&lesson=${lesson}&replay=1`;
 }
 
 /* ── LESSON NAVIGATION ── */
@@ -967,9 +964,7 @@ function startLesson() {
   if (user.hearts <= 0) { showHeartsModal(); return; }
   const lv = user.level;
   const ls = user.lesson;
-  const energyNeeded = 15;
-  if (user.energy < energyNeeded) { showLowEnergyModal(lv, ls); return; }
-  window.location.href = `/app/lesson-10.html?level=${lv}&lesson=${ls}`;
+  window.location.href = `engine/lesson.html?level=${lv}&lesson=${ls}`;
 }
 
 function startReview() {
