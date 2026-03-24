@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>汉路 Hànlù — Lesson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window._sb = window.supabase.createClient(
+  'https://cuiznbvvlqtwcoocehnd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w'
+);
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#080f0b;--bg2:#0c1610;--card:#111e16;--card2:#162218;
+  --border:rgba(74,222,128,.12);--border2:rgba(74,222,128,.25);
+  --green:#3ddb7a;--green2:#2ab862;--green3:#1a8a45;
+  --green-muted:rgba(61,219,122,.10);--glow:rgba(61,219,122,.18);
+  --gold:#f5c842;--gold-soft:rgba(245,200,66,.10);
+  --blue:#60a5fa;--blue-soft:rgba(96,165,250,.10);
+  --rose:#f87171;--rose-soft:rgba(248,113,113,.10);
+  --purple:#a78bfa;--orange:#fb923c;
+  --ink:#e8f2ee;--ink2:#9ab8aa;--ink3:#4a6b5a;
+  --nav-h:68px;--header-h:64px;
+  --t:.22s cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(74,222,128,.2);border-radius:3px}
+
+/* ── HEADER ── */
+.lesson-header{
+  position:sticky;top:0;z-index:60;height:var(--header-h);
+  background:rgba(8,15,11,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:0 16px;
+}
+.btn-back{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--ink2);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all var(--t);flex-shrink:0;
+}
+.btn-back:hover{border-color:var(--border2);color:var(--ink)}
+.progress-wrap{flex:1;display:flex;flex-direction:column;gap:4px}
+.progress-bar-track{height:6px;background:var(--border);border-radius:999px;overflow:hidden}
+.progress-bar-fill{
+  height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--green2),var(--green));
+  transition:width .5s cubic-bezier(.4,0,.2,1);width:0%
+}
+.progress-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);font-weight:600}
+.hud-stats{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hud-pill{
+  display:flex;align-items:center;gap:3px;
+  background:var(--card);border:1px solid var(--border);border-radius:999px;
+  padding:4px 8px;font-size:11px;font-weight:700;color:var(--ink2);white-space:nowrap;
+}
+.hud-pill.hearts{color:var(--rose)}
+.hud-pill.energy{color:var(--gold)}
+
+/* ── LESSON BODY ── */
+.lesson-body{max-width:520px;margin:0 auto;padding:24px 16px 40px;min-height:calc(100vh - var(--header-h))}
+
+/* ── EXERCISE CARDS ── */
+@keyframes exerciseFadeIn{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:translateY(0)}
+}
+#lesson-root{animation:exerciseFadeIn .35s ease both}
+
+.ex-card{
+  background:var(--card);border:1px solid var(--border);border-radius:24px;
+  padding:24px 20px;display:flex;flex-direction:column;gap:14px;
+  position:relative;overflow:hidden;
+}
+.ex-card::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,var(--green-muted),transparent 55%);
+}
+
+.ex-type-badge{
+  display:inline-flex;align-items:center;
+  background:var(--green-muted);border:1px solid rgba(61,219,122,.2);
+  border-radius:999px;padding:4px 12px;
+  font-size:11px;font-weight:700;color:var(--green);letter-spacing:.05em;
+  align-self:flex-start;
+}
+
+.ex-prompt{
+  font-family:'Playfair Display',serif;font-size:18px;font-weight:700;
+  color:var(--ink);line-height:1.4;
+}
+
+/* ── SENTENCES ── */
+.ex-sentence-zh{
+  font-family:'Noto Sans SC',sans-serif;font-size:20px;font-weight:400;
+  color:var(--ink);line-height:1.6;cursor:pointer;
+  background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;transition:border-color var(--t);
+}
+.ex-sentence-zh:hover{border-color:var(--border2)}
+.ex-sentence-en{font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;padding:0 4px}
+.ex-english-context{
+  font-size:22px;font-weight:700;color:var(--ink);text-align:center;
+  font-family:'Playfair Display',serif;padding:8px 0;
+}
+.ex-big-word{
+  font-family:'Noto Sans SC',sans-serif;font-size:52px;font-weight:900;
+  color:var(--ink);text-align:center;cursor:pointer;
+  text-shadow:0 0 40px var(--glow);line-height:1.2;
+}
+.audio-inline{font-size:14px;opacity:.5;margin-left:6px}
+
+/* ── HIGHLIGHTED WORD ── */
+.eng-word-highlight{
+  color:var(--green);font-weight:700;
+  background:rgba(61,219,122,.1);border-radius:4px;padding:0 3px;
+}
+
+/* ── MULTIPLE CHOICE ── */
+.mc-options{display:flex;flex-direction:column;gap:10px}
+.mc-option{
+  width:100%;padding:14px 18px;border-radius:14px;
+  border:1.5px solid var(--border);background:var(--card2);
+  color:var(--ink);font-family:'Noto Sans SC',sans-serif;font-size:17px;
+  font-weight:500;text-align:left;cursor:pointer;transition:all var(--t);
+}
+.mc-option:hover:not(:disabled){border-color:rgba(61,219,122,.4);background:rgba(61,219,122,.06)}
+.mc-option-text{font-family:'DM Sans',sans-serif;font-size:13px}
+.mc-correct{background:rgba(61,219,122,.12)!important;border-color:var(--green)!important;color:var(--green)!important}
+.mc-wrong{background:rgba(248,113,113,.1)!important;border-color:var(--rose)!important;color:var(--rose)!important}
+.mc-option:disabled{cursor:default}
+
+/* ── WORD INTRO ── */
+.ex-intro::before{background:linear-gradient(135deg,rgba(61,219,122,.12),transparent 55%)}
+.intro-word-wrap{text-align:center;padding:8px 0}
+.intro-hanzi{
+  font-family:'Noto Sans SC',sans-serif;font-size:64px;font-weight:900;
+  color:var(--ink);text-shadow:0 0 50px var(--glow);line-height:1.1;margin-bottom:8px;
+}
+.intro-pinyin{font-size:20px;color:var(--green);font-weight:600;letter-spacing:.05em;margin-bottom:6px}
+.intro-english{font-size:18px;color:var(--ink2);font-weight:500;margin-bottom:8px}
+.intro-type-badge{
+  display:inline-block;background:var(--card2);border:1px solid var(--border);
+  border-radius:999px;padding:3px 10px;font-size:10px;color:var(--ink3);
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+}
+.audio-btn{
+  background:var(--green-muted);border:1px solid rgba(61,219,122,.2);border-radius:999px;
+  padding:6px 16px;color:var(--green);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all var(--t);margin-bottom:8px;
+}
+.audio-btn:hover{background:rgba(61,219,122,.2)}
+.intro-divider{height:1px;background:var(--border);margin:4px 0}
+.intro-sentence-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.intro-sentence-zh{
+  font-family:'Noto Sans SC',sans-serif;font-size:18px;color:var(--ink);
+  line-height:1.7;cursor:pointer;background:var(--card2);border:1px solid var(--border);
+  border-radius:12px;padding:12px 14px;
+}
+.intro-sentence-py{font-size:11px;color:var(--ink3);padding:0 2px}
+.intro-sentence-en{font-size:13px;color:var(--ink2);font-style:italic}
+
+/* ── DRAG ORDER ── */
+.drag-answer-zone{
+  min-height:56px;background:rgba(61,219,122,.04);border:1.5px dashed rgba(61,219,122,.25);
+  border-radius:14px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;
+  transition:background var(--t);
+}
+.drag-divider{height:1px;background:var(--border);margin:4px 0}
+.drag-token-bank{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
+.drag-token{
+  padding:8px 14px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--card2);color:var(--ink);font-family:'Noto Sans SC',sans-serif;
+  font-size:16px;cursor:pointer;transition:all var(--t);
+}
+.drag-token:hover{border-color:var(--border2);background:rgba(61,219,122,.06)}
+.drag-token.token-in-zone{background:rgba(61,219,122,.1);border-color:rgba(61,219,122,.3);color:var(--green)}
+
+/* ── AUDIO ── */
+.audio-play-btn{
+  width:100%;padding:18px;border-radius:16px;
+  background:var(--blue-soft);border:1.5px solid rgba(96,165,250,.25);
+  color:var(--blue);font-size:16px;font-weight:700;cursor:pointer;
+  transition:all var(--t);display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.audio-play-btn:hover{background:rgba(96,165,250,.2);border-color:var(--blue)}
+.audio-play-icon{font-size:20px}
+
+/* ── TEXT INPUT ── */
+.text-input{
+  width:100%;padding:14px 16px;border-radius:14px;
+  border:1.5px solid var(--border);background:var(--card2);
+  color:var(--ink);font-size:16px;font-family:'DM Sans',sans-serif;
+  outline:none;transition:border-color var(--t);
+}
+.text-input:focus{border-color:rgba(61,219,122,.4)}
+.text-input::placeholder{color:var(--ink3)}
+
+/* ── TRUE / FALSE ── */
+.tf-passage{
+  font-family:'Noto Sans SC',sans-serif;font-size:16px;color:var(--ink);
+  line-height:1.8;background:var(--card2);border:1px solid var(--border);
+  border-radius:14px;padding:16px;cursor:pointer;
+}
+.tf-passage-en{font-size:12px;color:var(--ink3);font-style:italic;padding:0 4px}
+.tf-statements{display:flex;flex-direction:column;gap:10px}
+.tf-row{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:12px 14px}
+.tf-text{font-family:'Noto Sans SC',sans-serif;font-size:15px;color:var(--ink);margin-bottom:10px;line-height:1.5}
+.tf-btns{display:flex;gap:8px}
+.tf-btn{
+  flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border);
+  background:transparent;font-size:12px;font-weight:700;cursor:pointer;transition:all var(--t);
+}
+.tf-true{color:var(--green)}.tf-true:hover,.tf-true.tf-selected{background:rgba(61,219,122,.12);border-color:var(--green)}
+.tf-false{color:var(--rose)}.tf-false:hover,.tf-false.tf-selected{background:rgba(248,113,113,.1);border-color:var(--rose)}
+.error-sentence{color:var(--rose)!important}
+
+/* ── FEEDBACK ── */
+.ex-feedback{border-radius:14px;padding:14px 16px}
+.fb-correct{background:rgba(61,219,122,.1);border:1px solid rgba(61,219,122,.25)}
+.fb-wrong{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2)}
+.fb-warning{background:var(--gold-soft);border:1px solid rgba(245,200,66,.2);color:var(--gold)}
+.fb-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.fb-icon{font-size:16px;font-weight:800}
+.fb-correct .fb-icon,.fb-correct .fb-label{color:var(--green);font-weight:700}
+.fb-wrong .fb-icon,.fb-wrong .fb-label{color:var(--rose);font-weight:700}
+.fb-xp{background:rgba(61,219,122,.1);border:1px solid rgba(61,219,122,.2);border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;color:var(--green);margin-left:auto}
+.fb-heart-lost{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;color:var(--rose)}
+.fb-explanation{font-size:12px;color:var(--ink2);line-height:1.5;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;margin-top:4px}
+
+/* ── BUTTONS ── */
+.btn-primary{
+  width:100%;padding:15px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:#080f0b;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all var(--t);box-shadow:0 3px 14px rgba(61,219,122,.25);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 5px 22px rgba(61,219,122,.35)}
+.btn-secondary{
+  width:100%;padding:13px;border-radius:14px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all var(--t);
+}
+.btn-secondary:hover{border-color:var(--border2);color:var(--ink)}
+.btn-check{background:linear-gradient(135deg,var(--blue),#3b82f6);box-shadow:0 3px 14px rgba(96,165,250,.2)}
+.btn-check:hover{box-shadow:0 5px 22px rgba(96,165,250,.35)}
+.btn-got-it{margin-top:4px}
+
+/* ── WALL CARDS ── */
+.wall-card{text-align:center;gap:16px}
+.wall-card::before{background:none}
+.wall-icon{font-size:52px}
+.wall-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--ink)}
+.wall-sub{font-size:13px;color:var(--ink2);line-height:1.6}
+.btn-ad{background:linear-gradient(135deg,var(--gold),#d97706);box-shadow:0 3px 14px rgba(245,200,66,.2);color:#080f0b}
+.btn-ad:hover{box-shadow:0 5px 22px rgba(245,200,66,.35)}
+
+/* ── SESSION COMPLETE ── */
+.session-complete{text-align:center;gap:16px;padding:32px 20px}
+.session-complete::before{background:linear-gradient(135deg,rgba(61,219,122,.15),transparent 55%)}
+.complete-emoji{font-size:56px}
+.complete-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--ink)}
+.complete-stats{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.cs-row{display:flex;justify-content:space-between;align-items:center}
+.cs-label{font-size:13px;color:var(--ink2)}
+.cs-val{font-size:16px;font-weight:700}
+.cs-green{color:var(--green)}.cs-gold{color:var(--gold)}.cs-blue{color:var(--blue)}
+
+/* ── LESSON INTRO CARD ── */
+.lesson-intro-card{gap:16px}
+.lesson-intro-card::before{background:linear-gradient(135deg,rgba(61,219,122,.12),transparent 55%)}
+.intro-grammar-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);
+  border-radius:999px;padding:5px 14px;align-self:flex-start;
+  font-size:11px;font-weight:700;color:var(--purple);
+}
+.intro-header{display:flex;align-items:center;gap:12px}
+.intro-hsk-badge{
+  width:46px;height:46px;border-radius:12px;flex-shrink:0;
+  background:var(--green-muted);border:1.5px solid rgba(61,219,122,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:var(--green);
+}
+.intro-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink)}
+.intro-subtitle{font-size:11px;color:var(--ink3);margin-top:2px}
+.intro-split{
+  display:flex;align-items:center;
+  background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:14px 8px;
+}
+.intro-split-item{flex:1;text-align:center}
+.intro-split-num{font-family:'Playfair Display',serif;font-size:24px;font-weight:700}
+.intro-split-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.intro-split-new .intro-split-num{color:var(--green)}
+.intro-split-review .intro-split-num{color:var(--blue)}
+.intro-split-ex .intro-split-num{color:var(--gold)}
+.intro-split-divider{width:1px;height:36px;background:var(--border)}
+.intro-new-words-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.intro-word-list{display:flex;flex-direction:column;gap:8px}
+.intro-word-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--card2);border:1px solid var(--border);border-radius:12px;
+  padding:10px 14px;
+}
+.intro-word-zh{
+  font-family:'Noto Sans SC',sans-serif;font-size:22px;font-weight:700;
+  color:var(--ink);cursor:pointer;flex-shrink:0;min-width:48px;
+}
+.intro-word-zh:hover{color:var(--green)}
+.intro-word-py{font-size:12px;color:var(--green);font-weight:500;flex-shrink:0}
+.intro-word-en{font-size:12px;color:var(--ink2);margin-left:auto;text-align:right}
+
+/* ── LOADING ── */
+.loading-state{text-align:center;padding:60px 20px;color:var(--ink2)}
+.loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;font-weight:500}
+
+/* ── ERROR STATE ── */
+.error-state{text-align:center;padding:60px 20px}
+.error-icon{font-size:40px;margin-bottom:12px}
+.error-msg{font-size:14px;color:var(--rose);margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="lesson-header">
+  <button class="btn-back" onclick="history.back()">←</button>
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="lesson-label" style="color:var(--green);font-size:10px;font-weight:700">Lesson</span>
+      <span id="lesson-progress-label" style="color:var(--ink3);font-size:10px;font-weight:600">0 / 0</span>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="lesson-progress-fill"></div>
+    </div>
+  </div>
+  <div class="hud-stats">
+    <div class="hud-pill hearts" id="hud-hearts">❤️❤️❤️❤️❤️</div>
+    <div class="hud-pill energy" id="hud-energy">⚡ 25</div>
+  </div>
+</header>
+
+<!-- BODY -->
+<main class="lesson-body">
+  <div id="lesson-root">
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading lesson…</div>
+    </div>
+  </div>
+</main>
+
+<!-- ENGINE SCRIPTS (order matters) -->
+<script src="engine.js"></script>
+<script src="exercises.js"></script>
+<script src="ui.js"></script>
+
+<script>
+// ── BOOT ──
+// Read lesson params from URL: ?level=3&lesson=5&mode=new|review|replay
+(async function boot() {
+  const params    = new URLSearchParams(location.search);
+  const level     = parseInt(params.get('level')  || 3);
+  const lessonNum = parseInt(params.get('lesson') || 1);
+  const mode      = params.get('replay') === '1' ? 'review' : (params.get('mode') || 'new');
+  const lessonId  = MaobaiEngine.makeLessonId(level, lessonNum);
+
+  // Grammar lesson every 2 lessons
+  const isGrammarLesson = lessonNum % 2 === 0;
+
+  // Update header label with mode badge
+  const modeTag = mode === 'review' ? ' · 🔄 Review' : isGrammarLesson ? ' · 📐 Grammar' : '';
+  document.getElementById('lesson-label').textContent =
+    `HSK ${level} · Lesson ${lessonNum}${modeTag}`;
+
+  try {
+    await MaobaiEngine.init();
+
+    // Show loading message with context
+    document.querySelector('.loading-text').textContent =
+      isGrammarLesson ? 'Loading grammar lesson…' : 'Loading lesson…';
+
+    const session = await MaobaiEngine.buildSession({ level, lessonNum, lessonId, mode });
+
+    // Show a pre-lesson info card before starting
+    _showLessonIntroCard(session, () => MaobaiUI.startSession(session));
+
+    // Save position (only advance on new lessons, not review/replay)
+    if (mode === 'new') {
+      MaobaiEngine.setCurrentPosition(level, lessonNum);
+    }
+
+  } catch (err) {
+    document.getElementById('lesson-root').innerHTML = `
+      <div class="error-state">
+        <div class="error-icon">⚠️</div>
+        <div class="error-msg">${err.message || 'Failed to load lesson. Check your connection.'}</div>
+        <button class="btn-secondary" onclick="history.back()">← Go Back</button>
+      </div>
+    `;
+    console.error('[Lesson Boot]', err);
+  }
+
+  // ── HUD LIVE UPDATES ──
+  window.addEventListener('engine:heartUpdate', e => {
+    const h = e.detail.hearts;
+    const el = document.getElementById('hud-hearts');
+    if (el) el.textContent = '❤️'.repeat(h) + '🖤'.repeat(Math.max(0, 5 - h));
+  });
+
+  window.addEventListener('engine:energyUpdate', e => {
+    const el = document.getElementById('hud-energy');
+    if (el) el.textContent = `⚡ ${e.detail.energy}`;
+  });
+
+  window.addEventListener('engine:xpUpdate', e => {
+    _showXPToast(e.detail.gained);
+  });
+
+  window.addEventListener('engine:sessionComplete', e => {
+    // Redirect to dashboard after 4 seconds
+    setTimeout(() => { location.href = '../dashboard.html'; }, 4000);
+  });
+
+})();
+
+// ── PRE-LESSON INFO CARD ──
+// Shows what the user is about to learn before exercises begin
+function _showLessonIntroCard(session, onStart) {
+  const root = document.getElementById('lesson-root');
+  const newWordList = session.words.map(w =>
+    `<div class="intro-word-row">
+      <span class="intro-word-zh" onclick="MaobaiEngine.speak('${w.zh}')">${w.zh}</span>
+      <span class="intro-word-py">${w.pinyin}</span>
+      <span class="intro-word-en">${w.english}</span>
+    </div>`
+  ).join('');
+
+  const reviewCount = session.reviewWords?.length || 0;
+  const grammarBadge = session.isGrammarLesson
+    ? `<div class="intro-grammar-badge">📐 Grammar Focus Lesson</div>` : '';
+
+  root.innerHTML = `
+    <div class="ex-card lesson-intro-card">
+      ${grammarBadge}
+      <div class="intro-header">
+        <div class="intro-hsk-badge">HSK ${session.level}</div>
+        <div>
+          <div class="intro-title">Lesson ${session.lessonNum}</div>
+          <div class="intro-subtitle">${session.totalExercises} exercises · ${session.xpAvailable} XP available</div>
+        </div>
+      </div>
+
+      <div class="intro-split">
+        <div class="intro-split-item intro-split-new">
+          <div class="intro-split-num">${session.words.length}</div>
+          <div class="intro-split-label">New Words</div>
+        </div>
+        <div class="intro-split-divider"></div>
+        <div class="intro-split-item intro-split-review">
+          <div class="intro-split-num">${reviewCount}</div>
+          <div class="intro-split-label">Review Words</div>
+        </div>
+        <div class="intro-split-divider"></div>
+        <div class="intro-split-item intro-split-ex">
+          <div class="intro-split-num">${session.totalExercises}</div>
+          <div class="intro-split-label">Exercises</div>
+        </div>
+      </div>
+
+      <div class="intro-new-words-label">Today's new words</div>
+      <div class="intro-word-list">${newWordList}</div>
+
+      <button class="btn-primary" onclick="MaobaiUI_startCallback()">
+        ▶ Start Lesson
+      </button>
+      <button class="btn-secondary" onclick="history.back()">← Back</button>
+    </div>
+  `;
+
+  // Expose callback for inline onclick
+  window.MaobaiUI_startCallback = onStart;
+}
+
+// ── XP TOAST ──
+let _xpToastTimer;
+function _showXPToast(amount) {
+  let toast = document.getElementById('xp-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'xp-toast';
+    toast.style.cssText = `
+      position:fixed;bottom:24px;right:16px;z-index:500;
+      background:rgba(61,219,122,.15);border:1px solid rgba(61,219,122,.3);
+      border-radius:999px;padding:8px 16px;
+      font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:#3ddb7a;
+      opacity:0;transition:all .25s;pointer-events:none;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = `+${amount} XP`;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateY(0)';
+  clearTimeout(_xpToastTimer);
+  _xpToastTimer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(8px)';
+  }, 1200);
+}
+</script>
+</body>
+</html>
