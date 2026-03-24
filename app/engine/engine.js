@@ -1652,30 +1652,29 @@ const MaobaiUI = (() => {
 
     if (result.correct) _correctCount++;
 
-    // word_intro has no feedback/next divs — advance directly
+    // word_intro: 1 tap = immediate advance, no intermediate step
     if (exercise.uiHint === 'intro') {
       _renderProgress();
-      const gotItBtn = document.querySelector('.btn-got-it');
-      if (gotItBtn) {
-        gotItBtn.textContent = '+' + result.xpGained + ' XP ✓';
-        gotItBtn.disabled = true;
-        gotItBtn.style.background = 'linear-gradient(135deg,#2ab862,#1a8a45)';
-      }
-      setTimeout(() => _next(), 800);
+      _next();
       return;
     }
 
     _showFeedback(result.correct, result.explanation, result);
     _renderProgress();
 
+    // Show the continue button (always visible, sticky at bottom of feedback)
     const btnNext = document.getElementById('btn-next');
-    if (btnNext) btnNext.style.display = 'block';
+    if (btnNext) {
+      btnNext.style.display = 'block';
+      btnNext.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }
 
   function _showFeedback(correct, explanation, result) {
     const fb = document.getElementById('ex-feedback');
     if (!fb) return;
     fb.style.display  = 'block';
+    fb.style.cursor   = 'pointer';
     fb.className      = `ex-feedback ${correct ? 'fb-correct' : 'fb-wrong'}`;
 
     const hearts = result?.heartLost ? `<span class="fb-heart-lost">-1 ❤️</span>` : '';
@@ -1688,7 +1687,10 @@ const MaobaiUI = (() => {
         ${xp}${hearts}
       </div>
       ${explanation ? `<div class="fb-explanation">${explanation}</div>` : ''}
+      <button class="btn-continue-inline" onclick="MaobaiUI._next()">Continue →</button>
     `;
+    // Also tap anywhere on feedback = continue
+    fb.onclick = (e) => { if (!e.target.closest('.btn-continue-inline')) MaobaiUI._next(); };
   }
 
   // ─────────────────────────────────────────────
