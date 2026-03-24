@@ -360,10 +360,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   </div>
 </main>
 
-<!-- ENGINE SCRIPTS (order matters) -->
+<!-- ENGINE (single combined file: engine + exercises + ui) -->
 <script src="engine.js"></script>
-<script src="exercises.js"></script>
-<script src="ui.js"></script>
 
 <script>
 // ── BOOT ──
@@ -481,15 +479,24 @@ function _showLessonIntroCard(session, onStart) {
       <div class="intro-new-words-label">Today's new words</div>
       <div class="intro-word-list">${newWordList}</div>
 
-      <button class="btn-primary" onclick="MaobaiUI_startCallback()">
+      <button class="btn-primary" id="btn-start-lesson">
         ▶ Start Lesson
       </button>
       <button class="btn-secondary" onclick="history.back()">← Back</button>
     </div>
   `;
 
-  // Expose callback for inline onclick
-  window.MaobaiUI_startCallback = onStart;
+  // Attach click handler safely after DOM renders
+  window._lessonStartFn = onStart;
+  setTimeout(() => {
+    const btn = document.getElementById('btn-start-lesson');
+    if (btn) {
+      btn.onclick = null;
+      btn.addEventListener('click', function() {
+        if (window._lessonStartFn) window._lessonStartFn();
+      });
+    }
+  }, 50);
 }
 
 // ── XP TOAST ──
