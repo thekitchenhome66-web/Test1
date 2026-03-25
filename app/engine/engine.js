@@ -1189,7 +1189,14 @@ const MaobaiUI = (() => {
     if (btn) btn.classList.add('btn-check-ready');
   }
 
-  function _gotIt() { _submitAnswer('seen', true); }
+  function _gotIt() {
+    if (_answered) return;
+    _answered = true;
+    const ex = _session.exercises[_idx];
+    E.updateSRS(ex.wordId, 2);
+    _correct++;
+    _next();
+  }
 
   // ── NEXT ──
   function _next() {
