@@ -1,76 +1,45 @@
 /**
- * Maobai Learning Engine — engine.js
- * Core: Word Fetcher · SM-2 SRS Scheduler · Session Builder · Exercise Factory
- *
- * HOW TO USE:
- *   <script src="engine/engine.js"></script>
- *   <script src="engine/exercises.js"></script>
- *   <script src="engine/ui.js"></script>
- *   const session = await MaobaiEngine.buildSession({ level: 3, lesson: 5 });
- *   MaobaiUI.startSession(session);
+ * Maobai Learning Engine v3 — engine.js (combined: core + exercises + ui)
+ * HSK 1-2 focused. 15 exercises per lesson, 3-4 new words, rest review.
+ * Checkpoints every 5 lessons. Mock test at end of level.
+ * Full SRS memory tracking (1-3-7-14-30 days).
+ * Mistake tracking — weak words shown more often.
  */
 
+// ═══════════════════════════════════════════════════════════
+// PART 1: CORE ENGINE
+// ═══════════════════════════════════════════════════════════
 const MaobaiEngine = (() => {
 
-  // ─────────────────────────────────────────────
-  // CONFIG — change these without touching logic
-  // ─────────────────────────────────────────────
   const CFG = {
     supabaseUrl:    'https://cuiznbvvlqtwcoocehnd.supabase.co',
     supabaseKey:    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXpuYnZ2bHF0d2Nvb2NlaG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzI0NTUsImV4cCI6MjA4OTI0ODQ1NX0.QXAjvDdvih1ue1W8BaoqBfBr_fUJb9W5FYFZSC_JI8w',
 
-    // Energy & Hearts
-    ENERGY_MAX:     25,
-    ENERGY_REGEN_MS: 3 * 60 * 1000,   // 1 energy per 3 min = 25 in 1.25h
-    HEART_MAX:      5,
-    HEART_REGEN_MS: 30 * 60 * 1000,   // 1 heart per 30 min
-    ENERGY_PER_EXERCISE: 1,
-    HEART_PER_MISTAKE:   1,
+    // Resources
+    ENERGY_MAX:          25,
+    ENERGY_REGEN_MS:     3 * 60 * 1000,
+    HEART_MAX:           5,
+    HEART_REGEN_MS:      30 * 60 * 1000,
     ENERGY_AD_REWARD:    15,
     HEART_AD_REWARD:     1,
 
-    // Rewards
-    XP_PER_EXERCISE:     2,
-    DIAMONDS_PER_LESSON: 10,
+    // Lesson structure
+    EXERCISES_PER_LESSON:   15,   // 15 total
+    NEW_WORD_EXERCISES:      5,   // 5 for new words (intro + 4 drills)
+    REVIEW_WORD_EXERCISES:  10,   // 10 for review (SRS-driven)
+    WORDS_PER_LESSON:    { 1:3, 2:3, 3:4, 4:4, 5:4, 6:4 },
+    LESSONS_PER_LEVEL:   { 1:50, 2:50, 3:75, 4:150, 5:325, 6:625 },
 
-    // 3-4 NEW words per lesson — keeps each session focused and fully learnable.
-    // Grammar point introduced every 2 lessons via word_type='grammar' words from DB.
-    WORDS_PER_LESSON: { 1:3, 2:3, 3:4, 4:4, 5:4, 6:4 },
+    // Checkpoint every 5 lessons — reviews all words from past 5 lessons
+    CHECKPOINT_EVERY: 5,
 
-    // Grammar word introduced every N lessons
-    GRAMMAR_EVERY_N_LESSONS: 2,
+    // Rewards: flat 20 XP per lesson completed
+    XP_PER_LESSON:        20,
+    XP_PER_CHECKPOINT:    30,
+    DIAMONDS_PER_LESSON:  10,
+    DIAMONDS_CHECKPOINT:  20,
 
-    // Total lessons per level — more lessons now because fewer words each:
-    //   HSK1: ~150 ÷ 3 = 50 | HSK2: ~150 ÷ 3 = 50 | HSK3: ~300 ÷ 4 = 75
-    //   HSK4: ~600 ÷ 4 = 150 | HSK5: ~1300 ÷ 4 = 325 | HSK6: ~2500 ÷ 4 = 625
-    LESSONS_PER_LEVEL: { 1:50, 2:50, 3:75, 4:150, 5:325, 6:625 },
-
-    // 20 exercises per lesson total
-    EXERCISES_PER_LESSON: 20,
-
-    // 70/30 split: ~14 exercises on OLD (review) words, ~6 on NEW words this lesson.
-    // New words get: intro → gap_fill → hanzi_to_english → audio → translate → english_to_hanzi
-    // Review words get the remaining 14 slots cycling through all unlocked types.
-    NEW_WORD_EXERCISES:    6,
-    REVIEW_WORD_EXERCISES: 14,
-
-    // Which exercise types unlock at which lesson number (within any level)
-    EXERCISE_UNLOCK_AT_LESSON: {
-      'word_intro':       1,
-      'gap_fill':         1,
-      'hanzi_to_english': 1,
-      'english_to_hanzi': 2,
-      'word_order':       3,
-      'negation':         4,
-      'question_builder': 5,
-      'error_correction': 7,
-      'audio_choice':     2,
-      'read_true_false':  6,
-      'translate_cn_en':  3,
-      'translate_en_cn':  4,
-    },
-
-    // SRS review intervals in ms (SM-2 base schedule)
+    // SRS intervals (ms)
     SRS_INTERVALS_MS: [
       0,
       1  * 24*60*60*1000,   // 1 day
@@ -80,1760 +49,1239 @@ const MaobaiEngine = (() => {
       30 * 24*60*60*1000,   // 30 days
     ],
 
-    // UI language (future: swap to any locale file)
-    UI_LANG: 'en',
+    // Exercise types unlocked per lesson number
+    // HSK 1-2: gentle ramp. No grammar exercises until lesson 8+
+    EXERCISE_UNLOCK: {
+      'word_intro':        1,
+      'select_image':      1,   // see image → pick Chinese word
+      'word_meaning':      1,   // English shown → pick Chinese (with pinyin)
+      'tap_what_you_hear': 2,   // audio → tap correct word tiles
+      'select_translation':3,   // Chinese sentence → tap English tiles to translate
+      'word_bank_build':   4,   // English sentence → tap tiles to build Chinese
+      'word_order':        8,   // arrange shuffled tiles
+      'gap_fill':          2,   // fill blank sentence
+      'select_meaning':    1,   // Chinese word shown → pick English meaning
+    },
   };
 
-  // ─────────────────────────────────────────────
-  // INTERNAL STATE
-  // ─────────────────────────────────────────────
-  let _sb   = null;  // supabase client
-  let _uid  = null;  // current user id
-  let _exerciseRegistry = {}; // registered exercise type handlers
+  let _sb  = null;
+  let _uid = null;
+  let _exerciseRegistry = {};
 
-  // ─────────────────────────────────────────────
-  // INIT
-  // ─────────────────────────────────────────────
+  // ── INIT ──
   async function init() {
-    // reuse existing supabase client if dashboard already created one
     _sb = window._sb || window._supabaseClient ||
-          window.supabase?.createClient(CFG.supabaseUrl, CFG.supabaseKey);
-    if (!_sb) throw new Error('[Engine] Supabase client not found. Include supabase-js before engine.js');
-
+          (window.supabase ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey) : null);
+    if (!_sb) throw new Error('Supabase client not found');
     const { data: { session } } = await _sb.auth.getSession();
     _uid = session?.user?.id || null;
-    _startEnergyRegen();
-    _startHeartRegen();
+    _startRegens();
     return { userId: _uid };
   }
 
-  // ─────────────────────────────────────────────
-  // STORAGE HELPERS  (localStorage + Supabase)
-  // ─────────────────────────────────────────────
-  function lk(k) { return `${k}_${_uid}`; }   // user-scoped key
+  // ── STORAGE ──
+  const lk = k => `${k}_${_uid}`;
+  function lsGet(k, fb = null) {
+    try { const v = localStorage.getItem(lk(k)); return v !== null ? JSON.parse(v) : fb; } catch { return fb; }
+  }
+  function lsSet(k, v) { try { localStorage.setItem(lk(k), JSON.stringify(v)); } catch {} }
 
-  function lsGet(k, fallback = null) {
-    try { const v = localStorage.getItem(lk(k)); return v !== null ? JSON.parse(v) : fallback; }
-    catch { return fallback; }
+  async function sbUpsert(table, row, conflict = 'user_id') {
+    if (!_uid || !_sb) return;
+    try { await _sb.from(table).upsert({ user_id: _uid, ...row }, { onConflict: conflict }); } catch {}
   }
 
-  function lsSet(k, v) {
-    try { localStorage.setItem(lk(k), JSON.stringify(v)); } catch {}
-  }
-
-  // Write to Supabase async — never blocks UI
-  async function sbUpsert(table, row, conflictCol = 'user_id') {
-    if (!_uid) return;
-    try { await _sb.from(table).upsert({ user_id: _uid, ...row }, { onConflict: conflictCol }); }
-    catch (e) { console.warn('[Engine] Supabase upsert failed', e); }
-  }
-
-  // ─────────────────────────────────────────────
-  // WORD FETCHER
-  // Fetches words from Supabase for a given level + lesson range.
-  // Uses localStorage cache (5-min TTL) so repeated calls are instant.
-  // Falls back to cache if offline (VIP users).
-  // ─────────────────────────────────────────────
-  async function fetchWords({ level, lessonIds = null }) {
-    const cacheKey = `word_cache_l${level}`;
-    const cacheTs  = lsGet(`word_cache_ts_l${level}`, 0);
-    const fresh    = (Date.now() - cacheTs) < 5 * 60 * 1000;
-
-    if (fresh) {
-      const cached = lsGet(cacheKey, null);
-      if (cached) return cached;
-    }
-
+  // ── WORD FETCHER ──
+  // All words fetched from Supabase, cached 5 min in localStorage
+  async function fetchWords(level) {
+    const ck = `wcache_l${level}`, ct = `wcache_ts_l${level}`;
+    const ts = lsGet(ct, 0);
+    if (Date.now() - ts < 300000) { const c = lsGet(ck, null); if (c) return c; }
     try {
-      let q = _sb.from('words').select('*').eq('hsk_level', level);
-      if (lessonIds?.length) q = q.in('lesson_id', lessonIds);
-      const { data, error } = await q;
+      const { data, error } = await _sb.from('words').select('*').eq('hsk_level', level);
       if (error) throw error;
-      // Cache result
-      lsSet(cacheKey, data);
-      lsSet(`word_cache_ts_l${level}`, Date.now());
+      lsSet(ck, data); lsSet(ct, Date.now());
       return data;
-    } catch (e) {
-      console.warn('[Engine] Fetch failed, using cache', e);
-      return lsGet(cacheKey, []);
-    }
+    } catch { return lsGet(ck, []); }
   }
 
-  // Fetch words for a single lesson (by lesson_id string like "3-5")
   async function fetchLessonWords(lessonId) {
     const level = parseInt(lessonId.split('-')[0]);
-    const all   = await fetchWords({ level });
+    const all = await fetchWords(level);
     return all.filter(w => w.lesson_id === lessonId);
   }
 
-  // Fetch distractors — same level words NOT in current lesson (for MC options)
-  async function fetchDistractors(level, excludeIds, count = 6) {
-    const all = await fetchWords({ level });
-    const pool = all.filter(w => !excludeIds.includes(w.id));
-    return _shuffle(pool).slice(0, count);
+  // Get all words learned so far (lessons before current)
+  async function fetchLearnedWords(level, upToLesson) {
+    const all = await fetchWords(level);
+    const learned = [];
+    for (let i = 1; i < upToLesson; i++) {
+      const lid = `${level}-${i}`;
+      learned.push(...all.filter(w => w.lesson_id === lid));
+    }
+    return learned;
   }
 
-  // ─────────────────────────────────────────────
-  // SRS — SM-2 ALGORITHM
-  // score: 0=wrong, 1=hard, 2=good, 3=easy
-  // ─────────────────────────────────────────────
+  // ── SRS — SM-2 ALGORITHM ──
   function getSRS() { return lsGet('srs', {}); }
   function saveSRS(srs) { lsSet('srs', srs); }
 
   function getSRSEntry(wordId) {
-    const srs = getSRS();
-    return srs[wordId] || { interval: 0, easeFactor: 2.5, repetitions: 0, nextReview: 0, correctCount: 0, wrongCount: 0 };
+    return getSRS()[wordId] || { interval: 0, easeFactor: 2.5, repetitions: 0, nextReview: 0, correctCount: 0, wrongCount: 0 };
   }
 
-  /**
-   * Update SRS after answering.
-   * score: 0=wrong, 1=hard, 2=good, 3=easy
-   * Returns updated entry with new nextReview timestamp.
-   */
   function updateSRS(wordId, score) {
     const srs   = getSRS();
     const entry = getSRSEntry(wordId);
     const now   = Date.now();
-
     if (score === 0) {
-      // Wrong: reset repetitions, keep ease factor, review tomorrow
       entry.repetitions = 0;
       entry.interval    = CFG.SRS_INTERVALS_MS[1];
       entry.wrongCount  = (entry.wrongCount || 0) + 1;
+      // Track mistake
+      _recordMistake(wordId);
     } else {
       entry.correctCount = (entry.correctCount || 0) + 1;
-      if (entry.repetitions === 0) {
-        entry.interval = CFG.SRS_INTERVALS_MS[1];
-      } else if (entry.repetitions === 1) {
-        entry.interval = CFG.SRS_INTERVALS_MS[2];
-      } else {
-        // SM-2: new_interval = old_interval * easeFactor
-        entry.interval = Math.round(entry.interval * entry.easeFactor);
-      }
-      // Adjust ease factor: ef' = ef + (0.1 - (3-score)*(0.08+(3-score)*0.02))
-      const q  = score; // 1,2,3
-      entry.easeFactor = Math.max(1.3, entry.easeFactor + (0.1 - (3 - q) * (0.08 + (3 - q) * 0.02)));
+      entry.interval = entry.repetitions === 0 ? CFG.SRS_INTERVALS_MS[1]
+                     : entry.repetitions === 1 ? CFG.SRS_INTERVALS_MS[2]
+                     : Math.min(Math.round(entry.interval * entry.easeFactor), CFG.SRS_INTERVALS_MS[5]);
+      entry.easeFactor = Math.max(1.3, entry.easeFactor + 0.1 - (3 - score) * (0.08 + (3 - score) * 0.02));
       entry.repetitions++;
+      // Clear from mistakes if answered correctly 2+ times
+      if (entry.correctCount >= 2) _clearMistake(wordId);
     }
-
     entry.nextReview = now + entry.interval;
     entry.lastSeen   = now;
     srs[wordId] = entry;
     saveSRS(srs);
-
-    // Sync to Supabase async
-    if (_uid) {
-      sbUpsert('user_progress', {
-        word_id:      wordId,
-        interval:     entry.interval,
-        ease_factor:  entry.easeFactor,
-        repetitions:  entry.repetitions,
-        next_review:  new Date(entry.nextReview).toISOString(),
-        last_seen:    new Date(now).toISOString(),
-        correct_count: entry.correctCount,
-        wrong_count:   entry.wrongCount,
-      }, 'user_id,word_id');
-    }
-
+    if (_uid) sbUpsert('user_progress', {
+      word_id: wordId, interval: entry.interval, ease_factor: entry.easeFactor,
+      repetitions: entry.repetitions, next_review: new Date(entry.nextReview).toISOString(),
+      last_seen: new Date(now).toISOString(), correct_count: entry.correctCount, wrong_count: entry.wrongCount
+    }, 'user_id,word_id');
     return entry;
   }
 
-  // Classify a word's SRS state
-  function wordSRSState(wordId) {
-    const entry = getSRSEntry(wordId);
-    if (!entry.lastSeen)              return 'new';
-    if (entry.nextReview <= Date.now()) return 'due';
-    return 'learned';
+  // ── MISTAKE TRACKING ──
+  function _recordMistake(wordId) {
+    const mistakes = lsGet('mistake_words', {});
+    mistakes[wordId] = (mistakes[wordId] || 0) + 1;
+    lsSet('mistake_words', mistakes);
+  }
+  function _clearMistake(wordId) {
+    const mistakes = lsGet('mistake_words', {});
+    delete mistakes[wordId];
+    lsSet('mistake_words', mistakes);
+  }
+  function getMistakeWords() { return lsGet('mistake_words', {}); }
+
+  // Sort words by mistake count (most mistakes first) for review priority
+  function prioritiseByMistakes(words) {
+    const mistakes = getMistakeWords();
+    return [...words].sort((a, b) => (mistakes[b.id] || 0) - (mistakes[a.id] || 0));
   }
 
-  // ─────────────────────────────────────────────
-  // SESSION BUILDER
-  // Builds an ordered list of exercise objects for one lesson.
-  // context: { level, lessonNum, lessonId, mode: 'new'|'review' }
-  // ─────────────────────────────────────────────
+  // ── SESSION BUILDER ──
   async function buildSession({ level, lessonNum, lessonId, mode = 'new' }) {
     await init();
 
-    // ── Fetch this lesson's NEW words ──
+    const isCheckpoint = lessonNum % CFG.CHECKPOINT_EVERY === 0 && mode !== 'review';
+
+    if (isCheckpoint) {
+      return await _buildCheckpointSession({ level, lessonNum, lessonId });
+    }
+
+    // New lesson words
     const newWords = await fetchLessonWords(lessonId);
-    if (!newWords.length) throw new Error(`[Engine] No words found for lesson ${lessonId}`);
+    if (!newWords.length) throw new Error(`No words found for lesson ${lessonId}. Check Supabase words table.`);
 
-    // ── Fetch REVIEW words from previous lessons (SRS-due first, then recent) ──
-    // Pull all words for this level up to previous lessons
-    const allLevelWords = await fetchWords({ level });
-    const newIds        = new Set(newWords.map(w => w.id));
-    const srs           = getSRS();
-    const now           = Date.now();
+    // All learned words (only words from previous lessons — no unknowns in sentences)
+    const learnedWords = await fetchLearnedWords(level, lessonNum);
 
-    // Classify prior words by SRS state
-    const priorWords  = allLevelWords.filter(w => !newIds.has(w.id));
-    const due         = _shuffle(priorWords.filter(w => srs[w.id]?.nextReview <= now));
-    const seen        = _shuffle(priorWords.filter(w => srs[w.id] && srs[w.id].nextReview > now));
-    const unseen      = _shuffle(priorWords.filter(w => !srs[w.id]));
+    // Review pool: mistakes first → SRS due → recently learned
+    const srs  = getSRS();
+    const now  = Date.now();
+    const newIds = new Set(newWords.map(w => w.id));
+    const prior  = learnedWords.filter(w => !newIds.has(w.id));
 
-    // Priority: due → recently learned → unseen — pick enough for REVIEW slots
-    const reviewPool  = [...due, ...seen, ...unseen].slice(0, CFG.REVIEW_WORD_EXERCISES * 2);
+    const mistakes    = prioritiseByMistakes(prior.filter(w => getMistakeWords()[w.id]));
+    const due         = _shuffle(prior.filter(w => !getMistakeWords()[w.id] && srs[w.id]?.nextReview <= now));
+    const learned     = _shuffle(prior.filter(w => !getMistakeWords()[w.id] && srs[w.id] && srs[w.id].nextReview > now));
+    const reviewPool  = [...mistakes, ...due, ...learned].slice(0, 20);
 
-    // Distractors for MC options (words from same level, not in lesson)
-    const allWords    = [...newWords, ...reviewPool];
-    const distractors = await fetchDistractors(level, allWords.map(w => w.id), 10);
+    // Distractors: words from same level not in lesson (for MC wrong answers)
+    const allLevel   = await fetchWords(level);
+    const usedIds    = new Set([...newWords.map(w => w.id), ...reviewPool.map(w => w.id)]);
+    const distractors = _shuffle(allLevel.filter(w => !usedIds.has(w.id))).slice(0, 12);
 
     const unlockedTypes = _getUnlockedTypes(lessonNum);
-
-    // Is this a grammar lesson? (every GRAMMAR_EVERY_N_LESSONS lessons)
-    const isGrammarLesson = lessonNum % CFG.GRAMMAR_EVERY_N_LESSONS === 0;
-
-    // Build exercise sequence — 20 total: 6 new + 14 review
-    const exercises = await _buildExerciseSequence(
-      newWords, reviewPool, distractors, unlockedTypes, mode, isGrammarLesson
-    );
+    const exercises = await _buildExercises(newWords, reviewPool, learnedWords, distractors, unlockedTypes, mode);
 
     return {
-      sessionId:    `${lessonId}-${Date.now()}`,
-      lessonId,
-      level,
-      lessonNum,
-      mode,
-      isGrammarLesson,
+      sessionId:      `${lessonId}-${Date.now()}`,
+      lessonId, level, lessonNum, mode,
+      isCheckpoint:   false,
       words:          newWords,
-      reviewWords:    reviewPool.slice(0, CFG.REVIEW_WORD_EXERCISES),
+      reviewWords:    reviewPool.slice(0, 8),
       exercises,
       totalExercises: exercises.length,
-      xpAvailable:    exercises.length * CFG.XP_PER_EXERCISE,
-      diamondsAvailable: CFG.DIAMONDS_PER_LESSON,
+      xpReward:       CFG.XP_PER_LESSON,
+      diamonds:       CFG.DIAMONDS_PER_LESSON,
     };
   }
 
-  async function _buildExerciseSequence(newWords, reviewWords, distractors, unlockedTypes, mode, isGrammarLesson) {
-    const exercises = [];
-    const TARGET    = CFG.EXERCISES_PER_LESSON; // 20
+  // Checkpoint: reviews ALL words from the last 5 lessons
+  async function _buildCheckpointSession({ level, lessonNum, lessonId }) {
+    const start = lessonNum - CFG.CHECKPOINT_EVERY + 1;
+    const allLevel = await fetchWords(level);
+    const checkpointWords = [];
+    for (let i = start; i <= lessonNum; i++) {
+      checkpointWords.push(...allLevel.filter(w => w.lesson_id === `${level}-${i}`));
+    }
+    const distractors = _shuffle(allLevel.filter(w => !checkpointWords.some(cw => cw.id === w.id))).slice(0, 12);
+    const unlockedTypes = _getUnlockedTypes(lessonNum);
 
-    // All exercise types in learning-psychology order — repeat types are intentional
-    // (repetition with different words deepens memory)
-    const ALL_TYPES = [
-      'word_intro',       // 1  — always first for new words
-      'gap_fill',         // 2
-      'hanzi_to_english', // 3
-      'audio_choice',     // 4
-      'gap_fill',         // 5  — repeat with different word
-      'english_to_hanzi', // 6
-      'hanzi_to_english', // 7
-      'translate_cn_en',  // 8
-      'audio_choice',     // 9
-      'gap_fill',         // 10
-      'english_to_hanzi', // 11
-      'translate_en_cn',  // 12
-      'hanzi_to_english', // 13
-      'word_order',       // 14
-      'gap_fill',         // 15
-      'negation',         // 16
-      'translate_cn_en',  // 17
-      'audio_choice',     // 18
-      'question_builder', // 19
-      'error_correction', // 20
+    // 20 exercises for checkpoint — all review types
+    const exercises = [];
+    const types = ['select_image','word_meaning','tap_what_you_hear','select_meaning','gap_fill',
+                   'select_translation','word_bank_build','word_meaning','select_image','tap_what_you_hear',
+                   'gap_fill','select_translation','word_meaning','select_image','word_order',
+                   'select_meaning','word_bank_build','gap_fill','tap_what_you_hear','word_meaning']
+                   .filter(t => unlockedTypes.includes(t));
+
+    const pool = _shuffle([...checkpointWords]);
+    let wi = 0;
+    for (let i = 0; i < Math.min(types.length, 20); i++) {
+      const word = pool[wi % pool.length]; wi++;
+      const handler = _exerciseRegistry[types[i]];
+      if (!handler) continue;
+      const ex = await handler.build(word, checkpointWords, distractors);
+      if (ex) exercises.push({ ...ex, type: types[i], wordId: word.id, index: exercises.length });
+    }
+
+    return {
+      sessionId:      `${lessonId}-cp-${Date.now()}`,
+      lessonId, level, lessonNum,
+      isCheckpoint:   true,
+      checkpointRange:`Lessons ${lessonNum - CFG.CHECKPOINT_EVERY + 1}–${lessonNum}`,
+      words:          checkpointWords,
+      reviewWords:    checkpointWords,
+      exercises,
+      totalExercises: exercises.length,
+      xpReward:       CFG.XP_PER_CHECKPOINT,
+      diamonds:       CFG.DIAMONDS_CHECKPOINT,
+    };
+  }
+
+  async function _buildExercises(newWords, reviewPool, learnedWords, distractors, unlockedTypes, mode) {
+    const exercises = [];
+    // ── 5 exercises: introduce + drill each new word ──
+    // Each new word: word_intro first, then 1-2 drill types
+    const newDrillTypes = ['select_image','word_meaning','select_meaning','tap_what_you_hear']
+      .filter(t => unlockedTypes.includes(t));
+
+    for (let i = 0; i < newWords.length && exercises.length < CFG.NEW_WORD_EXERCISES; i++) {
+      const word = newWords[i];
+      // Always start with intro
+      const introHandler = _exerciseRegistry['word_intro'];
+      if (introHandler && exercises.length < CFG.NEW_WORD_EXERCISES) {
+        const ex = await introHandler.build(word, [...newWords, ...reviewPool], distractors);
+        if (ex) exercises.push({ ...ex, type: 'word_intro', wordId: word.id, index: exercises.length, isNew: true });
+      }
+      // One drill per new word
+      if (newDrillTypes.length > 0 && exercises.length < CFG.NEW_WORD_EXERCISES) {
+        const type = newDrillTypes[i % newDrillTypes.length];
+        const handler = _exerciseRegistry[type];
+        if (handler) {
+          const ex = await handler.build(word, [...newWords, ...reviewPool], distractors);
+          if (ex) exercises.push({ ...ex, type, wordId: word.id, index: exercises.length, isNew: true });
+        }
+      }
+    }
+
+    // ── 10 exercises: review words ──
+    // Cycles through varied types. Mistake words get extra appearances.
+    const reviewTypeQueue = [
+      'select_image','word_meaning','tap_what_you_hear','gap_fill','select_meaning',
+      'select_translation','word_bank_build','select_image','word_meaning','word_order',
     ].filter(t => unlockedTypes.includes(t));
 
-    // Grammar lesson: boost grammar types to front
-    const typeQueue = isGrammarLesson
-      ? [...new Set(['word_order','negation','question_builder','error_correction',...ALL_TYPES])]
-      : ALL_TYPES;
+    const fallbackPool = reviewPool.length > 0 ? reviewPool : newWords;
+    const shuffledReview = _shuffle([...fallbackPool]);
+    let ri = 0, typeI = 0;
 
-    // Word pool: new words first, then review words (fallback to new words repeated if no review)
-    const reviewPool  = reviewWords.length > 0 ? reviewWords : newWords;
-    const allWordPool = [...newWords, ...reviewPool];
-
-    // Track which words have had 'word_intro' so we don't intro the same word twice
-    const introducedIds = new Set();
-
-    let wordIdx = 0;
-    for (let i = 0; exercises.length < TARGET; i++) {
-      // Cycle through type queue indefinitely until we hit TARGET
-      const type = typeQueue[i % typeQueue.length];
+    while (exercises.length < CFG.EXERCISES_PER_LESSON) {
+      if (typeI >= reviewTypeQueue.length * 4) break; // safety
+      const type    = reviewTypeQueue[typeI % reviewTypeQueue.length]; typeI++;
+      const word    = shuffledReview[ri % shuffledReview.length]; ri++;
       const handler = _exerciseRegistry[type];
-      if (!handler) { if (i > typeQueue.length * 3) break; continue; }
-
-      // word_intro: only use NEW words, each word introduced once
-      let word;
-      if (type === 'word_intro') {
-        const notYetIntroduced = newWords.filter(w => !introducedIds.has(w.id));
-        if (notYetIntroduced.length === 0) continue; // skip if all new words introduced
-        word = notYetIntroduced[0];
-        introducedIds.add(word.id);
-      } else {
-        // Bias toward new words for first 6 slots, review words after
-        const isNewSlot = exercises.length < CFG.NEW_WORD_EXERCISES;
-        const pool = isNewSlot ? newWords : reviewPool;
-        word = pool[wordIdx % pool.length];
-        wordIdx++;
-      }
-
-      const ex = await handler.build(word, allWordPool, distractors);
-      if (ex) exercises.push({
-        ...ex, type, wordId: word.id,
-        index: exercises.length,
-        isNew: newWords.some(w => w.id === word.id)
-      });
-
-      // Safety: stop infinite loop
-      if (i > TARGET * 5) break;
+      if (!handler) continue;
+      const ex = await handler.build(word, [...newWords, ...shuffledReview], distractors);
+      if (ex) exercises.push({ ...ex, type, wordId: word.id, index: exercises.length, isNew: false });
     }
 
     return exercises;
   }
 
-  // Which exercise types are available at lesson N
   function _getUnlockedTypes(lessonNum) {
-    return Object.entries(CFG.EXERCISE_UNLOCK_AT_LESSON)
-      .filter(([, unlockAt]) => lessonNum >= unlockAt)
-      .map(([type]) => type);
+    return Object.entries(CFG.EXERCISE_UNLOCK)
+      .filter(([, n]) => lessonNum >= n)
+      .map(([t]) => t);
   }
 
-  // ─────────────────────────────────────────────
-  // EXERCISE REGISTRY
-  // Register a new exercise type handler:
-  //   MaobaiEngine.registerExercise('my_type', { build, validate, score })
-  // build(word, lessonWords, distractors) → exercise object
-  // validate(userAnswer, exercise) → { correct: bool, score: 0-3 }
-  // ─────────────────────────────────────────────
-  function registerExercise(type, handler) {
-    _exerciseRegistry[type] = handler;
-    console.log(`[Engine] Registered exercise type: ${type}`);
-  }
-
-  // ─────────────────────────────────────────────
-  // ANSWER PROCESSING
-  // Call this after user answers. Returns result + updates SRS + XP + hearts
-  // ─────────────────────────────────────────────
+  // ── ANSWER PROCESSING ──
   async function processAnswer(exercise, userAnswer) {
     const handler = _exerciseRegistry[exercise.type];
-    if (!handler) throw new Error(`[Engine] No handler for type: ${exercise.type}`);
-
+    if (!handler) return { correct: false, score: 0, xpGained: 0, heartLost: false };
     const { correct, score } = handler.validate(userAnswer, exercise);
-
-    // Update SRS
-    const srsEntry = updateSRS(exercise.wordId, correct ? score : 0);
-
-    // XP always awarded (even for wrong — learning still happens)
-    const xpGained = correct ? CFG.XP_PER_EXERCISE : 1;
-    await _addXP(xpGained);
-
-    // Hearts on wrong answer
+    updateSRS(exercise.wordId, correct ? score : 0);
     let heartLost = false;
-    if (!correct) {
-      heartLost = await _loseHeart();
-    }
-
-    return {
-      correct,
-      score,
-      xpGained,
-      heartLost,
-      srsEntry,
-      correctAnswer: exercise.correctAnswer,
-      explanation:   exercise.explanation || null,
-    };
+    if (!correct) heartLost = await _loseHeart();
+    return { correct, score, xpGained: 0, heartLost, correctAnswer: exercise.correctAnswer, explanation: exercise.explanation };
   }
 
-  // ─────────────────────────────────────────────
-  // LESSON COMPLETION
-  // Call when all exercises in a session are done
-  // ─────────────────────────────────────────────
-  async function completeLesson({ lessonId, level, correctCount, totalCount }) {
-    const diamonds = CFG.DIAMONDS_PER_LESSON;
+  // ── LESSON COMPLETION ──
+  async function completeLesson({ lessonId, level, lessonNum, correctCount, totalCount, isCheckpoint }) {
+    const xp       = isCheckpoint ? CFG.XP_PER_CHECKPOINT : CFG.XP_PER_LESSON;
+    const diamonds = isCheckpoint ? CFG.DIAMONDS_CHECKPOINT : CFG.DIAMONDS_PER_LESSON;
+
+    await _addXP(xp);
     _addDiamonds(diamonds);
 
-    // Mark lesson complete in localStorage
-    const doneKey = 'completed_lessons';
-    const done    = lsGet(doneKey, []);
-    if (!done.includes(lessonId)) { done.push(lessonId); lsSet(doneKey, done); }
+    // Advance to next lesson
+    const nextLesson = lessonNum + 1;
+    setCurrentPosition(level, nextLesson);
 
-    // Supabase
+    // Mark completed
+    const done = lsGet('completed_lessons', []);
+    if (!done.includes(lessonId)) { done.push(lessonId); lsSet('completed_lessons', done); }
+
     if (_uid) {
       await sbUpsert('user_lessons', {
-        lesson_id:       lessonId,
-        hsk_level:       level,
-        status:          'completed',
-        completed_at:    new Date().toISOString(),
-        score:           Math.round((correctCount / totalCount) * 100),
-        diamonds_earned: diamonds,
+        lesson_id: lessonId, hsk_level: level,
+        status: 'completed', completed_at: new Date().toISOString(),
+        score: Math.round((correctCount / totalCount) * 100),
+        diamonds_earned: diamonds, xp_earned: xp,
       }, 'user_id,lesson_id');
     }
 
-    return { diamonds, xpTotal: totalCount * CFG.XP_PER_EXERCISE };
-  }
+    // Track lessons completed today
+    const today = new Date().toDateString();
+    if (lsGet('lesson_day', '') !== today) { lsSet('lesson_day', today); lsSet('lessons_today', 0); }
+    lsSet('lessons_today', (lsGet('lessons_today', 0)) + 1);
 
-  // ─────────────────────────────────────────────
-  // ENERGY SYSTEM
-  // ─────────────────────────────────────────────
-  function getEnergy() {
-    const saved  = lsGet('energy', CFG.ENERGY_MAX);
-    const ts     = lsGet('energy_ts', Date.now());
-    const elapsed = Date.now() - ts;
-    const regen  = Math.floor(elapsed / CFG.ENERGY_REGEN_MS);
-    const current = Math.min(CFG.ENERGY_MAX, saved + regen);
-    if (regen > 0) {
-      lsSet('energy', current);
-      lsSet('energy_ts', ts + regen * CFG.ENERGY_REGEN_MS);
+    // Check if level complete → set mock test pending
+    const totalLessons = CFG.LESSONS_PER_LEVEL[level] || 50;
+    if (nextLesson > totalLessons) {
+      lsSet(`hsk_exam_pending_${level}`, true);
+      localStorage.setItem(`hsk_exam_pending_${_uid}`, String(level));
     }
-    return current;
+
+    return { xp, diamonds, score: Math.round((correctCount / totalCount) * 100) };
   }
 
-  function consumeEnergy(amount = CFG.ENERGY_PER_EXERCISE) {
-    const current = getEnergy();
-    if (current < amount) return false;
-    lsSet('energy', current - amount);
-    lsSet('energy_ts', Date.now());
+  // ── ENERGY ──
+  function getEnergy() {
+    const saved = lsGet('energy', CFG.ENERGY_MAX);
+    const ts    = lsGet('energy_ts', Date.now());
+    const regen = Math.floor((Date.now() - ts) / CFG.ENERGY_REGEN_MS);
+    const cur   = Math.min(CFG.ENERGY_MAX, (isNaN(saved) ? CFG.ENERGY_MAX : saved) + regen);
+    if (regen > 0) { lsSet('energy', cur); lsSet('energy_ts', Date.now() - ((Date.now() - ts) % CFG.ENERGY_REGEN_MS)); }
+    return cur;
+  }
+  function consumeEnergy(n = 1) {
+    const e = getEnergy(); if (e < n) return false;
+    lsSet('energy', e - n); lsSet('energy_ts', Date.now()); return true;
+  }
+  function addEnergyAd() { lsSet('energy', Math.min(CFG.ENERGY_MAX, getEnergy() + CFG.ENERGY_AD_REWARD)); }
+
+  // ── HEARTS ──
+  function getHearts() {
+    const saved = lsGet('hearts', CFG.HEART_MAX);
+    const ts    = lsGet('heart_ts', Date.now());
+    const regen = Math.floor((Date.now() - ts) / CFG.HEART_REGEN_MS);
+    const cur   = Math.min(CFG.HEART_MAX, (isNaN(saved) ? CFG.HEART_MAX : saved) + regen);
+    if (regen > 0) { lsSet('hearts', cur); lsSet('heart_ts', Date.now() - ((Date.now() - ts) % CFG.HEART_REGEN_MS)); }
+    return cur;
+  }
+  async function _loseHeart() {
+    const h = getHearts(); if (h <= 0) return false;
+    lsSet('hearts', h - 1);
+    window.dispatchEvent(new CustomEvent('engine:heartUpdate', { detail: { hearts: h - 1 } }));
     return true;
   }
-
-  function addEnergyAd() {
-    const current = getEnergy();
-    lsSet('energy', Math.min(CFG.ENERGY_MAX, current + CFG.ENERGY_AD_REWARD));
-  }
-
-  function _startEnergyRegen() {
-    setInterval(() => {
-      const e = getEnergy(); // triggers regen calc + saves
-      window.dispatchEvent(new CustomEvent('engine:energyUpdate', { detail: { energy: e } }));
-    }, 30000);
-  }
-
-  // ─────────────────────────────────────────────
-  // HEART SYSTEM
-  // ─────────────────────────────────────────────
-  function getHearts() {
-    const saved   = lsGet('hearts', CFG.HEART_MAX);
-    const ts      = lsGet('heart_ts', Date.now());
-    const elapsed = Date.now() - ts;
-    const regen   = Math.floor(elapsed / CFG.HEART_REGEN_MS);
-    const current = Math.min(CFG.HEART_MAX, saved + regen);
-    if (regen > 0) {
-      lsSet('hearts', current);
-      lsSet('heart_ts', ts + regen * CFG.HEART_REGEN_MS);
-    }
-    return current;
-  }
-
-  async function _loseHeart() {
-    const h = getHearts();
-    if (h > 0) {
-      lsSet('hearts', h - 1);
-      window.dispatchEvent(new CustomEvent('engine:heartUpdate', { detail: { hearts: h - 1 } }));
-      return true;
-    }
-    return false;
-  }
-
   function addHeartAd() {
-    const h = getHearts();
-    lsSet('hearts', Math.min(CFG.HEART_MAX, h + CFG.HEART_AD_REWARD));
+    lsSet('hearts', Math.min(CFG.HEART_MAX, getHearts() + CFG.HEART_AD_REWARD));
     window.dispatchEvent(new CustomEvent('engine:heartUpdate', { detail: { hearts: getHearts() } }));
   }
 
-  function _startHeartRegen() {
-    setInterval(() => {
-      const h = getHearts();
-      window.dispatchEvent(new CustomEvent('engine:heartUpdate', { detail: { hearts: h } }));
-    }, 60000);
-  }
-
-  // ─────────────────────────────────────────────
-  // XP + DIAMONDS
-  // ─────────────────────────────────────────────
+  // ── XP + DIAMONDS ──
   async function _addXP(amount) {
-    const current = lsGet('xp', 0);
-    const newXP   = current + amount;
+    const cur = lsGet('xp', 0);
+    const newXP = cur + amount;
     lsSet('xp', newXP);
     window.dispatchEvent(new CustomEvent('engine:xpUpdate', { detail: { xp: newXP, gained: amount } }));
-
-    // Sync leaderboard
-    if (_uid) {
+    if (_uid && _sb) {
       try {
         const { data: row } = await _sb.from('leaderboard').select('xp').eq('user_id', _uid).maybeSingle();
-        const lbXP = (row?.xp || 0) + amount;
-        await _sb.from('leaderboard').upsert({ user_id: _uid, xp: lbXP }, { onConflict: 'user_id' });
+        await _sb.from('leaderboard').upsert({ user_id: _uid, xp: (row?.xp || 0) + amount }, { onConflict: 'user_id' });
       } catch {}
     }
   }
-
-  function _addDiamonds(amount) {
-    const current = lsGet('diamonds', 0);
-    lsSet('diamonds', current + amount);
-    window.dispatchEvent(new CustomEvent('engine:diamondsUpdate', { detail: { diamonds: current + amount } }));
+  function _addDiamonds(n) {
+    lsSet('diamonds', (lsGet('diamonds', 0)) + n);
+    window.dispatchEvent(new CustomEvent('engine:diamondsUpdate', { detail: { diamonds: lsGet('diamonds', 0) } }));
   }
 
-  // ─────────────────────────────────────────────
-  // LESSON NAVIGATION — completed lessons list
-  // ─────────────────────────────────────────────
-  function getCompletedLessons() { return lsGet('completed_lessons', []); }
+  // ── REGENS ──
+  function _startRegens() {
+    setInterval(() => {
+      window.dispatchEvent(new CustomEvent('engine:energyUpdate', { detail: { energy: getEnergy() } }));
+      window.dispatchEvent(new CustomEvent('engine:heartUpdate', { detail: { hearts: getHearts() } }));
+    }, 30000);
+  }
 
-  function isLessonComplete(lessonId) { return getCompletedLessons().includes(lessonId); }
-
+  // ── NAVIGATION ──
   function getCurrentPosition() {
-    return {
-      level:  lsGet('user_level',  1),
-      lesson: lsGet('user_lesson', 1),
-    };
+    return { level: lsGet('user_level', 1), lesson: lsGet('user_lesson', 1) };
   }
-
-  function setCurrentPosition(level, lessonNum) {
-    lsSet('user_level',  level);
-    lsSet('user_lesson', lessonNum);
+  function setCurrentPosition(level, lesson) {
+    lsSet('user_level', level); lsSet('user_lesson', lesson);
   }
+  function makeLessonId(level, n) { return `${level}-${n}`; }
+  function isLessonComplete(lessonId) { return (lsGet('completed_lessons', [])).includes(lessonId); }
+  function isCheckpointLesson(n) { return n % CFG.CHECKPOINT_EVERY === 0; }
 
-  // Build lessonId string from level + lessonNum (e.g. level=3, num=5 → "3-5")
-  function makeLessonId(level, lessonNum) { return `${level}-${lessonNum}`; }
-
-  // ─────────────────────────────────────────────
-  // UTILITY
-  // ─────────────────────────────────────────────
+  // ── UTILS ──
   function _shuffle(arr) {
     const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
     return a;
   }
-
-  // Highlight target word inside a sentence (returns HTML string)
   function highlightWord(sentence, word) {
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return sentence.replace(new RegExp(escaped, 'g'),
-      `<span class="eng-word-highlight">${word}</span>`);
+    if (!sentence || !word) return sentence || '';
+    const esc = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return sentence.replace(new RegExp(esc, 'g'), `<span class="word-hl">${word}</span>`);
   }
-
-  // TTS using browser SpeechSynthesis
   function speak(text, lang = 'zh-CN', rate = 0.85) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
-    utt.lang  = lang;
-    utt.rate  = rate;
-    // Prefer a Chinese voice if available
+    utt.lang = lang; utt.rate = rate;
     const voices = window.speechSynthesis.getVoices();
-    const cn = voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh-TW');
+    const cn = voices.find(v => v.lang.startsWith('zh'));
     if (cn) utt.voice = cn;
     window.speechSynthesis.speak(utt);
   }
+  function registerExercise(type, handler) { _exerciseRegistry[type] = handler; }
 
-  // Translate index (for future multi-language UI)
-  const _i18n = {
-    en: {
-      correct:      '✓ Correct!',
-      wrong:        '✗ Incorrect',
-      tapToReveal:  'Tap to reveal',
-      checkAnswer:  'Check Answer',
-      next:         'Next →',
-      noEnergy:     'Out of energy! Watch an ad to get +15 energy.',
-      noHearts:     'No hearts left! Watch an ad or wait 30 min.',
-      lessonDone:   'Lesson Complete! 🎉',
-    }
-  };
-  function t(key) { return (_i18n[CFG.UI_LANG] || _i18n.en)[key] || key; }
-
-  // ─────────────────────────────────────────────
-  // PUBLIC API
-  // ─────────────────────────────────────────────
   return {
-    // Core
-    init,
-    buildSession,
-    processAnswer,
-    completeLesson,
-
-    // Exercise plug-in system
+    init, buildSession, processAnswer, completeLesson,
     registerExercise,
-
-    // Resources
-    getEnergy,
-    consumeEnergy,
-    addEnergyAd,
-    getHearts,
-    addHeartAd,
-
-    // Navigation
-    getCompletedLessons,
-    isLessonComplete,
-    getCurrentPosition,
-    setCurrentPosition,
-    makeLessonId,
-    fetchLessonWords,
-    fetchWords,
-
-    // SRS
-    updateSRS,
-    getSRSEntry,
-    wordSRSState,
-
-    // Utils (exposed for exercises.js and ui.js)
-    highlightWord,
-    speak,
-    shuffle: _shuffle,
-    t,
+    getEnergy, consumeEnergy, addEnergyAd,
+    getHearts, addHeartAd,
+    getCurrentPosition, setCurrentPosition, makeLessonId,
+    isLessonComplete, isCheckpointLesson,
+    fetchWords, fetchLessonWords,
+    updateSRS, getSRSEntry, getMistakeWords,
+    highlightWord, speak, shuffle: _shuffle,
     CFG,
   };
 })();
-/**
- * Maobai Learning Engine — exercises.js
- * All 10 exercise type handlers.
- *
- * Each handler has:
- *   build(word, lessonWords, distractors) → exercise object
- *   validate(userAnswer, exercise)        → { correct: bool, score: 0-3 }
- *
- * Exercise object shape (always includes):
- *   { type, wordId, prompt, correctAnswer, explanation?, uiHint }
- *   + type-specific fields
- *
- * To add a new exercise type in the future:
- *   MaobaiEngine.registerExercise('my_type', { build, validate });
- *   Add a renderer in ui.js renderExercise() switch.
- *   Done — no other files need changing.
- */
 
-(function () {
+// ═══════════════════════════════════════════════════════════
+// PART 2: EXERCISE TYPES
+// All exercise types for HSK 1-2
+// ═══════════════════════════════════════════════════════════
+(function() {
+  const E = MaobaiEngine;
 
-  const E = MaobaiEngine; // alias
+  function shuffle(a) { return E.shuffle(a); }
 
-  // ─────────────────────────────────────────────
-  // SHARED HELPERS
-  // ─────────────────────────────────────────────
+  // Emoji map for HSK1-2 concrete words
+  const EMOJI_MAP = {
+    '水':'💧','茶':'🍵','咖啡':'☕','米饭':'🍚','面条':'🍜','鱼':'🐟','肉':'🥩','菜':'🥬',
+    '苹果':'🍎','鸡蛋':'🥚','面包':'🍞','汤':'🍲',
+    '猫':'🐱','狗':'🐶','鸟':'🐦','马':'🐴','牛':'🐮',
+    '书':'📖','手机':'📱','电脑':'💻','电视':'📺','照片':'📸',
+    '家':'🏠','学校':'🏫','医院':'🏥','商店':'🏪','饭店':'🍽️',
+    '车':'🚗','飞机':'✈️','火车':'🚂','公共汽车':'🚌',
+    '钱':'💰','衣服':'👕','裤子':'👖','鞋':'👟',
+    '爸爸':'👨','妈妈':'👩','朋友':'👫','老师':'👨‍🏫','学生':'🧑‍🎓',
+    '医生':'👨‍⚕️','工人':'👷',
+    '大':'📏','小':'🔬','多':'➕','少':'➖','好':'😊','不好':'😞',
+    '今天':'📅','明天':'📆','昨天':'📅','现在':'⏰','早上':'🌅','晚上':'🌙',
+    '冷':'🥶','热':'🥵','高兴':'😄','累':'😴','饿':'🤤',
+    '中国':'🇨🇳','北京':'🏙️','上海':'🌆',
+    '你好':'👋','谢谢':'🙏','对不起':'😔','没关系':'🤝',
+    '一':'1️⃣','二':'2️⃣','三':'3️⃣','四':'4️⃣','五':'5️⃣',
+    '六':'6️⃣','七':'7️⃣','八':'8️⃣','九':'9️⃣','十':'🔟',
+  };
 
-  function pick(arr, n) {
-    return E.shuffle(arr).slice(0, n);
+  function getEmoji(word) { return EMOJI_MAP[word.zh] || null; }
+
+  function pick(arr, n) { return shuffle(arr).slice(0, n); }
+
+  function mcOptions4(correctVal, pool, fn) {
+    const wrongs = pick(pool, 3).map(w => ({ label: fn(w), correct: false }));
+    return shuffle([{ label: correctVal, correct: true }, ...wrongs]);
   }
 
-  // Build 4 MC options: 1 correct + 3 distractors, shuffled
-  function mcOptions(correctLabel, pool, labelFn, n = 3) {
-    const wrongs = pick(pool, n).map(w => ({ label: labelFn(w), correct: false }));
-    const all = E.shuffle([{ label: correctLabel, correct: true }, ...wrongs]);
-    return all;
-  }
-
-  // Score based on attempt speed / confidence (for now: correct=3 always, can extend)
-  function scoreCorrect() { return 3; }
-
-  // ─────────────────────────────────────────────
-  // TYPE 1 — WORD INTRODUCTION
-  // Show new word, pinyin, highlighted in example sentence. No question to answer —
-  // user just reads and taps "Got it". Always scores as correct (SRS: easy).
-  // ─────────────────────────────────────────────
+  // ── TYPE: WORD INTRO ──
+  // Show new word large, with pinyin, English, example sentence. Tap to continue.
   E.registerExercise('word_intro', {
     build(word) {
       return {
-        type:          'word_intro',
-        wordId:        word.id,
-        word:          word.zh,
-        pinyin:        word.pinyin,
-        english:       word.english,
-        wordType:      word.word_type,
-        sentenceZh:    word.example_zh,
-        sentencePinyin: word.example_pinyin,
-        sentenceEn:    word.example_en,
-        // Highlight target word in the example sentence
-        sentenceZhHighlighted: E.highlightWord(word.example_zh, word.zh),
-        prompt:        'New Word',
-        correctAnswer: 'seen',
-        uiHint:        'intro',
+        type: 'word_intro', wordId: word.id, uiHint: 'intro',
+        word: word.zh, pinyin: word.pinyin, english: word.english,
+        wordType: word.word_type || '',
+        sentenceZh: word.example_zh, sentencePinyin: word.example_pinyin,
+        sentenceEn: word.example_en,
+        sentenceZhHL: E.highlightWord(word.example_zh, word.zh),
+        prompt: 'New Word', correctAnswer: 'seen',
+        explanation: '',
       };
     },
-    validate(userAnswer) {
-      // Always correct — this is introduction, not a test
-      return { correct: true, score: 2 };
-    },
+    validate() { return { correct: true, score: 2 }; },
   });
 
-  // ─────────────────────────────────────────────
-  // TYPE 2 — GAP FILL (SENTENCE COMPLETION)
-  // Show sentence with target word blanked out.
-  // Show 4 word choices (Chinese characters). User picks correct one.
-  // ─────────────────────────────────────────────
+  // ── TYPE: SELECT IMAGE ──
+  // Show Chinese word + pinyin. Pick the correct image (emoji) from 4 options.
+  // If no emoji available, falls back to word_meaning.
+  E.registerExercise('select_image', {
+    build(word, lessonWords, distractors) {
+      const emoji = getEmoji(word);
+      if (!emoji) {
+        // Fallback to select_meaning
+        return _buildSelectMeaning(word, lessonWords, distractors);
+      }
+      const pool = shuffle([...lessonWords, ...distractors].filter(w => w.id !== word.id && getEmoji(w)));
+      // If not enough emoji words, pad with non-emoji as text options
+      const options4 = [];
+      options4.push({ id: word.id, emoji: emoji, label: word.english, correct: true });
+      for (const w of pool) {
+        if (options4.length >= 4) break;
+        const e = getEmoji(w);
+        if (e) options4.push({ id: w.id, emoji: e, label: w.english, correct: false });
+      }
+      // Pad with text if needed
+      for (const w of distractors) {
+        if (options4.length >= 4) break;
+        options4.push({ id: w.id, emoji: '❓', label: w.english, correct: false });
+      }
+      return {
+        type: 'select_image', wordId: word.id, uiHint: 'select_image',
+        word: word.zh, pinyin: word.pinyin,
+        options: shuffle(options4),
+        correctAnswer: word.english,
+        prompt: 'Select the correct image',
+        explanation: `${word.zh} (${word.pinyin}) = "${word.english}"\n${word.example_zh}\n→ ${word.example_en}`,
+      };
+    },
+    validate(ans, ex) { return { correct: ans === ex.correctAnswer, score: 3 }; },
+  });
+
+  // ── TYPE: WORD MEANING ──
+  // Show English word/meaning. Pick the Chinese character (with pinyin shown).
+  E.registerExercise('word_meaning', {
+    build(word, lessonWords, distractors) {
+      const pool = shuffle([...lessonWords, ...distractors].filter(w => w.id !== word.id));
+      const options = mcOptions4(word.zh, pool, w => w.zh);
+      return {
+        type: 'word_meaning', wordId: word.id, uiHint: 'word_meaning',
+        english: word.english,
+        // Also show pinyin on each option
+        optionsWithPinyin: options.map(o => {
+          const match = [...lessonWords, ...distractors, word].find(w => w.zh === o.label);
+          return { ...o, pinyin: match?.pinyin || '' };
+        }),
+        options,
+        correctAnswer: word.zh,
+        prompt: 'Select the correct translation',
+        explanation: `"${word.english}" = ${word.zh} (${word.pinyin})\n${word.example_zh}\n→ ${word.example_en}`,
+      };
+    },
+    validate(ans, ex) { return { correct: ans === ex.correctAnswer, score: 3 }; },
+  });
+
+  // ── TYPE: SELECT MEANING ──
+  // Show Chinese word + pinyin. Pick the English meaning from 4 options.
+  function _buildSelectMeaning(word, lessonWords, distractors) {
+    const pool = shuffle([...lessonWords, ...distractors].filter(w => w.id !== word.id));
+    const options = mcOptions4(word.english, pool, w => w.english);
+    return {
+      type: 'select_meaning', wordId: word.id, uiHint: 'select_meaning',
+      word: word.zh, pinyin: word.pinyin,
+      options,
+      correctAnswer: word.english,
+      prompt: 'What does this mean?',
+      explanation: `${word.zh} (${word.pinyin}) = "${word.english}"\n${word.example_zh}\n→ ${word.example_en}`,
+    };
+  }
+  E.registerExercise('select_meaning', {
+    build(word, lessonWords, distractors) { return _buildSelectMeaning(word, lessonWords, distractors); },
+    validate(ans, ex) { return { correct: ans === ex.correctAnswer, score: 3 }; },
+  });
+
+  // ── TYPE: TAP WHAT YOU HEAR ──
+  // Play audio of a word. Show 4 word tile options (Chinese + pinyin). Tap correct one.
+  E.registerExercise('tap_what_you_hear', {
+    build(word, lessonWords, distractors) {
+      const pool = shuffle([...lessonWords, ...distractors].filter(w => w.id !== word.id));
+      const wrong = pick(pool, 3);
+      const options = shuffle([word, ...wrong]);
+      return {
+        type: 'tap_what_you_hear', wordId: word.id, uiHint: 'tap_what_you_hear',
+        audioText: word.zh,
+        options: options.map(w => ({ zh: w.zh, pinyin: w.pinyin, correct: w.id === word.id })),
+        correctAnswer: word.zh,
+        prompt: 'Tap what you hear',
+        explanation: `You heard: ${word.zh} (${word.pinyin}) = "${word.english}"\n${word.example_zh}\n→ ${word.example_en}`,
+      };
+    },
+    validate(ans, ex) { return { correct: ans === ex.correctAnswer, score: 3 }; },
+  });
+
+  // ── TYPE: GAP FILL ──
+  // Show sentence with word blanked. 4 choices (Chinese chars). Tap correct.
+  // IMPORTANT: sentence only uses words from the learned pool — no unknowns.
   E.registerExercise('gap_fill', {
     build(word, lessonWords, distractors) {
-      const pool     = [...lessonWords, ...distractors].filter(w => w.id !== word.id);
-      const sentence = word.example_zh.replace(word.zh, '___');
-      const options  = mcOptions(word.zh, pool, w => w.zh, 3);
-
+      const sentence = word.example_zh;
+      if (!sentence || !sentence.includes(word.zh)) {
+        // Fallback if word not in sentence
+        return _buildSelectMeaning(word, lessonWords, distractors);
+      }
+      const blanked = sentence.replace(word.zh, '___');
+      const pool = shuffle([...lessonWords, ...distractors].filter(w => w.id !== word.id));
+      const options = mcOptions4(word.zh, pool, w => w.zh);
       return {
-        type:          'gap_fill',
-        wordId:        word.id,
-        sentenceZh:    sentence,
-        sentenceEn:    word.example_en,
+        type: 'gap_fill', wordId: word.id, uiHint: 'gap_fill',
+        sentenceZh: blanked,
+        sentenceEn: word.example_en,
         options,
         correctAnswer: word.zh,
-        explanation:   `The full sentence: ${word.example_zh}\n(${word.example_en})`,
-        prompt:        'Choose the word that fits the blank',
-        uiHint:        'multiple_choice',
+        prompt: 'Fill in the blank',
+        explanation: `✅ ${word.zh} (${word.pinyin}) = "${word.english}"\nFull sentence: ${word.example_zh}\n→ ${word.example_en}`,
       };
     },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
-    },
+    validate(ans, ex) { return { correct: ans === ex.correctAnswer, score: 3 }; },
   });
 
-  // ─────────────────────────────────────────────
-  // TYPE 3A — HANZI TO ENGLISH (meaning recall)
-  // Show the Chinese word. Pick the correct English meaning.
-  // ─────────────────────────────────────────────
-  E.registerExercise('hanzi_to_english', {
+  // ── TYPE: SELECT TRANSLATION ──
+  // Show Chinese sentence. Tap English word tiles (word bank) to build translation.
+  // Shows only words from the learned pool so user isn't confused.
+  E.registerExercise('select_translation', {
     build(word, lessonWords, distractors) {
-      const pool    = [...lessonWords, ...distractors].filter(w => w.id !== word.id);
-      const options = mcOptions(word.english, pool, w => w.english, 3);
-
+      // Split English sentence into words as tiles
+      const answer = word.example_en;
+      const answerWords = answer.replace(/[.,?!]/g, '').split(' ').filter(Boolean);
+      // Distractor tiles: other English words from distractors
+      const distWords = shuffle([...distractors].map(w => w.english.split(' ')[0])).slice(0, 4);
+      const allTiles = shuffle([...answerWords, ...distWords]);
       return {
-        type:          'hanzi_to_english',
-        wordId:        word.id,
-        // Show word IN CONTEXT — sentence with word highlighted
-        sentenceZhHighlighted: E.highlightWord(word.example_zh, word.zh),
-        word:          word.zh,
-        pinyin:        word.pinyin,
-        options,
-        correctAnswer: word.english,
-        explanation:   `${word.zh} (${word.pinyin}) = ${word.english}`,
-        prompt:        'What does the highlighted word mean?',
-        uiHint:        'multiple_choice',
+        type: 'select_translation', wordId: word.id, uiHint: 'word_bank',
+        sentenceZh: word.example_zh,
+        sentenceZhHL: E.highlightWord(word.example_zh, word.zh),
+        tiles: allTiles,
+        correctAnswer: answerWords.join(' '),
+        prompt: 'Translate this sentence',
+        explanation: `${word.example_zh}\n→ "${word.example_en}"\nKey: ${word.zh} (${word.pinyin}) = ${word.english}`,
       };
     },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
+    validate(ans, ex) {
+      const clean = s => s.toLowerCase().replace(/[.,?!]/g, '').trim();
+      return { correct: clean(ans) === clean(ex.correctAnswer), score: 2 };
     },
   });
 
-  // ─────────────────────────────────────────────
-  // TYPE 3B — ENGLISH TO HANZI (reverse recall)
-  // Show English meaning. Pick the correct Chinese character.
-  // ─────────────────────────────────────────────
-  E.registerExercise('english_to_hanzi', {
+  // ── TYPE: WORD BANK BUILD ──
+  // Show English sentence. Tap Chinese tiles to build the Chinese translation.
+  E.registerExercise('word_bank_build', {
     build(word, lessonWords, distractors) {
-      const pool    = [...lessonWords, ...distractors].filter(w => w.id !== word.id);
-      const options = mcOptions(word.zh, pool, w => w.zh, 3);
-
+      const answer = word.example_zh.replace(/[，。！？]/g, '');
+      // Tokenise: each character or 2-char word as a tile
+      const tokens = _tokenise(answer);
+      const distTokens = shuffle([...distractors].flatMap(w => _tokenise(w.zh))).slice(0, 3);
+      const allTiles = shuffle([...tokens, ...distTokens]);
       return {
-        type:          'english_to_hanzi',
-        wordId:        word.id,
-        sentenceEn:    word.example_en,
-        english:       word.english,
-        options,
-        correctAnswer: word.zh,
-        explanation:   `${word.english} = ${word.zh} (${word.pinyin})`,
-        prompt:        'Which character matches the English meaning?',
-        uiHint:        'multiple_choice',
+        type: 'word_bank_build', wordId: word.id, uiHint: 'word_bank_cn',
+        sentenceEn: word.example_en,
+        tiles: allTiles,
+        correctAnswer: tokens.join(''),
+        prompt: 'Write in Chinese',
+        explanation: `"${word.example_en}"\n→ ${word.example_zh} (${word.example_pinyin})\nKey: ${word.zh} (${word.pinyin}) = ${word.english}`,
       };
     },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
+    validate(ans, ex) {
+      return { correct: ans.replace(/\s/g,'') === ex.correctAnswer.replace(/\s/g,''), score: 2 };
     },
   });
 
-  // ─────────────────────────────────────────────
-  // TYPE 4 — WORD ORDER (pattern completion)
-  // Show shuffled Chinese words/characters. User drags/taps to correct order.
-  // The sentence tokens come from the example sentence.
-  // ─────────────────────────────────────────────
+  // ── TYPE: WORD ORDER ──
+  // Show English prompt. Arrange shuffled Chinese word tiles in correct order.
   E.registerExercise('word_order', {
-    build(word) {
-      // Tokenise by Chinese words (split on common punctuation + spaces)
-      // Simple approach: split example into segments of 1-3 chars + particles
-      const raw    = word.example_zh.replace(/[，。！？、：；""''（）]/g, '');
-      const tokens = _segmentChinese(raw);
-      const shuffled = E.shuffle([...tokens]);
-
+    build(word, lessonWords, distractors) {
+      const sentence = word.example_zh.replace(/[，。！？]/g, '');
+      const tokens = _tokenise(sentence);
+      if (tokens.length < 3) return _buildSelectMeaning(word, lessonWords, distractors);
       return {
-        type:          'word_order',
-        wordId:        word.id,
-        tokens:        shuffled,
+        type: 'word_order', wordId: word.id, uiHint: 'word_order',
+        tiles: shuffle([...tokens]),
         correctTokens: tokens,
         correctAnswer: tokens.join(''),
-        sentenceEn:    word.example_en,
-        wordHighlight: word.zh,
-        prompt:        'Arrange the words in the correct order',
-        uiHint:        'drag_order',
-        explanation:   `Correct order: ${tokens.join(' ')} — ${word.example_en}`,
+        sentenceEn: word.example_en,
+        prompt: 'Arrange the words in the correct order',
+        explanation: `Correct: ${tokens.join(' ')}\n→ "${word.example_en}"\nKey: ${word.zh} = ${word.english}`,
       };
     },
-    validate(userAnswer, exercise) {
-      // userAnswer: array of tokens in user's order, or joined string
-      const ans     = Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer;
-      const correct = ans === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
+    validate(ans, ex) {
+      const a = Array.isArray(ans) ? ans.join('') : ans;
+      return { correct: a === ex.correctAnswer, score: 3 };
     },
   });
 
-  // Simple Chinese sentence segmenter — splits into chunks recognisable as words
-  function _segmentChinese(text) {
-    // Attempt to split by known 2-char patterns then single chars
-    // A full segmenter (jieba) is overkill; this is good enough for example sentences
+  // Simple Chinese tokeniser — splits into 2-char chunks where possible
+  function _tokenise(text) {
+    if (!text) return [];
     const result = [];
     let i = 0;
     while (i < text.length) {
-      // Try 4-char chunk first (compound words), then 3, then 2, then 1
-      let pushed = false;
-      for (const len of [4, 3, 2]) {
-        if (i + len <= text.length) {
-          result.push(text.slice(i, i + len));
-          i += len;
-          pushed = true;
-          break;
-        }
-      }
-      if (!pushed) { result.push(text[i]); i++; }
+      if (i + 1 < text.length) { result.push(text.slice(i, i + 2)); i += 2; }
+      else { result.push(text[i]); i++; }
     }
-    // Recombine very short solo chars with previous (avoid 1-char tokens for very short segs)
     return result.filter(Boolean);
   }
 
-  // ─────────────────────────────────────────────
-  // TYPE 5 — NEGATION BUILDER
-  // Show an affirmative sentence. User must choose the correct negative form
-  // using 不 or 没有 (displayed as 4 options).
-  // ─────────────────────────────────────────────
-  E.registerExercise('negation', {
-    build(word) {
-      const affirm = word.example_zh;
-
-      // Build negation: insert 不/没 before the verb
-      // Rules: 有 → 没有, verb in past/completed context → 没, else 不
-      const useMei = affirm.includes('了') || affirm.includes('过') || word.zh === '有';
-      const neg    = useMei
-        ? _insertNegation(affirm, '没')
-        : _insertNegation(affirm, '不');
-
-      const neg2   = useMei
-        ? _insertNegation(affirm, '不')
-        : _insertNegation(affirm, '没');
-
-      // Distractors: wrong negation positions or wrong negators
-      const options = E.shuffle([
-        { label: neg,   correct: true },
-        { label: neg2,  correct: false },
-        // Wrong position
-        { label: '不' + affirm, correct: false },
-        { label: affirm.replace(word.zh, word.zh + '不'), correct: false },
-      ]).slice(0, 4);
-
-      return {
-        type:          'negation',
-        wordId:        word.id,
-        affirmative:   affirm,
-        sentenceEn:    word.example_en,
-        options,
-        correctAnswer: neg,
-        prompt:        'Make this sentence negative',
-        uiHint:        'multiple_choice',
-        explanation:   `Use ${useMei ? '没/没有' : '不'} to negate action/state sentences.\n→ ${neg}`,
-      };
-    },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
-    },
-  });
-
-  function _insertNegation(sentence, neg) {
-    // Find the first verb-like character after a subject (first 1-2 chars)
-    // Simplified: insert after the first 1-2 characters
-    if (sentence.length <= 2) return neg + sentence;
-    const cutPoint = sentence.length > 4 ? 2 : 1;
-    return sentence.slice(0, cutPoint) + neg + sentence.slice(cutPoint);
-  }
-
-  // ─────────────────────────────────────────────
-  // TYPE 6 — QUESTION BUILDER
-  // Show a statement. Show 4 question forms — user picks the grammatically
-  // correct question that matches the statement's meaning.
-  // ─────────────────────────────────────────────
-  E.registerExercise('question_builder', {
-    build(word) {
-      const statement = word.example_zh;
-
-      // Generate question forms
-      const questions = _generateQuestions(statement, word);
-
-      return {
-        type:          'question_builder',
-        wordId:        word.id,
-        statement,
-        sentenceEn:    word.example_en,
-        options:       questions,
-        correctAnswer: questions.find(q => q.correct)?.label || questions[0].label,
-        prompt:        'Which question matches this statement?',
-        uiHint:        'multiple_choice',
-        explanation:   `The correct question form uses the right question word for the context.`,
-      };
-    },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
-    },
-  });
-
-  function _generateQuestions(statement, word) {
-    // Map common patterns to question words
-    const qWords = ['吗', '呢', '什么', '谁', '哪', '怎么', '为什么', '几'];
-    const isYesNo     = !statement.includes('什么') && !statement.includes('谁');
-    const correctQ    = isYesNo ? statement.replace(/。$/, '') + '吗？' : statement.replace(/[^？]+/, '') + '？';
-
-    return E.shuffle([
-      { label: correctQ,                          correct: true  },
-      { label: '是不是' + statement,               correct: false },
-      { label: statement.replace(/。$/, '') + '呢？',correct: false },
-      { label: '你' + statement.replace(/[^。]+。/, '') + '什么？', correct: false },
-    ]).slice(0, 4);
-  }
-
-  // ─────────────────────────────────────────────
-  // TYPE 7 — ERROR CORRECTION
-  // Show a grammatically wrong sentence (with a subtle error injected).
-  // Show 4 options: the corrected sentence + 3 wrong variants.
-  // ─────────────────────────────────────────────
-  E.registerExercise('error_correction', {
-    build(word, lessonWords) {
-      const correct = word.example_zh;
-      const error   = _injectError(correct, word);
-
-      // Distractor corrections
-      const other = E.shuffle(lessonWords.filter(w => w.id !== word.id)).slice(0, 2);
-      const options = E.shuffle([
-        { label: correct, correct: true },
-        { label: _injectError(correct, word, 'swap'),  correct: false },
-        { label: other[0]?.example_zh || _injectError(correct, word, 'add'), correct: false },
-        { label: _injectError(correct, word, 'remove'), correct: false },
-      ]);
-
-      return {
-        type:          'error_correction',
-        wordId:        word.id,
-        errorSentence: error,
-        sentenceEn:    word.example_en,
-        options,
-        correctAnswer: correct,
-        prompt:        'Find the correct sentence (one below has a grammar error)',
-        uiHint:        'multiple_choice',
-        explanation:   `Correct: ${correct}`,
-      };
-    },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
-    },
-  });
-
-  function _injectError(sentence, word, mode = 'neg') {
-    if (mode === 'swap') {
-      // Swap two adjacent characters
-      const i = Math.floor(sentence.length / 2);
-      return sentence.slice(0, i) + sentence[i + 1] + sentence[i] + sentence.slice(i + 2);
-    }
-    if (mode === 'add') {
-      // Add 的 in wrong place
-      return sentence.slice(0, 2) + '的' + sentence.slice(2);
-    }
-    if (mode === 'remove') {
-      // Remove a character
-      const i = Math.max(1, Math.floor(sentence.length * 0.4));
-      return sentence.slice(0, i) + sentence.slice(i + 1);
-    }
-    // Default: misplace negation
-    return '不' + sentence;
-  }
-
-  // ─────────────────────────────────────────────
-  // TYPE 8 — AUDIO CHOICE
-  // Two sub-modes alternate:
-  //   8a: Hear sentence, TYPE what you heard (short answer)
-  //   8b: Hear sentence, PICK which of 4 written sentences matches
-  // Uses browser SpeechSynthesis.
-  // ─────────────────────────────────────────────
-  E.registerExercise('audio_choice', {
-    build(word, lessonWords) {
-      const mode = Math.random() > 0.5 ? 'listen_pick' : 'listen_write';
-
-      if (mode === 'listen_pick') {
-        const pool = E.shuffle(lessonWords.filter(w => w.id !== word.id)).slice(0, 3);
-        const options = E.shuffle([
-          { label: word.example_zh, correct: true },
-          ...pool.map(w => ({ label: w.example_zh, correct: false })),
-        ]);
-
-        return {
-          type:          'audio_choice',
-          subMode:       'listen_pick',
-          wordId:        word.id,
-          audioText:     word.example_zh,
-          options,
-          correctAnswer: word.example_zh,
-          prompt:        '🔊 Listen, then choose the sentence you heard',
-          uiHint:        'audio_multiple_choice',
-          explanation:   `You heard: ${word.example_zh}\n(${word.example_en})`,
-        };
-      } else {
-        return {
-          type:          'audio_choice',
-          subMode:       'listen_write',
-          wordId:        word.id,
-          audioText:     word.example_zh,
-          correctAnswer: word.example_zh,
-          prompt:        '🔊 Listen and type what you hear (in Pinyin or Hanzi)',
-          uiHint:        'audio_text_input',
-          explanation:   `The sentence was: ${word.example_zh} (${word.example_en})`,
-          // Accept pinyin as correct too (loose match)
-          acceptPinyin:  word.example_pinyin,
-        };
-      }
-    },
-    validate(userAnswer, exercise) {
-      if (exercise.subMode === 'listen_pick') {
-        const correct = userAnswer === exercise.correctAnswer;
-        return { correct, score: correct ? scoreCorrect() : 0 };
-      } else {
-        // Listen-write: fuzzy match — accept if >70% characters match
-        const a = (userAnswer || '').trim().toLowerCase().replace(/\s/g, '');
-        const b = exercise.correctAnswer.replace(/[，。！？]/g, '').toLowerCase();
-        const p = (exercise.acceptPinyin || '').toLowerCase().replace(/\s/g, '');
-
-        const hanziMatch  = _similarity(a, b) >= 0.7;
-        const pinyinMatch = _similarity(a, p) >= 0.7;
-        const correct     = hanziMatch || pinyinMatch;
-        return { correct, score: correct ? 2 : 0 }; // max score 2 for typed answers
-      }
-    },
-  });
-
-  // Levenshtein-based similarity score 0-1
-  function _similarity(a, b) {
-    if (!a || !b) return 0;
-    const maxLen = Math.max(a.length, b.length);
-    if (maxLen === 0) return 1;
-    return (maxLen - _levenshtein(a, b)) / maxLen;
-  }
-
-  function _levenshtein(a, b) {
-    const dp = Array.from({ length: a.length + 1 }, (_, i) =>
-      Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-    );
-    for (let i = 1; i <= a.length; i++)
-      for (let j = 1; j <= b.length; j++)
-        dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1]
-          : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-    return dp[a.length][b.length];
-  }
-
-  // ─────────────────────────────────────────────
-  // TYPE 9 — READ TRUE / FALSE
-  // AI generates a short 3-4 sentence passage using the lesson words.
-  // Shows 4 statements about the passage; user picks True or False for each.
-  // The AI call is made once per lesson and cached.
-  // ─────────────────────────────────────────────
-  E.registerExercise('read_true_false', {
-    async build(word, lessonWords) {
-      // Use up to 5 words from the lesson for context
-      const contextWords = [word, ...E.shuffle(lessonWords.filter(w => w.id !== word.id)).slice(0, 4)];
-      const cacheKey     = `rtf_cache_${contextWords.map(w => w.id).join('-')}`;
-
-      // Check localStorage cache first
-      let data = null;
-      try { data = JSON.parse(localStorage.getItem(cacheKey)); } catch {}
-
-      if (!data) {
-        data = await _generateReadingPassage(contextWords);
-        try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch {}
-      }
-
-      return {
-        type:          'read_true_false',
-        wordId:        word.id,
-        passage:       data.passage,
-        passageEn:     data.passageEn,
-        statements:    data.statements, // [{ text, isTrue }]
-        correctAnswer: data.statements.map(s => s.isTrue ? 'true' : 'false'),
-        prompt:        'Read the passage and mark each statement True or False',
-        uiHint:        'true_false',
-        explanation:   data.passageEn,
-      };
-    },
-    validate(userAnswer, exercise) {
-      // userAnswer: array of 'true'/'false' strings
-      if (!Array.isArray(userAnswer)) return { correct: false, score: 0 };
-      const correct = exercise.correctAnswer.every((a, i) => a === userAnswer[i]);
-      const partialScore = exercise.correctAnswer.filter((a, i) => a === userAnswer[i]).length;
-      const score = partialScore === exercise.correctAnswer.length ? 3
-                  : partialScore >= 2 ? 2
-                  : partialScore >= 1 ? 1 : 0;
-      return { correct, score };
-    },
-  });
-
-  async function _generateReadingPassage(words) {
-    const wordList = words.map(w => `${w.zh} (${w.english})`).join(', ');
-    const prompt   = `Create a very short Chinese reading comprehension exercise for HSK learners.
-
-Words to use: ${wordList}
-
-Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
-{
-  "passage": "3-4 sentence Chinese passage using the vocabulary above",
-  "passageEn": "English translation of the passage",
-  "statements": [
-    { "text": "Chinese statement about the passage", "isTrue": true },
-    { "text": "Chinese statement about the passage", "isTrue": false },
-    { "text": "Chinese statement about the passage", "isTrue": true },
-    { "text": "Chinese statement about the passage", "isTrue": false }
-  ]
-}`;
-
-    try {
-      const res  = await fetch('https://api.anthropic.com/v1/messages', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          model:      'claude-sonnet-4-20250514',
-          max_tokens: 600,
-          messages:   [{ role: 'user', content: prompt }],
-        }),
-      });
-      const json = await res.json();
-      const raw  = json.content?.find(c => c.type === 'text')?.text || '';
-      return JSON.parse(raw.replace(/```json|```/g, '').trim());
-    } catch (e) {
-      console.warn('[Engine] AI passage generation failed, using fallback', e);
-      return _fallbackPassage(words);
-    }
-  }
-
-  function _fallbackPassage(words) {
-    const w = words[0];
-    return {
-      passage:   w.example_zh,
-      passageEn: w.example_en,
-      statements: [
-        { text: w.example_zh, isTrue: true },
-        { text: '这个句子是错误的。', isTrue: false },
-        { text: `${w.zh}出现在这段文字中。`, isTrue: true },
-        { text: '这段文字不包含任何动词。', isTrue: false },
-      ],
-    };
-  }
-
-  // ─────────────────────────────────────────────
-  // TYPE 10A — TRANSLATE CN → EN
-  // Show Chinese sentence. User types English translation (or picks from 4 options).
-  // ─────────────────────────────────────────────
-  E.registerExercise('translate_cn_en', {
-    build(word, lessonWords) {
-      // Multiple choice variant (avoids needing perfect NLP scoring for typed)
-      const pool    = E.shuffle(lessonWords.filter(w => w.id !== word.id)).slice(0, 3);
-      const options = E.shuffle([
-        { label: word.example_en, correct: true },
-        ...pool.map(w => ({ label: w.example_en, correct: false })),
-      ]);
-
-      return {
-        type:          'translate_cn_en',
-        wordId:        word.id,
-        sentenceZhHighlighted: E.highlightWord(word.example_zh, word.zh),
-        sentenceZh:    word.example_zh,
-        options,
-        correctAnswer: word.example_en,
-        prompt:        'Translate the Chinese sentence to English',
-        uiHint:        'multiple_choice',
-        explanation:   `${word.example_zh} = ${word.example_en}`,
-      };
-    },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
-    },
-  });
-
-  // ─────────────────────────────────────────────
-  // TYPE 10B — TRANSLATE EN → CN
-  // Show English sentence. User picks correct Chinese translation from 4 options.
-  // ─────────────────────────────────────────────
-  E.registerExercise('translate_en_cn', {
-    build(word, lessonWords) {
-      const pool    = E.shuffle(lessonWords.filter(w => w.id !== word.id)).slice(0, 3);
-      const options = E.shuffle([
-        { label: word.example_zh, correct: true },
-        ...pool.map(w => ({ label: w.example_zh, correct: false })),
-      ]);
-
-      return {
-        type:          'translate_en_cn',
-        wordId:        word.id,
-        sentenceEn:    word.example_en,
-        options,
-        correctAnswer: word.example_zh,
-        prompt:        'Translate the English sentence to Chinese',
-        uiHint:        'multiple_choice',
-        explanation:   `${word.example_en} = ${word.example_zh} (${word.example_pinyin})`,
-      };
-    },
-    validate(userAnswer, exercise) {
-      const correct = userAnswer === exercise.correctAnswer;
-      return { correct, score: correct ? scoreCorrect() : 0 };
-    },
-  });
-
 })();
-/**
- * Maobai Learning Engine — ui.js
- * Renders any exercise object to the DOM.
- * Handles energy wall, heart wall, answer feedback, session progress.
- *
- * Expects a <div id="lesson-root"> in the page.
- * Dispatches custom events for the page to react to:
- *   engine:sessionComplete  — { xpTotal, diamonds, correctCount, totalCount }
- *   engine:energyEmpty      — show ad wall
- *   engine:heartsEmpty      — show heart wall
- */
 
+// ═══════════════════════════════════════════════════════════
+// PART 3: UI RENDERER
+// ═══════════════════════════════════════════════════════════
 const MaobaiUI = (() => {
+  const E = MaobaiEngine;
+  let _session, _idx, _correct, _root, _answered;
 
-  const E   = MaobaiEngine;
-  let _session     = null;
-  let _currentIdx  = 0;
-  let _correctCount = 0;
-  let _root        = null;
-  let _answered    = false;   // prevent double-tap
-
-  // ─────────────────────────────────────────────
-  // START SESSION
-  // ─────────────────────────────────────────────
+  // ── START SESSION ──
   async function startSession(session) {
-    _session      = session;
-    _currentIdx   = 0;
-    _correctCount = 0;
-    _answered     = false;
-    _root = document.getElementById('lesson-root');
-    if (!_root) throw new Error('[UI] #lesson-root not found');
-
-    _renderProgress();
-    await _renderExercise(_session.exercises[0]);
-  }
-
-  // ─────────────────────────────────────────────
-  // PROGRESS BAR
-  // ─────────────────────────────────────────────
-  function _renderProgress() {
-    const pct = Math.round((_currentIdx / _session.totalExercises) * 100);
-    const bar = document.getElementById('lesson-progress-fill');
-    if (bar) bar.style.width = pct + '%';
-    const label = document.getElementById('lesson-progress-label');
-    if (label) label.textContent = `${_currentIdx} / ${_session.totalExercises}`;
-
-    // Update hearts & energy in header
-    const heartsEl = document.getElementById('hud-hearts');
-    if (heartsEl) heartsEl.textContent = '❤️'.repeat(E.getHearts()) + '🖤'.repeat(E.CFG.HEART_MAX - E.getHearts());
-    const energyEl = document.getElementById('hud-energy');
-    if (energyEl) energyEl.textContent = `⚡ ${E.getEnergy()}`;
-  }
-
-  // ─────────────────────────────────────────────
-  // RENDER EXERCISE (router)
-  // ─────────────────────────────────────────────
-  async function _renderExercise(exercise) {
+    _session  = session;
+    _idx      = 0;
+    _correct  = 0;
     _answered = false;
-    if (!exercise) { _finishSession(); return; }
+    _root     = document.getElementById('lesson-root');
+    _updateProgress();
+    _render(_session.exercises[0]);
+  }
 
-    // Check energy BEFORE rendering
-    if (!E.consumeEnergy(E.CFG.ENERGY_PER_EXERCISE)) {
-      _showEnergyWall();
-      return;
-    }
-    if (E.getHearts() === 0) {
-      _showHeartWall();
-      return;
-    }
+  // ── PROGRESS BAR ──
+  function _updateProgress() {
+    const pct = Math.round((_idx / (_session?.totalExercises || 1)) * 100);
+    const fill = document.getElementById('lesson-progress-fill');
+    if (fill) fill.style.width = pct + '%';
+    const lbl = document.getElementById('lesson-progress-label');
+    if (lbl) lbl.textContent = `${_idx} / ${_session.totalExercises}`;
+    const he = document.getElementById('hud-hearts');
+    if (he) he.textContent = '❤️'.repeat(E.getHearts()) + '🖤'.repeat(Math.max(0, E.CFG.HEART_MAX - E.getHearts()));
+    const en = document.getElementById('hud-energy');
+    if (en) en.textContent = `⚡ ${E.getEnergy()}`;
+  }
+
+  // ── RENDER EXERCISE ──
+  function _render(ex) {
+    _answered = false;
+    if (!ex) { _finish(); return; }
+
+    // Check energy
+    if (!E.consumeEnergy(1)) { _showEnergyWall(); return; }
+    if (E.getHearts() <= 0)  { _showHeartWall();  return; }
 
     _root.innerHTML = '';
     _root.style.animation = 'none';
-    void _root.offsetWidth; // reflow
-    _root.style.animation = 'exerciseFadeIn .35s ease both';
+    void _root.offsetWidth;
+    _root.style.animation = 'exIn .3s ease both';
 
-    switch (exercise.uiHint) {
-      case 'intro':              _renderIntro(exercise);           break;
-      case 'multiple_choice':    _renderMC(exercise);              break;
-      case 'drag_order':         _renderDragOrder(exercise);       break;
-      case 'audio_multiple_choice': _renderAudioMC(exercise);      break;
-      case 'audio_text_input':   _renderAudioWrite(exercise);      break;
-      case 'true_false':         _renderTrueFalse(exercise);       break;
-      default:                   _renderMC(exercise);              break;
+    switch (ex.uiHint) {
+      case 'intro':         _renderIntro(ex);        break;
+      case 'select_image':  _renderSelectImage(ex);  break;
+      case 'word_meaning':  _renderWordMeaning(ex);  break;
+      case 'select_meaning':_renderSelectMeaning(ex);break;
+      case 'tap_what_you_hear': _renderTapHear(ex);  break;
+      case 'gap_fill':      _renderGapFill(ex);      break;
+      case 'word_bank':     _renderWordBank(ex, 'en');break;
+      case 'word_bank_cn':  _renderWordBank(ex, 'cn');break;
+      case 'word_order':    _renderWordOrder(ex);    break;
+      default:              _renderSelectMeaning(ex);break;
     }
   }
 
-  // ─────────────────────────────────────────────
-  // RENDERER: WORD INTRO
-  // ─────────────────────────────────────────────
+  // ── INTRO CARD ──
   function _renderIntro(ex) {
     _root.innerHTML = `
       <div class="ex-card ex-intro">
-        <div class="ex-type-badge">New Word</div>
-
-        <div class="intro-word-wrap">
-          <button class="audio-btn" onclick="MaobaiEngine.speak('${_esc(ex.word)}')">🔊</button>
-          <div class="intro-hanzi">${ex.word}</div>
-          <div class="intro-pinyin">${ex.pinyin}</div>
-          <div class="intro-english">${ex.english}</div>
-          <div class="intro-type-badge">${ex.wordType || ''}</div>
+        <div class="ex-badge badge-new">✨ New Word</div>
+        <div class="intro-center">
+          <button class="btn-audio" onclick="MaobaiEngine.speak('${_esc(ex.word)}')">🔊</button>
+          <div class="intro-zh">${ex.word}</div>
+          <div class="intro-py">${ex.pinyin}</div>
+          <div class="intro-en">${ex.english}</div>
+          ${ex.wordType ? `<div class="intro-type">${ex.wordType}</div>` : ''}
         </div>
-
-        <div class="intro-divider"></div>
-
-        <div class="intro-sentence-label">In context:</div>
-        <div class="intro-sentence-zh" onclick="MaobaiEngine.speak('${_esc(ex.sentenceZh)}')">${ex.sentenceZhHighlighted}</div>
-        <div class="intro-sentence-py">${ex.sentencePinyin}</div>
-        <div class="intro-sentence-en">${ex.sentenceEn}</div>
-
-        <button class="btn-primary btn-got-it" onclick="MaobaiUI._submitAnswer('seen')">Got it →</button>
-      </div>
-    `;
+        <div class="intro-sep"></div>
+        <div class="intro-ctx-label">In a sentence:</div>
+        <div class="intro-ctx-zh" onclick="MaobaiEngine.speak('${_esc(ex.sentenceZh)}')">${ex.sentenceZhHL}</div>
+        <div class="intro-ctx-py">${ex.sentencePinyin || ''}</div>
+        <div class="intro-ctx-en">${ex.sentenceEn || ''}</div>
+        <button class="btn-got-it" onclick="MaobaiUI._gotIt()">Got it →</button>
+      </div>`;
+    // Auto-speak after short delay
+    setTimeout(() => E.speak(ex.word), 500);
   }
 
-  // ─────────────────────────────────────────────
-  // RENDERER: MULTIPLE CHOICE (shared by many types)
-  // ─────────────────────────────────────────────
-  function _renderMC(ex) {
-    const contextHtml = _buildContextHtml(ex);
+  // ── SELECT IMAGE (2×2 grid) ──
+  function _renderSelectImage(ex) {
+    const grid = ex.options.slice(0, 4).map((o, i) => `
+      <button class="img-option" data-correct="${o.correct}" data-label="${_esc(o.label)}"
+        onclick="MaobaiUI._imgPick(this)">
+        <span class="img-emoji">${o.emoji}</span>
+        <span class="img-label">${o.label}</span>
+      </button>`).join('');
 
     _root.innerHTML = `
       <div class="ex-card">
-        <div class="ex-type-badge">${_typeBadge(ex.type)}</div>
-        <div class="ex-prompt">${ex.prompt}</div>
-        ${contextHtml}
-        <div class="mc-options" id="mc-options">
-          ${ex.options.map((o, i) => `
-            <button class="mc-option" data-idx="${i}" data-label="${_esc(o.label)}"
-              onclick="MaobaiUI._mcPick(this, ${o.correct})">
-              ${o.label}
-            </button>
-          `).join('')}
+        <div class="ex-badge badge-img">🖼️ Select the correct image</div>
+        <div class="ex-word-display" onclick="MaobaiEngine.speak('${_esc(ex.word)}')">
+          <span class="ex-zh">${ex.word}</span>
+          <span class="ex-py">${ex.pinyin}</span>
+          <span class="audio-hint">🔊</span>
         </div>
-        <div class="ex-feedback" id="ex-feedback" style="display:none"></div>
-        <button class="btn-primary btn-next" id="btn-next" style="display:none"
-          onclick="MaobaiUI._next()">Next →</button>
-      </div>
-    `;
+        <div class="img-grid">${grid}</div>
+        ${_feedbackSlot()}
+        ${_checkBtn('MaobaiUI._checkImageSelection()')}
+      </div>`;
+    setTimeout(() => E.speak(ex.word), 400);
   }
 
-  function _buildContextHtml(ex) {
-    let html = '';
-    if (ex.sentenceZhHighlighted) {
-      html += `<div class="ex-sentence-zh" onclick="MaobaiEngine.speak('${_esc(ex.sentenceZh || '')}')">
-        ${ex.sentenceZhHighlighted} <span class="audio-inline">🔊</span>
+  // ── WORD MEANING (English → Chinese with pinyin) ──
+  function _renderWordMeaning(ex) {
+    const opts = (ex.optionsWithPinyin || ex.options).slice(0, 4).map((o, i) => `
+      <button class="mc-opt" data-correct="${o.correct}" data-label="${_esc(o.label)}"
+        onclick="MaobaiUI._mcPick(this)">
+        <span class="mc-py">${o.pinyin || ''}</span>
+        <span class="mc-zh">${o.label}</span>
+      </button>`).join('');
+
+    _root.innerHTML = `
+      <div class="ex-card">
+        <div class="ex-badge badge-mc">🔤 Select the correct translation</div>
+        <div class="ex-english-prompt">${ex.english}</div>
+        <div class="mc-options">${opts}</div>
+        ${_feedbackSlot()}
+        ${_checkBtn('MaobaiUI._checkMC()')}
       </div>`;
-    } else if (ex.sentenceZh) {
-      html += `<div class="ex-sentence-zh" onclick="MaobaiEngine.speak('${_esc(ex.sentenceZh)}')">
-        ${ex.sentenceZh} <span class="audio-inline">🔊</span>
-      </div>`;
-    }
-    if (ex.word && !ex.sentenceZhHighlighted) {
-      html += `<div class="ex-big-word" onclick="MaobaiEngine.speak('${_esc(ex.word)}')">${ex.word}</div>`;
-    }
-    if (ex.english && ex.type === 'english_to_hanzi') {
-      html += `<div class="ex-english-context">${ex.english}</div>`;
-    }
-    if (ex.sentenceEn && (ex.type === 'translate_cn_en' || ex.type === 'translate_en_cn')) {
-      html += `<div class="ex-sentence-en">${ex.sentenceEn}</div>`;
-    }
-    if (ex.affirmative) {
-      html += `<div class="ex-sentence-zh">${ex.affirmative}</div>`;
-    }
-    if (ex.errorSentence) {
-      html += `<div class="ex-sentence-zh error-sentence">⚠️ ${ex.errorSentence}</div>`;
-    }
-    if (ex.statement) {
-      html += `<div class="ex-sentence-zh">${ex.statement}</div>`;
-    }
-    return html;
   }
 
-  window.MaobaiUI = window.MaobaiUI || {};
+  // ── SELECT MEANING (Chinese → English) ──
+  function _renderSelectMeaning(ex) {
+    const opts = ex.options.slice(0, 4).map(o => `
+      <button class="mc-opt" data-correct="${o.correct}" data-label="${_esc(o.label)}"
+        onclick="MaobaiUI._mcPick(this)">
+        <span class="mc-en">${o.label}</span>
+      </button>`).join('');
 
-  function _mcPick(btn, isCorrect) {
+    _root.innerHTML = `
+      <div class="ex-card">
+        <div class="ex-badge badge-mc">💬 What does this mean?</div>
+        <div class="ex-word-display" onclick="MaobaiEngine.speak('${_esc(ex.word)}')">
+          <span class="ex-zh">${ex.word}</span>
+          <span class="ex-py">${ex.pinyin}</span>
+          <span class="audio-hint">🔊</span>
+        </div>
+        <div class="mc-options">${opts}</div>
+        ${_feedbackSlot()}
+        ${_checkBtn('MaobaiUI._checkMC()')}
+      </div>`;
+    setTimeout(() => E.speak(ex.word), 400);
+  }
+
+  // ── TAP WHAT YOU HEAR ──
+  function _renderTapHear(ex) {
+    const opts = ex.options.map(o => `
+      <button class="hear-opt" data-correct="${o.correct}" data-zh="${_esc(o.zh)}"
+        onclick="MaobaiUI._hearPick(this)">
+        <span class="hear-py">${o.pinyin}</span>
+        <span class="hear-zh">${o.zh}</span>
+      </button>`).join('');
+
+    _root.innerHTML = `
+      <div class="ex-card">
+        <div class="ex-badge badge-audio">🔊 Tap what you hear</div>
+        <div class="audio-btns-row">
+          <button class="btn-play-big" onclick="MaobaiEngine.speak('${_esc(ex.audioText)}')">
+            <span class="play-icon">▶</span> Play
+          </button>
+          <button class="btn-play-slow" onclick="MaobaiEngine.speak('${_esc(ex.audioText)}','zh-CN',0.5)">
+            <span class="play-icon">🐢</span> Slow
+          </button>
+        </div>
+        <div class="hear-opts">${opts}</div>
+        ${_feedbackSlot()}
+        ${_checkBtn('MaobaiUI._checkHear()')}
+      </div>`;
+    setTimeout(() => E.speak(ex.audioText), 500);
+  }
+
+  // ── GAP FILL ──
+  function _renderGapFill(ex) {
+    const opts = ex.options.map(o => `
+      <button class="mc-opt mc-opt-zh" data-correct="${o.correct}" data-label="${_esc(o.label)}"
+        onclick="MaobaiUI._mcPick(this)">
+        ${o.label}
+      </button>`).join('');
+
+    _root.innerHTML = `
+      <div class="ex-card">
+        <div class="ex-badge badge-fill">📝 Fill in the blank</div>
+        <div class="gap-sentence" onclick="MaobaiEngine.speak('${_esc(ex.sentenceZh.replace('___', ''))}')">
+          ${ex.sentenceZh} <span class="audio-hint">🔊</span>
+        </div>
+        <div class="gap-en">${ex.sentenceEn}</div>
+        <div class="mc-options">${opts}</div>
+        ${_feedbackSlot()}
+        ${_checkBtn('MaobaiUI._checkMC()')}
+      </div>`;
+  }
+
+  // ── WORD BANK (tap tiles to build sentence) ──
+  function _renderWordBank(ex, dir) {
+    const prompt = dir === 'cn'
+      ? `<div class="wb-prompt-en">${ex.sentenceEn}</div>`
+      : `<div class="wb-prompt-zh" onclick="MaobaiEngine.speak('${_esc(ex.sentenceZh)}')">${ex.sentenceZhHL} <span class="audio-hint">🔊</span></div>`;
+
+    const tiles = ex.tiles.map((t, i) => `
+      <button class="wb-tile" data-word="${_esc(t)}" data-idx="${i}"
+        onclick="MaobaiUI._wbTilePick(this)">
+        ${t}
+      </button>`).join('');
+
+    _root.innerHTML = `
+      <div class="ex-card">
+        <div class="ex-badge badge-wb">${dir === 'cn' ? '✍️ Write in Chinese' : '🌐 Translate this sentence'}</div>
+        ${prompt}
+        <div class="wb-answer" id="wb-answer">
+          <div class="wb-answer-placeholder">Tap words below to build your answer</div>
+        </div>
+        <div class="wb-divider"></div>
+        <div class="wb-bank" id="wb-bank">${tiles}</div>
+        ${_feedbackSlot()}
+        ${_checkBtn('MaobaiUI._checkWordBank()')}
+      </div>`;
+  }
+
+  // ── WORD ORDER ──
+  function _renderWordOrder(ex) {
+    const tiles = ex.tiles.map((t, i) => `
+      <button class="wo-tile" data-word="${_esc(t)}" onclick="MaobaiUI._woTilePick(this)">
+        ${t}
+      </button>`).join('');
+
+    _root.innerHTML = `
+      <div class="ex-card">
+        <div class="ex-badge badge-order">🔀 Arrange the words</div>
+        <div class="wo-en">${ex.sentenceEn}</div>
+        <div class="wo-answer" id="wo-answer">
+          <div class="wo-placeholder">Tap words to arrange</div>
+        </div>
+        <div class="wb-divider"></div>
+        <div class="wo-bank" id="wo-bank">${tiles}</div>
+        ${_feedbackSlot()}
+        ${_checkBtn('MaobaiUI._checkWordOrder()')}
+      </div>`;
+  }
+
+  // ── CHECK BUTTON TEMPLATE ──
+  function _checkBtn(fn) {
+    return `<button class="btn-check" id="btn-check" onclick="${fn}">Check</button>`;
+  }
+  function _feedbackSlot() {
+    return `<div class="feedback-box" id="feedback-box" style="display:none"></div>`;
+  }
+
+  // ── INTERACTION HANDLERS ──
+
+  // Image selection
+  function _imgPick(btn) {
     if (_answered) return;
-    _answered = true;
-
-    // Style all options
-    document.querySelectorAll('.mc-option').forEach(b => {
+    document.querySelectorAll('.img-option').forEach(b => b.classList.remove('img-selected'));
+    btn.classList.add('img-selected');
+    _activateCheckBtn();
+  }
+  function _checkImageSelection() {
+    if (_answered) return;
+    const sel = _root.querySelector('.img-option.img-selected');
+    if (!sel) { _solveItWarning('Select an image first'); return; }
+    const correct = sel.dataset.correct === 'true';
+    // Highlight all
+    document.querySelectorAll('.img-option').forEach(b => {
+      if (b.dataset.correct === 'true') b.classList.add('img-correct');
+      else if (b === sel) b.classList.add('img-wrong');
       b.disabled = true;
-      if (b === btn) {
-        b.classList.add(isCorrect ? 'mc-correct' : 'mc-wrong');
-      } else if (b.dataset.label === _session.exercises[_currentIdx].correctAnswer) {
-        b.classList.add('mc-correct'); // reveal correct
-      }
     });
-
-    _showFeedback(isCorrect, _session.exercises[_currentIdx].explanation);
-    _processAnswer(isCorrect ? 'correct' : btn.dataset.label);
+    _submitAnswer(correct ? sel.dataset.label : '__wrong__', correct);
   }
 
-  // ─────────────────────────────────────────────
-  // RENDERER: DRAG ORDER
-  // ─────────────────────────────────────────────
-  function _renderDragOrder(ex) {
-    _root.innerHTML = `
-      <div class="ex-card">
-        <div class="ex-type-badge">${_typeBadge(ex.type)}</div>
-        <div class="ex-prompt">${ex.prompt}</div>
-        <div class="ex-sentence-en">${ex.sentenceEn}</div>
-
-        <div class="drag-answer-zone" id="drag-answer"></div>
-        <div class="drag-divider"></div>
-        <div class="drag-token-bank" id="drag-bank">
-          ${ex.tokens.map((t, i) => `
-            <button class="drag-token" data-token="${_esc(t)}" data-idx="${i}"
-              onclick="MaobaiUI._dragTokenPick(this)">
-              ${t}
-            </button>
-          `).join('')}
-        </div>
-
-        <div class="ex-feedback" id="ex-feedback" style="display:none"></div>
-        <button class="btn-primary btn-check" id="btn-check" onclick="MaobaiUI._checkOrder('${_esc(ex.correctAnswer)}')">
-          Check Order
-        </button>
-        <button class="btn-primary btn-next" id="btn-next" style="display:none"
-          onclick="MaobaiUI._next()">Next →</button>
-      </div>
-    `;
-  }
-
-  function _dragTokenPick(btn) {
+  // MC pick (word_meaning, select_meaning, gap_fill)
+  function _mcPick(btn) {
     if (_answered) return;
-    const zone = document.getElementById('drag-answer');
-    const bank = document.getElementById('drag-bank');
+    document.querySelectorAll('.mc-opt').forEach(b => b.classList.remove('mc-selected'));
+    btn.classList.add('mc-selected');
+    _activateCheckBtn();
+  }
+  function _checkMC() {
+    if (_answered) return;
+    const sel = _root.querySelector('.mc-opt.mc-selected');
+    if (!sel) { _solveItWarning('Select an answer first'); return; }
+    const correct = sel.dataset.correct === 'true';
+    document.querySelectorAll('.mc-opt').forEach(b => {
+      if (b.dataset.correct === 'true') b.classList.add('mc-correct');
+      else if (b === sel && !correct) b.classList.add('mc-wrong');
+      b.disabled = true;
+    });
+    _submitAnswer(correct ? sel.dataset.label : '__wrong__', correct);
+  }
 
-    if (btn.classList.contains('token-in-zone')) {
-      // Move back to bank
-      btn.classList.remove('token-in-zone');
-      bank.appendChild(btn);
+  // Tap hear
+  function _hearPick(btn) {
+    if (_answered) return;
+    document.querySelectorAll('.hear-opt').forEach(b => b.classList.remove('hear-selected'));
+    btn.classList.add('hear-selected');
+    _activateCheckBtn();
+  }
+  function _checkHear() {
+    if (_answered) return;
+    const sel = _root.querySelector('.hear-opt.hear-selected');
+    if (!sel) { _solveItWarning('Tap a word first'); return; }
+    const correct = sel.dataset.correct === 'true';
+    document.querySelectorAll('.hear-opt').forEach(b => {
+      if (b.dataset.correct === 'true') b.classList.add('hear-correct');
+      else if (b === sel && !correct) b.classList.add('hear-wrong');
+      b.disabled = true;
+    });
+    _submitAnswer(correct ? sel.dataset.zh : '__wrong__', correct);
+  }
+
+  // Word bank (translate)
+  function _wbTilePick(btn) {
+    if (_answered) return;
+    const ans = document.getElementById('wb-answer');
+    const bank = document.getElementById('wb-bank');
+    if (btn.classList.contains('wb-in-answer')) {
+      btn.classList.remove('wb-in-answer'); bank.appendChild(btn);
     } else {
-      // Move to answer zone
-      btn.classList.add('token-in-zone');
-      zone.appendChild(btn);
+      btn.classList.add('wb-in-answer');
+      const placeholder = ans.querySelector('.wb-answer-placeholder');
+      if (placeholder) placeholder.remove();
+      ans.appendChild(btn);
     }
+    _activateCheckBtn();
   }
-
-  function _checkOrder(correctAnswer) {
+  function _checkWordBank() {
     if (_answered) return;
-    const zone   = document.getElementById('drag-answer');
-    const tokens = Array.from(zone.querySelectorAll('.drag-token')).map(b => b.dataset.token);
-    const joined = tokens.join('');
-    _submitAnswer(joined);
+    const ans = document.getElementById('wb-answer');
+    const tiles = [...ans.querySelectorAll('.wb-tile')].map(b => b.dataset.word);
+    if (tiles.length === 0) { _solveItWarning('Build your answer first'); return; }
+    const userAns = tiles.join(' ');
+    _submitAnswer(userAns, null); // let validate() decide
   }
 
-  // ─────────────────────────────────────────────
-  // RENDERER: AUDIO MULTIPLE CHOICE
-  // ─────────────────────────────────────────────
-  function _renderAudioMC(ex) {
-    _root.innerHTML = `
-      <div class="ex-card">
-        <div class="ex-type-badge">🔊 Listen</div>
-        <div class="ex-prompt">${ex.prompt}</div>
-        <button class="audio-play-btn" onclick="MaobaiEngine.speak('${_esc(ex.audioText)}')">
-          <span class="audio-play-icon">▶</span> Play
-        </button>
-        <div class="mc-options" id="mc-options">
-          ${ex.options.map((o, i) => `
-            <button class="mc-option mc-option-text" data-idx="${i}" data-label="${_esc(o.label)}"
-              onclick="MaobaiUI._mcPick(this, ${o.correct})">
-              ${o.label}
-            </button>
-          `).join('')}
-        </div>
-        <div class="ex-feedback" id="ex-feedback" style="display:none"></div>
-        <button class="btn-primary btn-next" id="btn-next" style="display:none"
-          onclick="MaobaiUI._next()">Next →</button>
-      </div>
-    `;
-    // Auto-play after short delay
-    setTimeout(() => E.speak(ex.audioText), 400);
-  }
-
-  // ─────────────────────────────────────────────
-  // RENDERER: AUDIO WRITE
-  // ─────────────────────────────────────────────
-  function _renderAudioWrite(ex) {
-    _root.innerHTML = `
-      <div class="ex-card">
-        <div class="ex-type-badge">🔊 Listen & Write</div>
-        <div class="ex-prompt">${ex.prompt}</div>
-        <button class="audio-play-btn" onclick="MaobaiEngine.speak('${_esc(ex.audioText)}')">
-          <span class="audio-play-icon">▶</span> Play Again
-        </button>
-        <input type="text" class="text-input" id="text-input"
-          placeholder="Type what you heard…"
-          onkeydown="if(event.key==='Enter') MaobaiUI._submitAnswer(this.value)" />
-        <div class="ex-feedback" id="ex-feedback" style="display:none"></div>
-        <button class="btn-primary btn-check" onclick="MaobaiUI._submitAnswer(document.getElementById('text-input').value)">
-          Check
-        </button>
-        <button class="btn-primary btn-next" id="btn-next" style="display:none"
-          onclick="MaobaiUI._next()">Next →</button>
-      </div>
-    `;
-    setTimeout(() => E.speak(ex.audioText), 400);
-  }
-
-  // ─────────────────────────────────────────────
-  // RENDERER: TRUE / FALSE
-  // ─────────────────────────────────────────────
-  function _renderTrueFalse(ex) {
-    _root.innerHTML = `
-      <div class="ex-card">
-        <div class="ex-type-badge">📖 Read</div>
-        <div class="ex-prompt">${ex.prompt}</div>
-
-        <div class="tf-passage" onclick="MaobaiEngine.speak('${_esc(ex.passage)}')">
-          ${ex.passage} <span class="audio-inline">🔊</span>
-        </div>
-        <div class="tf-passage-en">${ex.passageEn}</div>
-
-        <div class="tf-statements" id="tf-statements">
-          ${ex.statements.map((s, i) => `
-            <div class="tf-row" data-idx="${i}" data-correct="${s.isTrue}">
-              <div class="tf-text">${s.text}</div>
-              <div class="tf-btns">
-                <button class="tf-btn tf-true"  data-val="true"  onclick="MaobaiUI._tfPick(this)">✓ True</button>
-                <button class="tf-btn tf-false" data-val="false" onclick="MaobaiUI._tfPick(this)">✗ False</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-
-        <div class="ex-feedback" id="ex-feedback" style="display:none"></div>
-        <button class="btn-primary btn-check" id="btn-check" onclick="MaobaiUI._checkTrueFalse()">
-          Check Answers
-        </button>
-        <button class="btn-primary btn-next" id="btn-next" style="display:none"
-          onclick="MaobaiUI._next()">Next →</button>
-      </div>
-    `;
-  }
-
-  function _tfPick(btn) {
+  // Word order
+  function _woTilePick(btn) {
     if (_answered) return;
-    const row = btn.closest('.tf-row');
-    row.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('tf-selected'));
-    btn.classList.add('tf-selected');
-  }
-
-  function _checkTrueFalse() {
-    if (_answered) return;
-    const rows    = document.querySelectorAll('.tf-row');
-    const answers = Array.from(rows).map(r => {
-      const sel = r.querySelector('.tf-btn.tf-selected');
-      return sel ? sel.dataset.val : null;
-    });
-    if (answers.includes(null)) {
-      // Prompt to answer all
-      const fb = document.getElementById('ex-feedback');
-      fb.style.display = 'block';
-      fb.className = 'ex-feedback fb-warning';
-      fb.textContent = 'Please answer all statements first.';
-      return;
+    const ans = document.getElementById('wo-answer');
+    const bank = document.getElementById('wo-bank');
+    if (btn.classList.contains('wo-in-answer')) {
+      btn.classList.remove('wo-in-answer'); bank.appendChild(btn);
+    } else {
+      btn.classList.add('wo-in-answer');
+      const placeholder = ans.querySelector('.wo-placeholder');
+      if (placeholder) placeholder.remove();
+      ans.appendChild(btn);
     }
-    _submitAnswer(answers);
+    _activateCheckBtn();
+  }
+  function _checkWordOrder() {
+    if (_answered) return;
+    const ans = document.getElementById('wo-answer');
+    const tiles = [...ans.querySelectorAll('.wo-tile')].map(b => b.dataset.word);
+    if (tiles.length === 0) { _solveItWarning('Arrange the words first'); return; }
+    _submitAnswer(tiles.join(''), null);
   }
 
-  // ─────────────────────────────────────────────
-  // ANSWER SUBMISSION + FEEDBACK
-  // ─────────────────────────────────────────────
-  async function _submitAnswer(userAnswer) {
-    if (_answered && userAnswer !== 'seen') return;
+  // ── SUBMIT ANSWER ──
+  async function _submitAnswer(userAnswer, preComputed) {
+    if (_answered) return;
     _answered = true;
 
-    const exercise = _session.exercises[_currentIdx];
-    const result   = await E.processAnswer(exercise, userAnswer);
+    const ex = _session.exercises[_idx];
 
-    if (result.correct) _correctCount++;
-
-    // word_intro: 1 tap = immediate advance, no intermediate step
-    if (exercise.uiHint === 'intro') {
-      _renderProgress();
-      _next();
-      return;
+    let correct, score;
+    if (preComputed !== null && preComputed !== undefined) {
+      correct = preComputed; score = correct ? 3 : 0;
+    } else {
+      const result = E.processAnswer ? await E.processAnswer(ex, userAnswer) : { correct: false, score: 0 };
+      correct = result.correct; score = result.score;
     }
 
-    _showFeedback(result.correct, result.explanation, result);
-    _renderProgress();
+    // Update SRS directly
+    E.updateSRS(ex.wordId, correct ? score : 0);
 
-    // Show the continue button (always visible, sticky at bottom of feedback)
-    const btnNext = document.getElementById('btn-next');
-    if (btnNext) {
-      btnNext.style.display = 'block';
-      btnNext.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    if (correct) _correct++;
+    else if (E.getHearts() > 0) { await E._loseHeartPublic?.(); }
+
+    _showFeedback(correct, ex.explanation);
+    _updateProgress();
   }
 
-  function _showFeedback(correct, explanation, result) {
-    const fb = document.getElementById('ex-feedback');
+  // ── FEEDBACK ──
+  function _showFeedback(correct, explanation) {
+    const fb = document.getElementById('feedback-box');
     if (!fb) return;
-    fb.style.display  = 'block';
-    fb.style.cursor   = 'pointer';
-    fb.className      = `ex-feedback ${correct ? 'fb-correct' : 'fb-wrong'}`;
 
-    const hearts = result?.heartLost ? `<span class="fb-heart-lost">-1 ❤️</span>` : '';
-    const xp     = result?.xpGained  ? `<span class="fb-xp">+${result.xpGained} XP</span>` : '';
+    fb.style.display = 'block';
+    fb.className = `feedback-box ${correct ? 'fb-ok' : 'fb-fail'}`;
+
+    const explanationHtml = explanation
+      ? `<div class="fb-explain">${explanation.replace(/\n/g, '<br>')}</div>` : '';
 
     fb.innerHTML = `
-      <div class="fb-header">
+      <div class="fb-top">
         <span class="fb-icon">${correct ? '✓' : '✗'}</span>
-        <span class="fb-label">${correct ? 'Correct!' : 'Incorrect'}</span>
-        ${xp}${hearts}
+        <span class="fb-text">${correct ? 'Correct!' : 'Incorrect'}</span>
       </div>
-      ${explanation ? `<div class="fb-explanation">${explanation}</div>` : ''}
-      <button class="btn-continue-inline" onclick="MaobaiUI._next()">Continue →</button>
+      ${!correct ? explanationHtml : ''}
+      <button class="btn-continue" onclick="MaobaiUI._next()">Continue →</button>
     `;
-    // Also tap anywhere on feedback = continue
-    fb.onclick = (e) => { if (!e.target.closest('.btn-continue-inline')) MaobaiUI._next(); };
+
+    // Hide check button
+    const chk = document.getElementById('btn-check');
+    if (chk) chk.style.display = 'none';
   }
 
-  // ─────────────────────────────────────────────
-  // ADVANCE TO NEXT
-  // ─────────────────────────────────────────────
-  function _next() {
-    _currentIdx++;
-    _answered = false;
-    if (_currentIdx >= _session.totalExercises) {
-      _finishSession();
-    } else {
-      _renderProgress();
-      _renderExercise(_session.exercises[_currentIdx]);
+  // ── SOLVE IT WARNING ──
+  function _solveItWarning(msg) {
+    const card = _root.querySelector('.ex-card');
+    if (card) { card.style.animation = 'shake .35s ease'; setTimeout(() => card.style.animation = '', 400); }
+    let w = document.getElementById('solve-warn');
+    if (!w) {
+      w = document.createElement('div');
+      w.id = 'solve-warn';
+      w.className = 'solve-warn';
+      const chk = document.getElementById('btn-check');
+      if (chk) chk.parentNode.insertBefore(w, chk);
     }
+    w.textContent = '⚠️ ' + msg;
+    clearTimeout(w._t);
+    w._t = setTimeout(() => w.remove(), 2500);
   }
 
-  // ─────────────────────────────────────────────
-  // SESSION COMPLETE
-  // ─────────────────────────────────────────────
-  async function _finishSession() {
+  // Make check button active when something is selected
+  function _activateCheckBtn() {
+    const btn = document.getElementById('btn-check');
+    if (btn) btn.classList.add('btn-check-ready');
+  }
+
+  function _gotIt() { _submitAnswer('seen', true); }
+
+  // ── NEXT ──
+  function _next() {
+    _idx++;
+    _answered = false;
+    if (_idx >= _session.totalExercises) { _finish(); return; }
+    _updateProgress();
+    _render(_session.exercises[_idx]);
+  }
+
+  // ── FINISH SESSION ──
+  async function _finish() {
     const result = await E.completeLesson({
       lessonId:     _session.lessonId,
       level:        _session.level,
-      correctCount: _correctCount,
+      lessonNum:    _session.lessonNum,
+      correctCount: _correct,
       totalCount:   _session.totalExercises,
+      isCheckpoint: _session.isCheckpoint,
     });
 
+    const accuracy = Math.round((_correct / _session.totalExercises) * 100);
+    const isCheckpoint = _session.isCheckpoint;
+
     _root.innerHTML = `
-      <div class="ex-card session-complete">
-        <div class="complete-emoji">🎉</div>
-        <div class="complete-title">Lesson Complete!</div>
-        <div class="complete-stats">
-          <div class="cs-row">
-            <span class="cs-label">Correct</span>
-            <span class="cs-val cs-green">${_correctCount} / ${_session.totalExercises}</span>
+      <div class="ex-card session-done">
+        <div class="done-emoji">${isCheckpoint ? '🏆' : '🎉'}</div>
+        <div class="done-title">${isCheckpoint ? 'Checkpoint Complete!' : 'Lesson Complete!'}</div>
+        ${isCheckpoint ? `<div class="done-sub">${_session.checkpointRange}</div>` : ''}
+        <div class="done-stats">
+          <div class="done-stat">
+            <div class="ds-val ds-green">${_correct}/${_session.totalExercises}</div>
+            <div class="ds-lbl">Correct</div>
           </div>
-          <div class="cs-row">
-            <span class="cs-label">XP Earned</span>
-            <span class="cs-val cs-gold">+${result.xpTotal}</span>
+          <div class="done-stat">
+            <div class="ds-val ds-gold">+${result.xp}</div>
+            <div class="ds-lbl">XP</div>
           </div>
-          <div class="cs-row">
-            <span class="cs-label">Diamonds</span>
-            <span class="cs-val cs-blue">+${result.diamonds} 💎</span>
+          <div class="done-stat">
+            <div class="ds-val ds-blue">+${result.diamonds}💎</div>
+            <div class="ds-lbl">Diamonds</div>
           </div>
         </div>
-        <button class="btn-primary" onclick="history.back()">Continue →</button>
-      </div>
-    `;
+        <div class="done-accuracy">
+          <div class="acc-bar-wrap"><div class="acc-bar" style="width:${accuracy}%"></div></div>
+          <div class="acc-label">${accuracy}% accuracy</div>
+        </div>
+        <button class="btn-got-it" onclick="history.back()">Back to Lessons →</button>
+      </div>`;
 
     window.dispatchEvent(new CustomEvent('engine:sessionComplete', {
-      detail: { ...result, correctCount: _correctCount, totalCount: _session.totalExercises }
+      detail: { ...result, correctCount: _correct, totalCount: _session.totalExercises }
     }));
   }
 
-  // ─────────────────────────────────────────────
-  // WALLS — Energy & Hearts
-  // ─────────────────────────────────────────────
+  // ── WALLS ──
   function _showEnergyWall() {
     _root.innerHTML = `
       <div class="ex-card wall-card">
-        <div class="wall-icon">⚡</div>
+        <div class="wall-emoji">⚡</div>
         <div class="wall-title">Out of Energy</div>
-        <div class="wall-sub">Watch a short ad to get +${E.CFG.ENERGY_AD_REWARD} energy and continue.</div>
-        <button class="btn-primary btn-ad" onclick="MaobaiUI._watchAdEnergy()">
-          📺 Watch Ad (+${E.CFG.ENERGY_AD_REWARD} ⚡)
-        </button>
-        <button class="btn-secondary" onclick="history.back()">Leave Lesson</button>
-      </div>
-    `;
-    window.dispatchEvent(new CustomEvent('engine:energyEmpty'));
+        <div class="wall-sub">Watch a short ad to get +${E.CFG.ENERGY_AD_REWARD} energy.</div>
+        <button class="btn-got-it btn-gold" onclick="MaobaiUI._adEnergy()">📺 Watch Ad (+${E.CFG.ENERGY_AD_REWARD} ⚡)</button>
+        <button class="btn-secondary" onclick="history.back()">← Leave</button>
+      </div>`;
   }
-
   function _showHeartWall() {
     _root.innerHTML = `
       <div class="ex-card wall-card">
-        <div class="wall-icon">❤️</div>
+        <div class="wall-emoji">❤️</div>
         <div class="wall-title">No Hearts Left</div>
-        <div class="wall-sub">Watch an ad to get 1 heart, or wait 30 minutes for regen.</div>
-        <button class="btn-primary btn-ad" onclick="MaobaiUI._watchAdHeart()">
-          📺 Watch Ad (+1 ❤️)
-        </button>
-        <button class="btn-secondary" onclick="history.back()">Leave Lesson</button>
-      </div>
-    `;
-    window.dispatchEvent(new CustomEvent('engine:heartsEmpty'));
+        <div class="wall-sub">Watch an ad to get 1 heart back, or wait 30 min.</div>
+        <button class="btn-got-it btn-rose" onclick="MaobaiUI._adHeart()">📺 Watch Ad (+1 ❤️)</button>
+        <button class="btn-secondary" onclick="history.back()">← Leave</button>
+      </div>`;
   }
+  function _adEnergy() { E.addEnergyAd(); _updateProgress(); _render(_session.exercises[_idx]); }
+  function _adHeart()  { E.addHeartAd();  _updateProgress(); _render(_session.exercises[_idx]); }
 
-  // Ad reward handlers — replace with real ad SDK calls
-  function _watchAdEnergy() {
-    E.addEnergyAd();
-    _renderProgress();
-    _renderExercise(_session.exercises[_currentIdx]);
-  }
+  // ── HELPERS ──
+  function _esc(s) { return String(s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
-  function _watchAdHeart() {
-    E.addHeartAd();
-    _renderProgress();
-    _renderExercise(_session.exercises[_currentIdx]);
-  }
-
-  // ─────────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────────
-  function _typeBadge(type) {
-    const map = {
-      word_intro:        '✨ New Word',
-      gap_fill:          '📝 Fill the Gap',
-      hanzi_to_english:  '🔤 Meaning',
-      english_to_hanzi:  '汉 Characters',
-      word_order:        '🔀 Word Order',
-      negation:          '🚫 Negation',
-      question_builder:  '❓ Question',
-      error_correction:  '🔍 Find the Error',
-      audio_choice:      '🔊 Listening',
-      read_true_false:   '📖 Reading',
-      translate_cn_en:   '🌐 Translate →EN',
-      translate_en_cn:   '🌐 Translate →中',
-    };
-    return map[type] || type;
-  }
-
-  function _esc(s) {
-    return String(s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-  }
-
-  // ─────────────────────────────────────────────
-  // PUBLIC
-  // ─────────────────────────────────────────────
-  const publicApi = {
-    startSession,
-    // expose internals for inline onclick handlers
+  const api = {
+    startSession, _gotIt, _next,
+    _imgPick, _checkImageSelection,
+    _mcPick, _checkMC,
+    _hearPick, _checkHear,
+    _wbTilePick, _checkWordBank,
+    _woTilePick, _checkWordOrder,
+    _adEnergy, _adHeart,
     _submitAnswer,
-    _mcPick,
-    _dragTokenPick,
-    _checkOrder,
-    _tfPick,
-    _checkTrueFalse,
-    _next,
-    _watchAdEnergy,
-    _watchAdHeart,
   };
-
-  window.MaobaiUI = publicApi;
-  return publicApi;
-
+  window.MaobaiUI = api;
+  return api;
 })();
