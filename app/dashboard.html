@@ -803,29 +803,26 @@ function getBadgeColor(lv) {
 function buildLessonNodes(hsk, currentLevel, currentLesson, isDone) {
   let html = '';
   const sides = ['left','right'];
-  const BLOCK_ICONS = ['📖','📝','🔊','⚔️','⚡','🎯'];
 
   for (let i = 1; i <= hsk.lessons; i++) {
-    const posInBlock = ((i - 1) % 6);
-    const block = Math.ceil(i / 6);
     const isCurrentLevel = hsk.level === currentLevel;
+    const isCheckpoint   = i % 5 === 0;  // checkpoint every 5 lessons
 
     let state = 'locked';
     if (isDone || (isCurrentLevel && i < currentLesson)) state = 'done';
     if (isCurrentLevel && i === currentLesson) state = 'active';
 
-    const isCheckpoint = posInBlock === 5;
-    const side = sides[Math.floor((i - 1) / 1) % 2];
-    const icon = BLOCK_ICONS[posInBlock];
+    const side = sides[(i - 1) % 2];
+    const icon = isCheckpoint ? '🏆' : '📖';
 
     html += `<div class="path-row ${side}">
       <div class="lesson-node ${state} ${isCheckpoint ? 'checkpoint' : ''}"
-        onclick="handleNodeClick(${hsk.level}, ${i}, '${state}')"
-        title="Block ${block} · Lesson ${posInBlock+1}">
-        ${state === 'done'   ? `<span class="node-icon" title="Tap to replay">✓</span>` :
-          state === 'active' ? `<span class="node-num">${i}</span>` :
+        onclick="handleNodeClick(${hsk.level}, ${i}, '${state}', ${isCheckpoint})"
+        title="${isCheckpoint ? '🏆 Checkpoint' : 'Lesson ' + i}">
+        ${state === 'done'   ? `<span class="node-icon">${isCheckpoint ? '🏆' : '✓'}</span>` :
+          state === 'active' ? `<span class="node-num">${isCheckpoint ? '🏆' : i}</span>` :
           state === 'locked' ? `<span class="node-icon">🔒</span>` : ''}
-        <span class="node-label">${isCheckpoint ? '✓ Check' : `B${block}·L${posInBlock+1}`}</span>
+        <span class="node-label">${isCheckpoint ? 'Check' : 'L'+i}</span>
         ${state === 'done' ? '<span class="node-replay">↺</span>' : ''}
       </div>
     </div>`;
@@ -844,16 +841,16 @@ function toggleHSK(section, level) {
   }, 300);
 }
 
-function handleNodeClick(level, lesson, state) {
+function handleNodeClick(level, lesson, state, isCheckpoint) {
   if (state === 'locked') { showToast('Complete previous lessons first! 🔒'); return; }
   if (state === 'done') {
-    // Show replay modal instead of toast
-    showReplayModal(level, lesson);
+    showReplayModal(level, lesson, isCheckpoint);
     return;
   }
   if (state === 'active') {
     if (user.hearts <= 0) { showHeartsModal(); return; }
-    window.location.href = `engine/lesson.html?level=${level}&lesson=${lesson}`;
+    const url = `engine/lesson.html?level=${level}&lesson=${lesson}` + (isCheckpoint ? '&checkpoint=1' : '');
+    window.location.href = url;
   }
 }
 
@@ -954,9 +951,9 @@ function showReplayModal(level, lesson) {
   document.body.appendChild(modal);
 }
 
-function replayLesson(level, lesson) {
+function replayLesson(level, lesson, isCheckpoint) {
   document.getElementById('replay-modal')?.remove();
-  window.location.href = `engine/lesson.html?level=${level}&lesson=${lesson}&replay=1`;
+  window.location.href = `engine/lesson.html?level=${level}&lesson=${lesson}&replay=1` + (isCheckpoint ? '&checkpoint=1' : '');
 }
 
 /* ── LESSON NAVIGATION ── */
@@ -964,7 +961,8 @@ function startLesson() {
   if (user.hearts <= 0) { showHeartsModal(); return; }
   const lv = user.level;
   const ls = user.lesson;
-  window.location.href = `engine/lesson.html?level=${lv}&lesson=${ls}`;
+  const isCP = ls % 5 === 0;
+  window.location.href = `engine/lesson.html?level=${lv}&lesson=${ls}` + (isCP ? '&checkpoint=1' : '');
 }
 
 function startReview() {
