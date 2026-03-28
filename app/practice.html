@@ -186,11 +186,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .btn-audio{background:rgba(61,219,122,.1);border:1px solid rgba(61,219,122,.2);border-radius:50%;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);transition:all var(--t);vertical-align:middle;margin-left:6px}
 .btn-audio:hover{background:rgba(61,219,122,.2)}
 
-/* EMPTY */
+/* EMPTY / LOADING */
 .empty-state{text-align:center;padding:48px 20px;color:var(--ink2)}
 .empty-emoji{font-size:44px;display:block;margin-bottom:10px}
 .empty-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:5px}
 .empty-sub{font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:18px}
+.loading-block{text-align:center;padding:40px 20px;}
+.gate-spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--green);animation:spin .7s linear infinite;margin:0 auto 12px;}
 
 /* NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:rgba(8,15,11,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:100}
@@ -214,8 +216,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   <div class="header-title" id="header-title">⚡ <em>Practice</em></div>
 </header>
 
+<!-- LOADING DATA PROTECTOR -->
+<div id="loading-gate" class="screen active">
+  <div class="loading-block" style="margin-top:20vh">
+    <div class="gate-spin"></div>
+    <div style="font-size:13px;color:var(--ink3);font-weight:700;">Loading HSK Dictionary...</div>
+  </div>
+</div>
+
 <!-- HOME -->
-<div class="screen active" id="screen-home">
+<div class="screen" id="screen-home">
   <div class="home-inner">
 
     <!-- Stats -->
@@ -262,7 +272,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
       <div class="mode-info">
         <div class="mode-title">Learn From Mistakes</div>
         <div class="mode-desc">Review words you got wrong — shuffled every session</div>
-        <div class="mode-badge err" id="mistakes-badge">0 mistakes</div>
+        <div id="mistakes-breakdown" style="display:flex;gap:4px;flex-wrap:wrap;margin:5px 0;"></div>
+        <div class="mode-badge err" id="mistakes-badge">Loading...</div>
       </div>
       <div class="mistakes-count" id="mistakes-count" style="display:none">0</div>
       <div class="mode-arrow">›</div>
@@ -346,6 +357,9 @@ let _uid = null;
 let _adCallback = null;
 let _adTimer = null;
 
+// Dynamic Global Dictionary Structure (Empty by default)
+let WORDS_BY_LEVEL = {};
+
 function key(n) { return n + '_' + _uid; }
 
 // ── Toast
@@ -386,179 +400,108 @@ function shuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.fl
 function rand(a){return a[Math.floor(Math.random()*a.length)];}
 function stripTones(s){return s.toLowerCase().replace(/[āáǎà]/g,'a').replace(/[ēéěè]/g,'e').replace(/[īíǐì]/g,'i').replace(/[ōóǒò]/g,'o').replace(/[ūúǔùǖǘǚǜ]/g,'u').replace(/\s+/g,' ').trim();}
 
-// ── Mistake tracking
-function getMistakes(){
-  if(!_uid)return[];
-  try{return JSON.parse(localStorage.getItem(key('practice_mistakes'))||'[]');}catch(e){return[];}
+
+// ── MISTAKE HANDLING (Deep Supabase Tracking) ══════════════
+let _activeMistakes =[];
+
+async function fetchSupabaseMistakes() {
+  if (!_uid || !_sb) return;
+  try {
+    const { data, error } = await _sb.from('user_mistakes').select('*').eq('user_id', _uid).eq('is_resolved', false);
+    if (data && data.length > 0) {
+      _activeMistakes = data.map(item => {
+        let wData = null;
+        for (let l in WORDS_BY_LEVEL) {
+          const found = WORDS_BY_LEVEL[l].find(w => w.id === item.word_id);
+          if(found) { wData = found; break; }
+        }
+        if(wData) return { id: wData.id, zh: wData.zh, py: wData.py, en: wData.english || wData.en, error_type: item.error_type };
+        return null;
+      }).filter(Boolean);
+    } else {
+      _activeMistakes =[];
+    }
+    updateMistakesUI();
+  } catch (e) { console.error("Mistakes Load Error:", e); }
 }
-function addMistake(word){
-  if(!_uid||!word)return;
-  const mistakes=getMistakes();
-  if(!mistakes.find(m=>m.id===word.id)){
-    mistakes.push({id:word.id,zh:word.zh,py:word.py,en:word.en,addedAt:Date.now()});
-    // Keep max 200 mistakes
-    if(mistakes.length>200) mistakes.splice(0,mistakes.length-200);
-    localStorage.setItem(key('practice_mistakes'),JSON.stringify(mistakes));
+
+function updateMistakesUI() {
+  const mc = document.getElementById('mistakes-count');
+  const mb = document.getElementById('mistakes-badge');
+  const breakdown = document.getElementById('mistakes-breakdown');
+  
+  if (_activeMistakes.length > 0) {
+      mc.style.display = 'flex'; mc.textContent = _activeMistakes.length;
+      mb.textContent = _activeMistakes.length + ' to review'; mb.className = 'mode-badge err';
+
+      const types = { grammar:0, listening:0, translation:0, reading:0, pinyin:0 };
+      _activeMistakes.forEach(m => { const t = m.error_type || 'reading'; types[t] = (types[t] || 0) + 1; });
+
+      let html = '';
+      const map = {
+          listening:   { icon: '🎧', col: 'var(--blue)' },
+          grammar:     { icon: '🧩', col: 'var(--purple)' },
+          reading:     { icon: '📖', col: 'var(--green)' },
+          translation: { icon: '🌐', col: 'var(--gold)' },
+          pinyin:      { icon: '✍️', col: 'var(--orange)' }
+      };
+      for (let t in types) {
+          if (types[t] > 0) {
+              const m = map[t] || map['reading'];
+              html += `<span style="font-size:9.5px;font-weight:800;color:${m.col};background:var(--card2);border:1px solid ${m.col}40;border-radius:6px;padding:3px 6px;">${m.icon} ${types[t]}</span>`;
+          }
+      }
+      breakdown.innerHTML = html;
+  } else {
+      mc.style.display = 'none'; mb.textContent = 'No mistakes yet'; mb.className = 'mode-badge';
+      breakdown.innerHTML = '';
   }
 }
-function removeMistake(wordId){
-  if(!_uid)return;
-  const mistakes=getMistakes().filter(m=>m.id!==wordId);
-  localStorage.setItem(key('practice_mistakes'),JSON.stringify(mistakes));
+
+function addMistake(word, type = 'reading') {
+  if(!_uid || !word || !_sb) return;
+  _activeMistakes.push({ id: word.id, zh: word.zh, py: word.py || word.pinyin, en: word.en || word.english, error_type: type });
+  updateMistakesUI();
+
+  _sb.from('user_mistakes').select('fail_count').eq('user_id', _uid).eq('word_id', word.id).maybeSingle()
+    .then(({data}) => {
+       const current = data?.fail_count || 0;
+       _sb.from('user_mistakes').upsert({
+           user_id: _uid, word_id: word.id, error_type: type,
+           fail_count: current + 1, last_failed_at: new Date().toISOString(), is_resolved: false
+       }, {onConflict: 'user_id,word_id'}).then();
+    });
 }
 
-// ══ SHARED WORD DATA ══════════════════════════════════════
-const WORDS_BY_LEVEL = {
-1:[
-  {id:'1-1',zh:'你好',py:'nǐ hǎo',en:"Hello"},
-  {id:'1-2',zh:'谢谢',py:'xiè xie',en:"Thank you"},
-  {id:'1-3',zh:'我',py:'wǒ',en:"I / me"},
-  {id:'1-4',zh:'你',py:'nǐ',en:"you"},
-  {id:'1-5',zh:'是',py:'shì',en:"to be"},
-  {id:'1-6',zh:'不',py:'bù',en:"no / not"},
-  {id:'1-7',zh:'好',py:'hǎo',en:"good"},
-  {id:'1-8',zh:'大',py:'dà',en:"big"},
-  {id:'1-9',zh:'小',py:'xiǎo',en:"small"},
-  {id:'1-10',zh:'人',py:'rén',en:"person"},
-  {id:'1-11',zh:'今天',py:'jīntiān',en:"today"},
-  {id:'1-12',zh:'明天',py:'míngtiān',en:"tomorrow"},
-  {id:'1-13',zh:'朋友',py:'péngyǒu',en:"friend"},
-  {id:'1-14',zh:'学生',py:'xuésheng',en:"student"},
-  {id:'1-15',zh:'老师',py:'lǎoshī',en:"teacher"},
-  {id:'1-16',zh:'水',py:'shuǐ',en:"water"},
-  {id:'1-17',zh:'吃',py:'chī',en:"to eat"},
-  {id:'1-18',zh:'喝',py:'hē',en:"to drink"},
-  {id:'1-19',zh:'去',py:'qù',en:"to go"},
-  {id:'1-20',zh:'来',py:'lái',en:"to come"},
-  {id:'1-21',zh:'看',py:'kàn',en:"to look"},
-  {id:'1-22',zh:'说',py:'shuō',en:"to speak"},
-  {id:'1-23',zh:'听',py:'tīng',en:"to listen"},
-  {id:'1-24',zh:'写',py:'xiě',en:"to write"},
-  {id:'1-25',zh:'买',py:'mǎi',en:"to buy"},
-  {id:'1-26',zh:'有',py:'yǒu',en:"to have"},
-  {id:'1-27',zh:'在',py:'zài',en:"at / in"},
-  {id:'1-28',zh:'喜欢',py:'xǐhuān',en:"to like"},
-  {id:'1-29',zh:'中国',py:'zhōngguó',en:"China"},
-  {id:'1-30',zh:'北京',py:'Běijīng',en:"Beijing"},
-  {id:'1-31',zh:'时间',py:'shíjiān',en:"time"},
-  {id:'1-32',zh:'钱',py:'qián',en:"money"},
-  {id:'1-33',zh:'家',py:'jiā',en:"home"},
-  {id:'1-34',zh:'书',py:'shū',en:"book"},
-  {id:'1-35',zh:'手机',py:'shǒujī',en:"phone"},
-  {id:'1-36',zh:'爸爸',py:'bàba',en:"father"},
-  {id:'1-37',zh:'妈妈',py:'māma',en:"mother"},
-  {id:'1-38',zh:'高兴',py:'gāoxìng',en:"happy"},
-  {id:'1-39',zh:'累',py:'lèi',en:"tired"},
-  {id:'1-40',zh:'再见',py:'zàijiàn',en:"goodbye"},
-],
-2:[
-  {id:'2-1',zh:'努力',py:'nǔlì',en:"hardworking"},
-  {id:'2-2',zh:'认为',py:'rènwéi',en:"to think / believe"},
-  {id:'2-3',zh:'帮助',py:'bāngzhù',en:"to help"},
-  {id:'2-4',zh:'终于',py:'zhōngyú',en:"finally"},
-  {id:'2-5',zh:'其实',py:'qíshí',en:"actually"},
-  {id:'2-6',zh:'声音',py:'shēngyīn',en:"sound / voice"},
-  {id:'2-7',zh:'继续',py:'jìxù',en:"to continue"},
-  {id:'2-8',zh:'已经',py:'yǐjīng',en:"already"},
-  {id:'2-9',zh:'决定',py:'juédìng',en:"to decide"},
-  {id:'2-10',zh:'相信',py:'xiāngxìn',en:"to believe / trust"},
-  {id:'2-11',zh:'重要',py:'zhòngyào',en:"important"},
-  {id:'2-12',zh:'方法',py:'fāngfǎ',en:"method"},
-  {id:'2-13',zh:'问题',py:'wèntí',en:"problem / question"},
-  {id:'2-14',zh:'关系',py:'guānxi',en:"relationship"},
-  {id:'2-15',zh:'生活',py:'shēnghuó',en:"life / to live"},
-  {id:'2-16',zh:'工作',py:'gōngzuò',en:"work / to work"},
-  {id:'2-17',zh:'身体',py:'shēntǐ',en:"body / health"},
-  {id:'2-18',zh:'健康',py:'jiànkāng',en:"healthy / health"},
-  {id:'2-19',zh:'运动',py:'yùndòng',en:"exercise / sport"},
-  {id:'2-20',zh:'电话',py:'diànhuà',en:"telephone"},
-  {id:'2-21',zh:'因为',py:'yīnwèi',en:"because"},
-  {id:'2-22',zh:'所以',py:'suǒyǐ',en:"therefore"},
-  {id:'2-23',zh:'虽然',py:'suīrán',en:"although"},
-  {id:'2-24',zh:'但是',py:'dànshì',en:"but / however"},
-  {id:'2-25',zh:'如果',py:'rúguǒ',en:"if"},
-  {id:'2-26',zh:'一起',py:'yīqǐ',en:"together"},
-  {id:'2-27',zh:'以为',py:'yǐwéi',en:"to think mistakenly"},
-  {id:'2-28',zh:'应该',py:'yīnggāi',en:"should / ought to"},
-  {id:'2-29',zh:'可能',py:'kěnéng',en:"possible / maybe"},
-  {id:'2-30',zh:'一定',py:'yīdìng',en:"certainly / must"},
-],
-3:[
-  {id:'3-1',zh:'按照',py:'ànzhào',en:"according to"},
-  {id:'3-13',zh:'参加',py:'cānjiā',en:"to participate"},
-  {id:'3-15',zh:'成功',py:'chénggōng',en:"success"},
-  {id:'3-17',zh:'城市',py:'chéngshì',en:"city"},
-  {id:'3-29',zh:'发现',py:'fāxiàn',en:"to discover"},
-  {id:'3-30',zh:'方便',py:'fāngbiàn',en:"convenient"},
-  {id:'3-33',zh:'感觉',py:'gǎnjué',en:"feeling / to feel"},
-  {id:'3-35',zh:'更',py:'gèng',en:"even more"},
-  {id:'3-38',zh:'害怕',py:'hàipà',en:"to be afraid"},
-  {id:'3-46',zh:'机会',py:'jīhuì',en:"opportunity"},
-  {id:'3-48',zh:'计划',py:'jìhuà',en:"plan"},
-  {id:'3-49',zh:'记得',py:'jìde',en:"to remember"},
-  {id:'3-55',zh:'离开',py:'líkāi',en:"to leave"},
-  {id:'3-60',zh:'满意',py:'mǎnyì',en:"satisfied"},
-  {id:'3-70',zh:'生气',py:'shēngqì',en:"to be angry"},
-  {id:'3-71',zh:'世界',py:'shìjiè',en:"world"},
-  {id:'3-75',zh:'特别',py:'tèbié',en:"especially"},
-  {id:'3-79',zh:'突然',py:'tūrán',en:"suddenly"},
-  {id:'3-80',zh:'完成',py:'wánchéng',en:"to complete"},
-  {id:'3-97',zh:'重要',py:'zhòngyào',en:"important"},
-  {id:'3-98',zh:'注意',py:'zhùyì',en:"to pay attention"},
-  {id:'3-99',zh:'准备',py:'zhǔnbèi',en:"to prepare"},
-  {id:'3-100',zh:'总是',py:'zǒngshì',en:"always"},
-  {id:'3-107',zh:'必须',py:'bìxū',en:"must / have to"},
-  {id:'3-119',zh:'成绩',py:'chéngjì',en:"grade / result"},
-  {id:'3-133',zh:'担心',py:'dānxīn',en:"to worry"},
-  {id:'3-143',zh:'锻炼',py:'duànliàn',en:"to exercise"},
-  {id:'3-158',zh:'感动',py:'gǎndòng',en:"to be moved"},
-  {id:'3-160',zh:'感谢',py:'gǎnxiè',en:"to thank"},
-  {id:'3-197',zh:'建议',py:'jiànyì',en:"suggestion"},
-],
-4:[
-  {id:'4-1',zh:'按时',py:'ànshí',en:"on time"},
-  {id:'4-11',zh:'避免',py:'bìmiǎn',en:"to avoid"},
-  {id:'4-17',zh:'不断',py:'bùduàn',en:"continuously"},
-  {id:'4-19',zh:'不管',py:'bùguǎn',en:"no matter"},
-  {id:'4-20',zh:'不仅',py:'bùjǐn',en:"not only"},
-  {id:'4-35',zh:'达到',py:'dádào',en:"to achieve"},
-  {id:'4-39',zh:'导致',py:'dǎozhì',en:"to lead to"},
-  {id:'4-47',zh:'独立',py:'dúlì',en:"independent"},
-  {id:'4-62',zh:'鼓励',py:'gǔlì',en:"to encourage"},
-  {id:'4-64',zh:'关注',py:'guānzhù',en:"to pay attention to"},
-  {id:'4-73',zh:'积极',py:'jījí',en:"positive / active"},
-  {id:'4-77',zh:'坚持',py:'jiānchí',en:"to persist"},
-  {id:'4-83',zh:'解决',py:'jiějué',en:"to solve"},
-  {id:'4-84',zh:'尽管',py:'jǐnguǎn',en:"although"},
-  {id:'4-88',zh:'拒绝',py:'jùjué',en:"to refuse"},
-  {id:'4-96',zh:'乐观',py:'lèguān',en:"optimistic"},
-  {id:'4-97',zh:'理解',py:'lǐjiě',en:"to understand"},
-  {id:'4-108',zh:'目标',py:'mùbiāo',en:"goal / objective"},
-  {id:'4-110',zh:'努力',py:'nǔlì',en:"to work hard"},
-  {id:'4-128',zh:'实现',py:'shíxiàn',en:"to realize / achieve"},
-  {id:'4-132',zh:'虽然',py:'suīrán',en:"although"},
-  {id:'4-139',zh:'通过',py:'tōngguò',en:"by means of"},
-  {id:'4-144',zh:'无论',py:'wúlùn',en:"no matter"},
-  {id:'4-149',zh:'效率',py:'xiàolǜ',en:"efficiency"},
-  {id:'4-150',zh:'形成',py:'xíngchéng',en:"to form / take shape"},
-],
-};
+function removeMistake(wordId) {
+  if(!_uid || !_sb) return;
+  _activeMistakes = _activeMistakes.filter(m => m.id !== wordId);
+  updateMistakesUI();
+  _sb.from('user_mistakes').update({ is_resolved: true }).eq('user_id', _uid).eq('word_id', wordId).then();
+}
 
-// ── Get words for practice (user's level + completed lessons)
+function startMistakeReview() {
+  if(!_activeMistakes.length) { showToast('No mistakes saved yet. Keep practicing!'); return; }
+  const unique =[]; const seen = new Set();
+  for(let m of _activeMistakes) { if(!seen.has(m.id)) { unique.push(m); seen.add(m.id); } }
+  startFlashcardSession(shuffle(unique), 'Learn From Mistakes', false);
+}
+
+// ── GET DYNAMIC POOL
 function getUserWords() {
   if(!_uid) return WORDS_BY_LEVEL[1]||[];
   const level   = Number(localStorage.getItem(key('user_level'))||1);
   const lessonN = Number(localStorage.getItem(key('user_lesson'))||1);
   const maxWord = Math.max(5, Math.ceil((lessonN-1)/6)*5);
-  const all = [];
-  for(let l=1;l<level;l++) all.push(...(WORDS_BY_LEVEL[l]||[]));
+  const all =[];
+  for(let l=1; l<level; l++) all.push(...(WORDS_BY_LEVEL[l]||[]));
   all.push(...(WORDS_BY_LEVEL[level]||[]).slice(0, maxWord));
-  return all.length>=3 ? all : (WORDS_BY_LEVEL[1]||[]);
+  return all.length >= 3 ? all : (WORDS_BY_LEVEL[1]||[]);
 }
 
 function getPool() {
   const words = getUserWords();
-  if(!_uid||words.length===0) return shuffle(words);
+  if(!_uid || words.length === 0) return shuffle(words);
   const srs   = JSON.parse(localStorage.getItem(key('srs'))||'{}');
   const now   = Date.now();
   const due     = shuffle(words.filter(w=>srs[w.id]&&srs[w.id].nextReview<=now));
@@ -578,104 +521,68 @@ function showAdModal(title, sub, adsNeeded, onComplete) {
   document.getElementById('btn-watch-ad').disabled = false;
   document.getElementById('ad-overlay').classList.add('show');
 }
+function closeAdModal() { document.getElementById('ad-overlay').classList.remove('show'); clearInterval(_adTimer); }
 
-function closeAdModal() {
-  document.getElementById('ad-overlay').classList.remove('show');
-  clearInterval(_adTimer);
-}
-
-let _adsWatched = 0;
-let _adsTarget  = 1;
+let _adsWatched = 0, _adsTarget = 1;
 function watchAd() {
-  const btn   = document.getElementById('btn-watch-ad');
-  const bar   = document.getElementById('ad-bar-wrap');
-  const fill  = document.getElementById('ad-bar-fill');
-  const lbl   = document.getElementById('ad-bar-lbl');
-  btn.disabled = true;
-  btn.textContent = 'Loading ad…';
-  bar.style.display = 'block';
-  fill.style.width = '0%';
-  lbl.textContent = 'Please wait…';
-  let elapsed = 0;
-  clearInterval(_adTimer);
+  const btn = document.getElementById('btn-watch-ad'), bar = document.getElementById('ad-bar-wrap'), fill = document.getElementById('ad-bar-fill'), lbl = document.getElementById('ad-bar-lbl');
+  btn.disabled = true; btn.textContent = 'Loading ad…'; bar.style.display = 'block'; fill.style.width = '0%'; lbl.textContent = 'Please wait…';
+  let elapsed = 0; clearInterval(_adTimer);
   _adTimer = setInterval(() => {
-    elapsed += 80;
-    const pct = Math.min(100, (elapsed/5000)*100);
-    fill.style.width = pct + '%';
+    elapsed += 80; fill.style.width = Math.min(100, (elapsed/5000)*100) + '%';
     const remaining = Math.ceil((5000-elapsed)/1000);
     if(elapsed >= 5000) {
-      clearInterval(_adTimer);
-      _adsWatched++;
-      lbl.textContent = _adsWatched + ' / ' + _adsTarget + ' ads watched';
-      fill.style.width = '100%';
+      clearInterval(_adTimer); _adsWatched++;
+      lbl.textContent = _adsWatched + ' / ' + _adsTarget + ' ads watched'; fill.style.width = '100%';
       if(_adsWatched >= _adsTarget) {
-        setTimeout(() => {
-          closeAdModal();
-          _adsWatched = 0;
-          showToast('✅ Unlocked!');
-          if(_adCallback) _adCallback();
-        }, 400);
+        setTimeout(() => { closeAdModal(); _adsWatched = 0; showToast('✅ Unlocked!'); if(_adCallback) _adCallback(); }, 400);
       } else {
-        btn.disabled = false;
-        btn.textContent = 'Watch Ad ' + (_adsWatched+1) + ' / ' + _adsTarget;
-        fill.style.width = '0%';
-        elapsed = 0;
+        btn.disabled = false; btn.textContent = 'Watch Ad ' + (_adsWatched+1) + ' / ' + _adsTarget; fill.style.width = '0%'; elapsed = 0;
       }
-    } else {
-      lbl.textContent = 'Ad playing… ' + remaining + 's';
-    }
+    } else { lbl.textContent = 'Ad playing… ' + remaining + 's'; }
   }, 80);
 }
 
 // ══ HSK FULL REVIEW ═══════════════════════════════════════
-const HSK_REVIEW_INFO = [
-  {level:1, name:'Beginner',     words:40,  adsNeeded:0, available:true},
-  {level:2, name:'Elementary',   words:30,  adsNeeded:0, available:true},
-  {level:3, name:'Intermediate', words:30,  adsNeeded:2, available:true},
-  {level:4, name:'Upper-Int.',   words:25,  adsNeeded:3, available:true},
-  {level:5, name:'Advanced',     words:0,   adsNeeded:3, available:false},
-  {level:6, name:'Mastery',      words:0,   adsNeeded:3, available:false},
+const HSK_REVIEW_INFO =[
+  {level:1, name:'Beginner',     words:150, adsNeeded:0, available:true},
+  {level:2, name:'Elementary',   words:150, adsNeeded:0, available:true},
+  {level:3, name:'Intermediate', words:300, adsNeeded:2, available:true},
+  {level:4, name:'Upper-Int.',   words:600, adsNeeded:3, available:true},
+  {level:5, name:'Advanced',     words:1300, adsNeeded:3, available:false},
+  {level:6, name:'Mastery',      words:2500, adsNeeded:3, available:false},
 ];
 
 function buildHSKReviewGrid() {
-  const grid = document.getElementById('hsk-review-grid');
-  grid.innerHTML = '';
+  const grid = document.getElementById('hsk-review-grid'); grid.innerHTML = '';
   HSK_REVIEW_INFO.forEach(info => {
     const btn = document.createElement('div');
     btn.className = 'hsk-review-btn' + (!info.available ? ' locked' : '');
     const badgeClass = !info.available ? 'locked' : info.adsNeeded===0 ? 'free' : info.adsNeeded<=2 ? 'ad1' : 'ad2';
     const badgeText  = !info.available ? 'Soon' : info.adsNeeded===0 ? 'Free' : info.adsNeeded + ' ads';
-    btn.innerHTML =
-      '<div class="hrb-level">HSK ' + info.level + '</div>' +
-      '<div class="hrb-name">' + info.name + '</div>' +
-      '<div class="hrb-count">' + (info.available ? info.words + ' words' : 'Coming soon') + '</div>' +
-      '<div class="hrb-badge ' + badgeClass + '">' + badgeText + '</div>' +
-      (!info.available ? '<div class="lock-icon">🔒</div>' : '');
-    if(info.available) {
-      btn.addEventListener('click', () => startHSKReview(info));
-    }
+    
+    // dynamically determine actual downloaded count
+    const countLabel = info.available ? `${WORDS_BY_LEVEL[info.level]?.length || 0} words` : 'Coming soon';
+
+    btn.innerHTML = `
+      <div class="hrb-level">HSK ${info.level}</div>
+      <div class="hrb-name">${info.name}</div>
+      <div class="hrb-count">${countLabel}</div>
+      <div class="hrb-badge ${badgeClass}">${badgeText}</div>
+      ${!info.available ? '<div class="lock-icon">🔒</div>' : ''}`;
+    if(info.available) btn.addEventListener('click', () => startHSKReview(info));
     grid.appendChild(btn);
   });
 }
 
 function startHSKReview(info) {
   const doReview = () => {
-    const words = shuffle(WORDS_BY_LEVEL[info.level] || []);
-    if(!words.length) { showToast('No words available for HSK ' + info.level); return; }
-    startFlashcardSession(words, 'HSK ' + info.level + ' Review');
+    const words = shuffle(WORDS_BY_LEVEL[info.level] ||[]);
+    if(!words.length) { showToast('Dictionary still loading or empty for HSK ' + info.level); return; }
+    startFlashcardSession(words.slice(0, 40), 'HSK ' + info.level + ' Review');
   };
-  if(info.adsNeeded === 0) {
-    doReview();
-  } else {
-    _adsTarget = info.adsNeeded;
-    _adsWatched = 0;
-    showAdModal(
-      'Unlock HSK ' + info.level + ' Review',
-      'Watch ' + info.adsNeeded + ' short ad' + (info.adsNeeded>1?'s':'') + ' to review all ' + info.words + ' HSK ' + info.level + ' words.',
-      info.adsNeeded,
-      doReview
-    );
-  }
+  if(info.adsNeeded === 0) doReview();
+  else { _adsTarget = info.adsNeeded; _adsWatched = 0; showAdModal('Unlock HSK ' + info.level + ' Review', `Watch ${info.adsNeeded} ad(s) to review HSK ${info.level} words.`, info.adsNeeded, doReview); }
 }
 
 // ══ SPEED CHALLENGE ═══════════════════════════════════════
@@ -685,90 +592,89 @@ const SP_TOTAL = 20;
 function startSpeed() {
   _spCurrent=0;_spScore=0;_spWrong=0;_spAnswered=false;
   _spPool = shuffle(getPool()).slice(0,SP_TOTAL);
-  if(!_spPool.length){showToast('Complete some lessons first!');return;}
-  showScreen('speed');
-  renderSpeedQ();
+  if(!_spPool.length){showToast('Dictionary not ready yet!');return;}
+  showScreen('speed'); renderSpeedQ();
 }
 
 function renderSpeedQ() {
   if(_spCurrent>=SP_TOTAL){showSpeedResult();return;}
-  _spAnswered=false;
-  clearInterval(_spTimer);
+  _spAnswered=false; clearInterval(_spTimer);
   const w = _spPool[_spCurrent];
-  const mode = Math.random()>0.5?'meaning':'hanzi';
-  const correct = mode==='meaning'?w.en:w.zh;
-  const pool = Object.values(WORDS_BY_LEVEL).flat().filter(x=>x.id!==w.id&&x.en!==w.en);
-  const opts = shuffle([correct,...shuffle(pool).slice(0,3).map(d=>mode==='meaning'?d.en:d.zh)]);
+  const mode = Math.random()>0.5 ? 'meaning' : 'hanzi';
+  const correct = mode==='meaning' ? (w.english||w.en) : w.zh;
+  const pool = Object.values(WORDS_BY_LEVEL).flat().filter(x => x.id!==w.id && (x.english||x.en)!==(w.english||w.en));
+  
+  // ensure pool has words for options
+  let optsList = pool.length > 3 ? shuffle(pool).slice(0,3) : pool;
+  const opts = shuffle([correct, ...optsList.map(d=> mode==='meaning'?(d.english||d.en):d.zh)]);
+  
   document.getElementById('sp-q-count').textContent=(_spCurrent+1)+' / '+SP_TOTAL;
   document.getElementById('sp-score').textContent=_spScore+' ✓';
-  const area=document.getElementById('sp-area');
-  area.innerHTML='';
-  const lbl=document.createElement('div');
-  lbl.className='sq-label '+(mode==='meaning'?'read':'write');
-  lbl.textContent=mode==='meaning'?'📖 What does this mean?':'✍️ Choose the character';
-  area.appendChild(lbl);
+  const area=document.getElementById('sp-area'); area.innerHTML='';
+  
+  const lbl=document.createElement('div'); lbl.className='sq-label '+(mode==='meaning'?'read':'write');
+  lbl.textContent=mode==='meaning'?'📖 What does this mean?':'✍️ Choose the character'; area.appendChild(lbl);
+  
   if(mode==='meaning'){
-    const hz=document.createElement('div');hz.className='sq-hanzi';hz.textContent=w.zh;
-    area.appendChild(hz);speak(w.zh,1.0);
+    const hz=document.createElement('div'); hz.className='sq-hanzi'; hz.textContent=w.zh;
+    area.appendChild(hz); speak(w.zh, 1.0);
   } else {
-    const q=document.createElement('div');q.className='sq-question';q.textContent='How do you write "'+w.en+'"?';
+    const q=document.createElement('div'); q.className='sq-question'; q.textContent=`How do you write "${w.english||w.en}"?`;
     area.appendChild(q);
   }
-  const grid=document.createElement('div');grid.className='sq-opts';
+  
+  const grid=document.createElement('div'); grid.className='sq-opts';
   opts.forEach(opt=>{
-    const btn=document.createElement('button');btn.className='sq-opt';
-    if(mode==='hanzi')btn.style.fontFamily="'Noto Sans SC',sans-serif";
+    const btn=document.createElement('button'); btn.className='sq-opt';
+    if(mode==='hanzi') btn.style.fontFamily="'Noto Sans SC',sans-serif";
     btn.textContent=opt;
-    btn.addEventListener('click',function(){handleSpeedAnswer(opt,correct,w,this,grid);});
+    btn.addEventListener('click',function(){handleSpeedAnswer(opt,correct,w,this,grid, mode==='meaning'?'reading':'translation');});
     grid.appendChild(btn);
   });
   area.appendChild(grid);
-  const fb=document.createElement('div');fb.className='sq-feedback';fb.id='sp-fb';
-  fb.innerHTML='<span id="fb-icon"></span><span id="fb-text"></span>';
+  
+  const fb=document.createElement('div'); fb.className='sq-feedback'; fb.id='sp-fb'; fb.innerHTML='<span id="fb-icon"></span><span id="fb-text"></span>';
   area.appendChild(fb);
-  _spTimeLeft=8;updateSpeedBar();
+  
+  _spTimeLeft=8; updateSpeedBar();
   _spTimer=setInterval(()=>{
-    _spTimeLeft=Math.max(0,_spTimeLeft-0.1);updateSpeedBar();
+    _spTimeLeft=Math.max(0,_spTimeLeft-0.1); updateSpeedBar();
     if(_spTimeLeft<=0){
       clearInterval(_spTimer);
       if(!_spAnswered){
-        _spAnswered=true;_spWrong++;
-        addMistake(w);
-        grid.querySelectorAll('.sq-opt').forEach(b=>{b.disabled=true;if(b.textContent===correct)b.classList.add('correct');});
+        _spAnswered=true;_spWrong++; addMistake(w, mode==='meaning'?'reading':'translation');
+        grid.querySelectorAll('.sq-opt').forEach(b=>{ b.disabled=true; if(b.textContent===correct) b.classList.add('correct'); });
         showSpeedFb(false,correct);
         setTimeout(()=>{_spCurrent++;renderSpeedQ();},900);
       }
     }
-  },100);
+  }, 100);
 }
 
 function updateSpeedBar(){
   const bar=document.getElementById('sp-bar'),cnt=document.getElementById('sp-counter');
   if(!bar||!cnt)return;
   const pct=(_spTimeLeft/8)*100;
-  bar.style.width=pct+'%';
-  bar.className='speed-bar'+(pct<40?' warning':'')+(pct<15?' danger':'');
+  bar.style.width=pct+'%'; bar.className='speed-bar'+(pct<40?' warning':'')+(pct<15?' danger':'');
   cnt.textContent=Math.ceil(_spTimeLeft)+'s';
 }
 
-function handleSpeedAnswer(chosen,correct,word,btn,grid){
-  if(_spAnswered)return;
-  _spAnswered=true;clearInterval(_spTimer);
-  const isOk=chosen===correct;
+function handleSpeedAnswer(chosen,correct,word,btn,grid,errType){
+  if(_spAnswered)return; _spAnswered=true; clearInterval(_spTimer);
+  const isOk = chosen === correct;
   grid.querySelectorAll('.sq-opt').forEach(b=>b.disabled=true);
   btn.classList.add(isOk?'correct':'wrong');
-  if(!isOk){_spWrong++;addMistake(word);grid.querySelectorAll('.sq-opt').forEach(b=>{if(b.textContent===correct)b.classList.add('correct');});}
-  else{_spScore++;}
+  if(!isOk) { _spWrong++; addMistake(word, errType); grid.querySelectorAll('.sq-opt').forEach(b=>{ if(b.textContent===correct)b.classList.add('correct'); }); }
+  else { _spScore++; }
   showSpeedFb(isOk,correct);
-  setTimeout(()=>{_spCurrent++;renderSpeedQ();},isOk?500:900);
+  setTimeout(()=>{_spCurrent++; renderSpeedQ();}, isOk?500:900);
 }
 
 function showSpeedFb(isOk,correct){
-  const fb=document.getElementById('sp-fb');if(!fb)return;
+  const fb=document.getElementById('sp-fb'); if(!fb)return;
   fb.className='sq-feedback show '+(isOk?'ok':'err');
   document.getElementById('fb-icon').textContent=isOk?'✓':'✕';
-  const pos=['Correct!','Great!','Perfect!'];
-  document.getElementById('fb-text').textContent=isOk?rand(pos):'Answer: '+correct;
+  document.getElementById('fb-text').textContent=isOk?rand(['Correct!','Great!','Perfect!']):'Answer: '+correct;
 }
 
 function showSpeedResult(){
@@ -777,7 +683,7 @@ function showSpeedResult(){
   const earnedXP=_spScore*2+10;
   if(_uid){
     const best=Number(localStorage.getItem(key('speed_best'))||0);
-    if(_spScore>best)localStorage.setItem(key('speed_best'),_spScore);
+    if(_spScore>best) localStorage.setItem(key('speed_best'),_spScore);
     const curXP=Number(localStorage.getItem(key('xp'))||0)+earnedXP;
     localStorage.setItem(key('xp'),curXP);
     saveXP(earnedXP);
@@ -787,22 +693,20 @@ function showSpeedResult(){
   showScreen('speed-result');
   const el=document.getElementById('speed-result-inner');
   el.innerHTML=
-    '<div class="sr-emoji">'+emoji+'</div>'+
-    '<div class="sr-title">'+title+'</div>'+
-    '<div class="sr-sub">Speed Challenge Complete</div>'+
-    '<div class="sr-score">'+_spScore+' / '+SP_TOTAL+'</div>'+
-    '<div class="xp-earned">+'+earnedXP+' XP earned</div>'+
-    '<div class="sr-stats">'+
-      '<div class="sr-stat"><div class="sr-stat-val">'+pct+'%</div><div class="sr-stat-lbl">Accuracy</div></div>'+
-      '<div class="sr-stat"><div class="sr-stat-val">'+_spScore+'</div><div class="sr-stat-lbl">Correct</div></div>'+
-      '<div class="sr-stat"><div class="sr-stat-val">'+_spWrong+'</div><div class="sr-stat-lbl">Wrong</div></div>'+
-    '</div>'+
-    '<div class="sr-actions" id="sr-actions"></div>';
+    `<div class="sr-emoji">${emoji}</div>
+     <div class="sr-title">${title}</div>
+     <div class="sr-sub">Speed Challenge Complete</div>
+     <div class="sr-score">${_spScore} / ${SP_TOTAL}</div>
+     <div class="xp-earned">+${earnedXP} XP earned</div>
+     <div class="sr-stats">
+       <div class="sr-stat"><div class="sr-stat-val">${pct}%</div><div class="sr-stat-lbl">Accuracy</div></div>
+       <div class="sr-stat"><div class="sr-stat-val">${_spScore}</div><div class="sr-stat-lbl">Correct</div></div>
+       <div class="sr-stat"><div class="sr-stat-val">${_spWrong}</div><div class="sr-stat-lbl">Wrong</div></div>
+     </div>
+     <div class="sr-actions" id="sr-actions"></div>`;
   const acts=document.getElementById('sr-actions');
-  const b1=document.createElement('button');b1.className='btn-primary';b1.textContent='⚡ Play Again';
-  b1.addEventListener('click',startSpeed);acts.appendChild(b1);
-  const b2=document.createElement('button');b2.className='btn-secondary';b2.textContent='← Back';
-  b2.addEventListener('click',exitMode);acts.appendChild(b2);
+  const b1=document.createElement('button'); b1.className='btn-primary'; b1.textContent='⚡ Play Again'; b1.addEventListener('click',startSpeed); acts.appendChild(b1);
+  const b2=document.createElement('button'); b2.className='btn-secondary'; b2.textContent='← Back'; b2.addEventListener('click',exitMode); acts.appendChild(b2);
   loadStats();
 }
 
@@ -811,22 +715,13 @@ let _revPool=[], _revIdx=0, _revRevealed=false, _revCorrect=0, _revTitle='Flashc
 
 function startReview() {
   const words = getPool();
-  if(!words.length){showToast('Complete some lessons first!');return;}
+  if(!words.length){showToast('Dictionary not ready!');return;}
   startFlashcardSession(shuffle(words).slice(0,40),'Flashcards',true);
 }
 
-function startMistakeReview() {
-  const mistakes = getMistakes();
-  if(!mistakes.length){showToast('No mistakes saved yet. Keep practicing!');return;}
-  // Shuffle every time so order changes
-  startFlashcardSession(shuffle(mistakes),'Learn From Mistakes',false);
-}
-
 function startFlashcardSession(words, title, saveSRS=true) {
-  _revPool=words;_revIdx=0;_revRevealed=false;_revCorrect=0;
-  _revTitle=title;_revSaveMs=saveSRS;
-  showScreen('review');
-  renderReviewCard();
+  _revPool=words;_revIdx=0;_revRevealed=false;_revCorrect=0;_revTitle=title;_revSaveMs=saveSRS;
+  showScreen('review'); renderReviewCard();
 }
 
 function renderReviewCard() {
@@ -835,48 +730,40 @@ function renderReviewCard() {
   const srs=JSON.parse(localStorage.getItem(key('srs'))||'{}');
   const entry=srs[w.id];
   const tag=!entry?'new':entry.nextReview<=Date.now()?'due':'learned';
-  _revRevealed=false;
-  const inner=document.getElementById('review-inner');
-  inner.innerHTML='';
-  // Header
+  _revRevealed=false; const inner=document.getElementById('review-inner'); inner.innerHTML='';
+  
   const hdr=document.createElement('div');hdr.className='review-header';
-  hdr.innerHTML='<div class="review-title">'+_revTitle+'</div><div class="review-count">'+(_revIdx+1)+' / '+_revPool.length+'</div>';
+  hdr.innerHTML=`<div class="review-title">${_revTitle}</div><div class="review-count">${_revIdx+1} / ${_revPool.length}</div>`;
   inner.appendChild(hdr);
-  // Progress bar
+  
   const prog=document.createElement('div');prog.className='progress-bar-wrap';
   const fill=document.createElement('div');fill.className='progress-bar-fill';
   fill.style.width=Math.round((_revIdx/_revPool.length)*100)+'%';
   prog.appendChild(fill);inner.appendChild(prog);
-  // Card
+  
   const card=document.createElement('div');card.className='word-card-review';
   const hanzi=document.createElement('div');hanzi.className='wcr-hanzi';hanzi.textContent=w.zh;
-  const tagEl=document.createElement('div');
-  tagEl.className='srs-tag srs-'+tag;
-  tagEl.textContent=tag==='new'?'New word':tag==='due'?'Due for review':'Learned';
-  const pyEl=document.createElement('div');pyEl.className='wcr-pinyin wcr-hidden';pyEl.id='rev-py';pyEl.textContent=w.py;
-  const mnEl=document.createElement('div');mnEl.className='wcr-meaning wcr-hidden';mnEl.id='rev-mn';mnEl.textContent=w.en;
+  const tagEl=document.createElement('div'); tagEl.className='srs-tag srs-'+tag; tagEl.textContent=tag==='new'?'New word':tag==='due'?'Due for review':'Learned';
+  const pyEl=document.createElement('div');pyEl.className='wcr-pinyin wcr-hidden';pyEl.id='rev-py';pyEl.textContent=w.pinyin||w.py;
+  const mnEl=document.createElement('div');mnEl.className='wcr-meaning wcr-hidden';mnEl.id='rev-mn';mnEl.textContent=w.english||w.en;
   const tap=document.createElement('div');tap.className='wcr-tap';tap.id='rev-tap';tap.textContent='Tap to reveal';
-  card.appendChild(hanzi);card.appendChild(tagEl);card.appendChild(pyEl);card.appendChild(mnEl);card.appendChild(tap);
-  card.addEventListener('click',()=>revealCard(w));
-  inner.appendChild(card);
-  // Audio button
+  card.append(hanzi, tagEl, pyEl, mnEl, tap);
+  card.addEventListener('click',()=>revealCard()); inner.appendChild(card);
+  
   const abRow=document.createElement('div');abRow.style.cssText='text-align:center;margin-top:-4px';
   const ab=document.createElement('button');ab.className='btn-audio';
   ab.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-  ab.addEventListener('click',function(e){e.stopPropagation();speak(w.zh);});
-  abRow.appendChild(ab);inner.appendChild(abRow);
-  // Buttons (hidden until revealed)
+  ab.addEventListener('click',function(e){e.stopPropagation();speak(w.zh);}); abRow.appendChild(ab); inner.appendChild(abRow);
+  
   const btns=document.createElement('div');btns.className='review-btns';btns.id='rev-btns';btns.style.display='none';
   const knowBtn=document.createElement('button');knowBtn.className='btn-know';knowBtn.textContent='✓ I knew it';
   const dontBtn=document.createElement('button');dontBtn.className='btn-dontknow';dontBtn.textContent='✕ Not yet';
-  knowBtn.addEventListener('click',()=>revScore(w,true));
-  dontBtn.addEventListener('click',()=>revScore(w,false));
-  btns.appendChild(dontBtn);btns.appendChild(knowBtn);
-  inner.appendChild(btns);
+  knowBtn.addEventListener('click',()=>revScore(w,true)); dontBtn.addEventListener('click',()=>revScore(w,false));
+  btns.append(dontBtn, knowBtn); inner.appendChild(btns);
   speak(w.zh,0.85);
 }
 
-function revealCard(w){
+function revealCard(){
   if(_revRevealed)return;_revRevealed=true;
   document.querySelectorAll('.wcr-hidden').forEach(el=>{el.classList.remove('wcr-hidden');el.style.animation='fadeUp .3s ease both';});
   const tap=document.getElementById('rev-tap');if(tap)tap.style.display='none';
@@ -893,21 +780,17 @@ function revScore(w,knew){
     srs[w.id]=entry;
     localStorage.setItem(key('srs'),JSON.stringify(srs));
   }
-  if(!knew) addMistake(w);
-  else removeMistake(w.id);
+  if(!knew) addMistake(w, 'reading'); else removeMistake(w.id);
   if(knew)_revCorrect++;
-  _revIdx++;
-  renderReviewCard();
+  _revIdx++; renderReviewCard();
 }
 
 function showReviewDone(){
   const inner=document.getElementById('review-inner');
   const pct=_revPool.length>0?Math.round((_revCorrect/_revPool.length)*100):0;
-  inner.innerHTML='<div class="empty-state"><span class="empty-emoji">🎉</span><div class="empty-title">Done!</div><div class="empty-sub">'+_revCorrect+' / '+_revPool.length+' known ('+pct+'%)</div></div>';
+  inner.innerHTML=`<div class="empty-state"><span class="empty-emoji">🎉</span><div class="empty-title">Done!</div><div class="empty-sub">${_revCorrect} / ${_revPool.length} known (${pct}%)</div></div>`;
   const b1=document.createElement('button');b1.className='btn-primary';b1.style.cssText='width:100%;max-width:300px;margin:0 auto;display:block;padding:14px;border-radius:13px;border:none;background:linear-gradient(135deg,var(--green),var(--green2));color:#080f0b;font-family:DM Sans,sans-serif;font-size:15px;font-weight:700;cursor:pointer';
-  b1.textContent='← Back to Practice';
-  b1.addEventListener('click',exitMode);
-  inner.querySelector('.empty-state').appendChild(b1);
+  b1.textContent='← Back to Practice'; b1.addEventListener('click',exitMode); inner.querySelector('.empty-state').appendChild(b1);
   loadStats();
 }
 
@@ -916,51 +799,38 @@ let _listenPool=[], _listenIdx=0, _listenScore=0, _listenWrong=0, _listenAnswere
 
 function startListening(){
   _listenPool=shuffle(getPool()).slice(0,20);
-  if(!_listenPool.length){showToast('Complete some lessons first!');return;}
+  if(!_listenPool.length){showToast('Dictionary not ready!');return;}
   _listenIdx=0;_listenScore=0;_listenWrong=0;_listenAnswered=false;
-  showScreen('speed');
-  const h=document.getElementById('header-title');
-  h.innerHTML='🎧 <em>Listening</em>';
+  showScreen('speed'); document.getElementById('header-title').innerHTML='🎧 <em>Listening</em>';
   _spScore=0;_spWrong=0;_spCurrent=0;_spPool=_listenPool;
   renderListenQ();
 }
 
 function renderListenQ(){
-  if(_listenIdx>=20){
-    // Use speed result screen
-    clearInterval(_spTimer);
-    _spScore=_listenScore;_spWrong=_listenWrong;_spCurrent=20;
-    showSpeedResult();
-    return;
-  }
-  _listenAnswered=false;
-  clearInterval(_spTimer);
-  const w=_listenPool[_listenIdx];
-  const correct=w.en;
-  const pool=Object.values(WORDS_BY_LEVEL).flat().filter(x=>x.id!==w.id&&x.en!==w.en);
-  const opts=shuffle([correct,...shuffle(pool).slice(0,3).map(d=>d.en)]);
+  if(_listenIdx>=20){ clearInterval(_spTimer); _spScore=_listenScore;_spWrong=_listenWrong;_spCurrent=20; showSpeedResult(); return; }
+  _listenAnswered=false; clearInterval(_spTimer);
+  const w=_listenPool[_listenIdx]; const correct=w.english||w.en;
+  const pool=Object.values(WORDS_BY_LEVEL).flat().filter(x=>x.id!==w.id && (x.english||x.en)!==(w.english||w.en));
+  let optsList = pool.length > 3 ? shuffle(pool).slice(0,3) : pool;
+  const opts=shuffle([correct, ...optsList.map(d=>d.english||d.en)]);
+  
   document.getElementById('sp-q-count').textContent=(_listenIdx+1)+' / 20';
   document.getElementById('sp-score').textContent=_listenScore+' ✓';
-  const area=document.getElementById('sp-area');area.innerHTML='';
-  const lbl=document.createElement('div');lbl.className='sq-label listen';lbl.textContent='🎧 What do you hear?';
-  area.appendChild(lbl);
+  const area=document.getElementById('sp-area'); area.innerHTML='';
+  
+  const lbl=document.createElement('div');lbl.className='sq-label listen';lbl.textContent='🎧 What do you hear?'; area.appendChild(lbl);
   const pb=document.createElement('button');
   pb.style.cssText='width:100%;padding:15px;border-radius:13px;background:rgba(96,165,250,.1);border:1.5px solid rgba(96,165,250,.25);color:var(--blue);font-family:DM Sans,sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px';
-  pb.innerHTML='<span style="font-size:20px">🔊</span> Tap to hear again';
-  pb.addEventListener('click',()=>speak(w.zh,0.85));
-  area.appendChild(pb);
+  pb.innerHTML='<span style="font-size:20px">🔊</span> Tap to hear again'; pb.addEventListener('click',()=>speak(w.zh,0.85)); area.appendChild(pb);
   speak(w.zh,0.85);
+  
   const grid=document.createElement('div');grid.className='sq-opts';
   opts.forEach(opt=>{
     const btn=document.createElement('button');btn.className='sq-opt';btn.textContent=opt;
     btn.addEventListener('click',function(){
-      if(_listenAnswered)return;
-      _listenAnswered=true;clearInterval(_spTimer);
-      const isOk=opt===correct;
-      grid.querySelectorAll('.sq-opt').forEach(b=>b.disabled=true);
-      btn.classList.add(isOk?'correct':'wrong');
-      if(!isOk){_listenWrong++;addMistake(w);grid.querySelectorAll('.sq-opt').forEach(b=>{if(b.textContent===correct)b.classList.add('correct');});}
-      else{_listenScore++;}
+      if(_listenAnswered)return; _listenAnswered=true;clearInterval(_spTimer);
+      const isOk=opt===correct; grid.querySelectorAll('.sq-opt').forEach(b=>b.disabled=true); btn.classList.add(isOk?'correct':'wrong');
+      if(!isOk){_listenWrong++; addMistake(w,'listening'); grid.querySelectorAll('.sq-opt').forEach(b=>{if(b.textContent===correct)b.classList.add('correct');});} else{_listenScore++;}
       const fb=document.getElementById('sp-fb');
       if(fb){fb.className='sq-feedback show '+(isOk?'ok':'err');document.getElementById('fb-icon').textContent=isOk?'✓':'✕';document.getElementById('fb-text').textContent=isOk?rand(['Correct!','Great!']):'Answer: '+correct;}
       setTimeout(()=>{_listenIdx++;renderListenQ();},isOk?500:900);
@@ -968,73 +838,99 @@ function renderListenQ(){
     grid.appendChild(btn);
   });
   area.appendChild(grid);
-  const fb=document.createElement('div');fb.className='sq-feedback';fb.id='sp-fb';
-  fb.innerHTML='<span id="fb-icon"></span><span id="fb-text"></span>';
-  area.appendChild(fb);
-  // Timer (10s for listening)
-  _spTimeLeft=10;updateSpeedBar();
+  
+  const fb=document.createElement('div');fb.className='sq-feedback';fb.id='sp-fb'; fb.innerHTML='<span id="fb-icon"></span><span id="fb-text"></span>'; area.appendChild(fb);
+  
+  _spTimeLeft=10; updateSpeedBar();
   _spTimer=setInterval(()=>{
     _spTimeLeft=Math.max(0,_spTimeLeft-0.1);updateSpeedBar();
-    if(_spTimeLeft<=0){clearInterval(_spTimer);if(!_listenAnswered){_listenAnswered=true;_listenWrong++;addMistake(w);grid.querySelectorAll('.sq-opt').forEach(b=>{b.disabled=true;if(b.textContent===correct)b.classList.add('correct');});const fb=document.getElementById('sp-fb');if(fb){fb.className='sq-feedback show err';document.getElementById('fb-icon').textContent='✕';document.getElementById('fb-text').textContent='Answer: '+correct;}setTimeout(()=>{_listenIdx++;renderListenQ();},900);}}
+    if(_spTimeLeft<=0){
+      clearInterval(_spTimer);
+      if(!_listenAnswered){
+        _listenAnswered=true;_listenWrong++; addMistake(w, 'listening'); grid.querySelectorAll('.sq-opt').forEach(b=>{b.disabled=true;if(b.textContent===correct)b.classList.add('correct');});
+        const fbo=document.getElementById('sp-fb');if(fbo){fbo.className='sq-feedback show err';document.getElementById('fb-icon').textContent='✕';document.getElementById('fb-text').textContent='Answer: '+correct;}
+        setTimeout(()=>{_listenIdx++;renderListenQ();},900);
+      }
+    }
   },100);
 }
 
-// ══ EXIT ══════════════════════════════════════════════════
-function exitMode(){
-  clearInterval(_spTimer);window.speechSynthesis?.cancel();
-  showScreen('home');
-  loadStats();
-}
+// ══ EXIT & SAVE XP ═══════════════════════════════════════════
+function exitMode(){ clearInterval(_spTimer);window.speechSynthesis?.cancel(); showScreen('home'); loadStats(); }
 
-// ══ SAVE XP ═══════════════════════════════════════════════
 async function saveXP(earned){
   try{
-    if(!sb||!_uid)return;
+    if(!_uid || !_sb)return;
     const totalXP=Number(localStorage.getItem(key('xp'))||0);
     const username=localStorage.getItem('username_'+_uid)||('Learner '+_uid.slice(0,6).toUpperCase());
     const hskLevel=Number(localStorage.getItem(key('user_level'))||1);
-    await sb.from('leaderboard').upsert({user_id:_uid,xp:totalXP,username,hsk_level:hskLevel},{onConflict:'user_id'});
+    await _sb.from('leaderboard').upsert({user_id:_uid,xp:totalXP,username,hsk_level:hskLevel},{onConflict:'user_id'});
   }catch(e){console.warn('saveXP:',e);}
 }
 
-// ══ STATS ═════════════════════════════════════════════════
 function loadStats(){
   if(!_uid)return;
-  const best=localStorage.getItem(key('speed_best'));
-  document.getElementById('stat-best').textContent=best?best+'/20':'—';
-  const srs=JSON.parse(localStorage.getItem(key('srs'))||'{}');
-  const due=Object.values(srs).filter(w=>w.nextReview<=Date.now()).length;
+  fetchSupabaseMistakes();
+
+  const best=localStorage.getItem(key('speed_best')); document.getElementById('stat-best').textContent=best?best+'/20':'—';
+  const srs=JSON.parse(localStorage.getItem(key('srs'))||'{}'); const due=Object.values(srs).filter(w=>w.nextReview<=Date.now()).length;
+  
   document.getElementById('stat-due').textContent=due;
   document.getElementById('review-badge').textContent=due>0?due+' due for review':'All caught up!';
   if(due>0)document.getElementById('review-badge').className='mode-badge active';
+  
   const completed=JSON.parse(localStorage.getItem(key('completed_lessons'))||'[]');
-  const mistakes=getMistakes();
-  const mc=document.getElementById('mistakes-count');
-  const mb=document.getElementById('mistakes-badge');
-  if(mistakes.length>0){
-    mc.style.display='flex';mc.textContent=mistakes.length;
-    mb.textContent=mistakes.length+' to review';mb.className='mode-badge err';
-  } else {
-    mc.style.display='none';mb.textContent='No mistakes yet';mb.className='mode-badge';
-  }
-  const totalQ=Math.max(completed.length*8,1);
-  const totalMistakes=mistakes.length;
-  const acc=Math.max(0,Math.round(((totalQ-totalMistakes)/totalQ)*100));
-  document.getElementById('stat-acc').textContent=acc+'%';
-  const sb2=localStorage.getItem(key('speed_best'));
-  if(sb2)document.getElementById('speed-badge').textContent='Best: '+sb2+'/20';
+  const totalQ=Math.max(completed.length*8,1); const totalMistakes=_activeMistakes.length;
+  const acc=Math.max(0,Math.round(((totalQ-totalMistakes)/totalQ)*100)); document.getElementById('stat-acc').textContent=acc+'%';
+  const sb2=localStorage.getItem(key('speed_best')); if(sb2)document.getElementById('speed-badge').textContent='Best: '+sb2+'/20';
 }
 
-// ══ INIT ══════════════════════════════════════════════════
-async function init(){
-  try{
-    const {data}=await sb.auth.getSession();
-    const user=data?.session?.user;
-    if(user){_uid=user.id;}
-  }catch(e){}
-  loadStats();
+// ══ INIT & SUPABASE LOAD ══════════════════════════════════
+async function loadDictionaryFromSupabase() {
+  const cacheKey = 'global_words_cache';
+  const cacheTs = localStorage.getItem(cacheKey + '_ts');
+  if (cacheTs && Date.now() - cacheTs < 86400000) { 
+      const cachedWords = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+      if (cachedWords.length > 0) {
+         buildLocalDictionary(cachedWords);
+         return;
+      }
+  }
+  
+  const { data, error } = await _sb.from('words').select('id, zh, pinyin, english, hsk_level');
+  if (!error && data) {
+      // transform standard column names internally if necessary
+      const cleanData = data.map(d => ({id:d.id, zh:d.zh, py:d.pinyin, en:d.english, hsk_level:d.hsk_level}));
+      localStorage.setItem(cacheKey, JSON.stringify(cleanData));
+      localStorage.setItem(cacheKey + '_ts', Date.now());
+      buildLocalDictionary(cleanData);
+  } else {
+    showToast("Error downloading dictionary from database.", true);
+  }
+}
+
+function buildLocalDictionary(data) {
+  WORDS_BY_LEVEL = {};
+  data.forEach(w => {
+      if(!WORDS_BY_LEVEL[w.hsk_level]) WORDS_BY_LEVEL[w.hsk_level] = [];
+      WORDS_BY_LEVEL[w.hsk_level].push(w);
+  });
+  // Trigger UI recalculations after loading data
   buildHSKReviewGrid();
-  // Wire up buttons via addEventListener (no inline onclick bugs)
+  loadStats();
+  
+  // Transition Gate Output
+  const gate = document.getElementById('loading-gate');
+  gate.style.opacity = '0';
+  setTimeout(() => { showScreen('home'); }, 300);
+}
+
+async function init(){
+  try{ const {data}=await sb.auth.getSession(); if(data?.session?.user) _uid=data.session.user.id; }catch(e){}
+  
+  // Asynchronous Loading the True Dictionary DB Instead of hardcode
+  loadDictionaryFromSupabase();
+
   document.getElementById('mc-speed').addEventListener('click',startSpeed);
   document.getElementById('mc-review').addEventListener('click',startReview);
   document.getElementById('mc-mistakes').addEventListener('click',startMistakeReview);
@@ -1043,13 +939,15 @@ async function init(){
   document.getElementById('btn-exit-speed').addEventListener('click',exitMode);
   document.getElementById('btn-watch-ad').addEventListener('click',watchAd);
   document.getElementById('btn-cancel-ad').addEventListener('click',closeAdModal);
-  // URL params for direct launch
-  const p=new URLSearchParams(location.search);
-  const mode=p.get('mode');
-  if(mode==='speed') startSpeed();
-  else if(mode==='review') startReview();
-  else if(mode==='listen') startListening();
-  else if(mode==='mistakes') startMistakeReview();
+  
+  const p=new URLSearchParams(location.search); const mode=p.get('mode');
+  // Need short timeout for remote Dictionary if invoked directly
+  setTimeout(() => {
+     if(mode==='speed') startSpeed();
+     else if(mode==='review') startReview();
+     else if(mode==='listen') startListening();
+     else if(mode==='mistakes') startMistakeReview();
+  }, 1000);
 }
 init();
 </script>
